@@ -38,7 +38,7 @@ using namespace chip;
 void AddPeerTest(nlTestSuite * inSuite, void * inContext)
 {
     NodeId peerNodeId                             = 1234;
-    FabricId fabricId                             = 1;
+    FabricIndex fabricIndex                       = 1;
     uint32_t i                                    = 0;
     CHIP_ERROR err                                = CHIP_NO_ERROR;
     chip::Transport::PeerMessageCounter * counter = nullptr;
@@ -46,7 +46,7 @@ void AddPeerTest(nlTestSuite * inSuite, void * inContext)
 
     do
     {
-        err = mGroupPeerMsgCounter.FindOrAddPeer(fabricId, peerNodeId++, false, counter);
+        err = mGroupPeerMsgCounter.FindOrAddPeer(fabricIndex, peerNodeId++, false, counter);
         i++;
 
     } while (err != CHIP_ERROR_TOO_MANY_PEER_NODES);
@@ -56,7 +56,7 @@ void AddPeerTest(nlTestSuite * inSuite, void * inContext)
     i = 1;
     do
     {
-        err = mGroupPeerMsgCounter.FindOrAddPeer(++fabricId, peerNodeId, false, counter);
+        err = mGroupPeerMsgCounter.FindOrAddPeer(++fabricIndex, peerNodeId, false, counter);
         i++;
     } while (err != CHIP_ERROR_TOO_MANY_PEER_NODES);
     NL_TEST_ASSERT(inSuite, i == CHIP_CONFIG_MAX_FABRICS + 1);
@@ -65,7 +65,7 @@ void AddPeerTest(nlTestSuite * inSuite, void * inContext)
 void RemovePeerTest(nlTestSuite * inSuite, void * inContext)
 {
     NodeId peerNodeId                             = 1234;
-    FabricId fabricId                             = 1;
+    FabricIndex fabricIndex                             = 1;
     CHIP_ERROR err                                = CHIP_NO_ERROR;
     chip::Transport::PeerMessageCounter * counter = nullptr;
     chip::Transport::GroupPeerTable mGroupPeerMsgCounter;
@@ -75,25 +75,25 @@ void RemovePeerTest(nlTestSuite * inSuite, void * inContext)
     {
         for (uint32_t peerId = 0; peerId < GROUP_MSG_COUNTER_MAX_NUMBER_OF_GROUP_CONTROL_PEER; peerId++)
         {
-            err = mGroupPeerMsgCounter.FindOrAddPeer(fabricId, peerNodeId++, true, counter);
+            err = mGroupPeerMsgCounter.FindOrAddPeer(fabricIndex, peerNodeId++, true, counter);
         }
-        fabricId++;
+        fabricIndex++;
     }
     // Verify that table is indeed full (for control Peer)
     err = mGroupPeerMsgCounter.FindOrAddPeer(99, 99, true, counter);
     NL_TEST_ASSERT(inSuite, err == CHIP_ERROR_TOO_MANY_PEER_NODES);
 
     // Clear all Peer
-    fabricId   = 1;
+    fabricIndex   = 1;
     peerNodeId = 1234;
     for (uint32_t it = 0; it < CHIP_CONFIG_MAX_FABRICS; it++)
     {
         for (uint32_t peerId = 0; peerId < GROUP_MSG_COUNTER_MAX_NUMBER_OF_GROUP_CONTROL_PEER; peerId++)
         {
-            err = mGroupPeerMsgCounter.RemovePeer(fabricId, peerNodeId++, true);
+            err = mGroupPeerMsgCounter.RemovePeer(fabricIndex, peerNodeId++, true);
             NL_TEST_ASSERT(inSuite, err == CHIP_NO_ERROR);
         }
-        fabricId++;
+        fabricIndex++;
     }
 
     // Try re-adding the previous peer without any error
@@ -104,13 +104,13 @@ void RemovePeerTest(nlTestSuite * inSuite, void * inContext)
 void PeerRetrievalTest(nlTestSuite * inSuite, void * inContext)
 {
     NodeId peerNodeId                              = 1234;
-    FabricId fabricId                              = 1;
+    FabricIndex fabricIndex                              = 1;
     CHIP_ERROR err                                 = CHIP_NO_ERROR;
     chip::Transport::PeerMessageCounter * counter  = nullptr;
     chip::Transport::PeerMessageCounter * counter2 = nullptr;
     chip::Transport::GroupPeerTable mGroupPeerMsgCounter;
 
-    err = mGroupPeerMsgCounter.FindOrAddPeer(fabricId, peerNodeId, true, counter);
+    err = mGroupPeerMsgCounter.FindOrAddPeer(fabricIndex, peerNodeId, true, counter);
     NL_TEST_ASSERT(inSuite, err == CHIP_NO_ERROR);
     NL_TEST_ASSERT(inSuite, counter != nullptr);
 
@@ -119,7 +119,7 @@ void PeerRetrievalTest(nlTestSuite * inSuite, void * inContext)
     NL_TEST_ASSERT(inSuite, counter2 != nullptr);
     NL_TEST_ASSERT(inSuite, counter2 != counter);
 
-    err = mGroupPeerMsgCounter.FindOrAddPeer(fabricId, peerNodeId, true, counter2);
+    err = mGroupPeerMsgCounter.FindOrAddPeer(fabricIndex, peerNodeId, true, counter2);
     NL_TEST_ASSERT(inSuite, err == CHIP_NO_ERROR);
     NL_TEST_ASSERT(inSuite, counter2 == counter);
 }
@@ -200,15 +200,15 @@ void ReorderFabricRemovalTest(nlTestSuite * inSuite, void * inContext)
     NL_TEST_ASSERT(inSuite, counter != nullptr);
 
     err = mGroupPeerMsgCounter.RemovePeer(3, 1, true);
-    NL_TEST_ASSERT(inSuite, mGroupPeerMsgCounter.GetFabricIdAt(2) == 12);
+    NL_TEST_ASSERT(inSuite, mGroupPeerMsgCounter.GetFabricIndexAt(2) == 12);
     err = mGroupPeerMsgCounter.RemovePeer(8, 1, true);
-    NL_TEST_ASSERT(inSuite, mGroupPeerMsgCounter.GetFabricIdAt(7) == 11);
+    NL_TEST_ASSERT(inSuite, mGroupPeerMsgCounter.GetFabricIndexAt(7) == 11);
     err = mGroupPeerMsgCounter.RemovePeer(11, 1, true);
-    NL_TEST_ASSERT(inSuite, mGroupPeerMsgCounter.GetFabricIdAt(7) == 10);
+    NL_TEST_ASSERT(inSuite, mGroupPeerMsgCounter.GetFabricIndexAt(7) == 10);
     err = mGroupPeerMsgCounter.RemovePeer(1, 1, true);
-    NL_TEST_ASSERT(inSuite, mGroupPeerMsgCounter.GetFabricIdAt(0) == 9);
+    NL_TEST_ASSERT(inSuite, mGroupPeerMsgCounter.GetFabricIndexAt(0) == 9);
     err = mGroupPeerMsgCounter.RemovePeer(10, 1, true);
-    NL_TEST_ASSERT(inSuite, mGroupPeerMsgCounter.GetFabricIdAt(7) == 0);
+    NL_TEST_ASSERT(inSuite, mGroupPeerMsgCounter.GetFabricIndexAt(7) == 0);
 
     // Validate that counter value were moved around correctly
     err = mGroupPeerMsgCounter.FindOrAddPeer(9, 1, true, counter);
