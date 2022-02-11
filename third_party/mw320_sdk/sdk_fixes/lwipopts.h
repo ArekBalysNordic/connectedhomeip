@@ -39,25 +39,25 @@
 
 #define CONFIG_NETWORK_HIGH_PERF 1
 
-#define MAX_SOCKETS_TCP           8
+#define MAX_SOCKETS_TCP 8
 #define MAX_LISTENING_SOCKETS_TCP 4
 //#define MAX_SOCKETS_UDP           6
-#define MAX_SOCKETS_UDP           7
-#define TCP_SND_BUF_COUNT         2
-#define TCPIP_STACK_TX_HEAP_SIZE  0
-#define LWIP_COMPAT_SOCKETS       2
+#define MAX_SOCKETS_UDP 7
+#define TCP_SND_BUF_COUNT 2
+#define TCPIP_STACK_TX_HEAP_SIZE 0
+#define LWIP_COMPAT_SOCKETS 2
 
 /**
  * Loopback demo related options.
  */
-#define LWIP_NETIF_LOOPBACK                1
-#define LWIP_HAVE_LOOPIF                   1
+#define LWIP_NETIF_LOOPBACK 1
+#define LWIP_HAVE_LOOPIF 1
 #define LWIP_NETIF_LOOPBACK_MULTITHREADING 1
-#define LWIP_LOOPBACK_MAX_PBUFS            8
+#define LWIP_LOOPBACK_MAX_PBUFS 8
 
-#define TCPIP_THREAD_NAME      "tcp/ip"
+#define TCPIP_THREAD_NAME "tcp/ip"
 #define TCPIP_THREAD_STACKSIZE 768
-#define TCPIP_THREAD_PRIO      2
+#define TCPIP_THREAD_PRIO 2
 #ifdef CONFIG_NETWORK_HIGH_PERF
 #define TCPIP_MBOX_SIZE 64
 #else
@@ -93,47 +93,47 @@
 #define DEFAULT_ACCEPTMBOX_SIZE 12
 
 #define DEFAULT_THREAD_STACKSIZE 200
-#define DEFAULT_THREAD_PRIO      1
+#define DEFAULT_THREAD_PRIO 1
 
-#define LWIP_DEBUG       0
+#define LWIP_DEBUG 0
 #define LWIP_DEBUG_TRACE 0
-#define SOCKETS_DEBUG    LWIP_DBG_OFF // | LWIP_DBG_MASK_LEVEL
+#define SOCKETS_DEBUG LWIP_DBG_OFF // | LWIP_DBG_MASK_LEVEL
 
-#define IP_DEBUG         LWIP_DBG_OFF
-#define IP6_DEBUG        LWIP_DBG_OFF
-#define ICMP6_DEBUG      LWIP_DBG_OFF
-#define DHCP6_DEBUG      LWIP_DBG_OFF
-#define ETHARP_DEBUG     LWIP_DBG_OFF
-#define NETIF_DEBUG      LWIP_DBG_OFF
-#define PBUF_DEBUG       LWIP_DBG_OFF
-#define MEMP_DEBUG       LWIP_DBG_OFF
-#define API_LIB_DEBUG    LWIP_DBG_OFF
-#define API_MSG_DEBUG    LWIP_DBG_OFF
-#define ICMP_DEBUG       LWIP_DBG_OFF
-#define IGMP_DEBUG       LWIP_DBG_OFF
-#define INET_DEBUG       LWIP_DBG_OFF
-#define IP_REASS_DEBUG   LWIP_DBG_OFF
-#define RAW_DEBUG        LWIP_DBG_OFF
-#define MEM_DEBUG        LWIP_DBG_OFF
-#define SYS_DEBUG        LWIP_DBG_OFF
-#define TCP_DEBUG        LWIP_DBG_OFF
-#define TCP_INPUT_DEBUG  LWIP_DBG_OFF
-#define TCP_FR_DEBUG     LWIP_DBG_OFF
-#define TCP_RTO_DEBUG    LWIP_DBG_OFF
-#define TCP_CWND_DEBUG   LWIP_DBG_OFF
-#define TCP_WND_DEBUG    LWIP_DBG_OFF
+#define IP_DEBUG LWIP_DBG_OFF
+#define IP6_DEBUG LWIP_DBG_OFF
+#define ICMP6_DEBUG LWIP_DBG_OFF
+#define DHCP6_DEBUG LWIP_DBG_OFF
+#define ETHARP_DEBUG LWIP_DBG_OFF
+#define NETIF_DEBUG LWIP_DBG_OFF
+#define PBUF_DEBUG LWIP_DBG_OFF
+#define MEMP_DEBUG LWIP_DBG_OFF
+#define API_LIB_DEBUG LWIP_DBG_OFF
+#define API_MSG_DEBUG LWIP_DBG_OFF
+#define ICMP_DEBUG LWIP_DBG_OFF
+#define IGMP_DEBUG LWIP_DBG_OFF
+#define INET_DEBUG LWIP_DBG_OFF
+#define IP_REASS_DEBUG LWIP_DBG_OFF
+#define RAW_DEBUG LWIP_DBG_OFF
+#define MEM_DEBUG LWIP_DBG_OFF
+#define SYS_DEBUG LWIP_DBG_OFF
+#define TCP_DEBUG LWIP_DBG_OFF
+#define TCP_INPUT_DEBUG LWIP_DBG_OFF
+#define TCP_FR_DEBUG LWIP_DBG_OFF
+#define TCP_RTO_DEBUG LWIP_DBG_OFF
+#define TCP_CWND_DEBUG LWIP_DBG_OFF
+#define TCP_WND_DEBUG LWIP_DBG_OFF
 #define TCP_OUTPUT_DEBUG LWIP_DBG_OFF
-#define TCP_RST_DEBUG    LWIP_DBG_OFF
-#define TCP_QLEN_DEBUG   LWIP_DBG_OFF
-#define UDP_DEBUG        LWIP_DBG_OFF
-#define TCPIP_DEBUG      LWIP_DBG_OFF
-#define PPP_DEBUG        LWIP_DBG_OFF
-#define SLIP_DEBUG       LWIP_DBG_OFF
-#define DHCP_DEBUG       LWIP_DBG_OFF
-#define AUTOIP_DEBUG     LWIP_DBG_OFF
-#define SNMP_MSG_DEBUG   LWIP_DBG_OFF
-#define SNMP_MIB_DEBUG   LWIP_DBG_OFF
-#define DNS_DEBUG        LWIP_DBG_OFF
+#define TCP_RST_DEBUG LWIP_DBG_OFF
+#define TCP_QLEN_DEBUG LWIP_DBG_OFF
+#define UDP_DEBUG LWIP_DBG_OFF
+#define TCPIP_DEBUG LWIP_DBG_OFF
+#define PPP_DEBUG LWIP_DBG_OFF
+#define SLIP_DEBUG LWIP_DBG_OFF
+#define DHCP_DEBUG LWIP_DBG_OFF
+#define AUTOIP_DEBUG LWIP_DBG_OFF
+#define SNMP_MSG_DEBUG LWIP_DBG_OFF
+#define SNMP_MIB_DEBUG LWIP_DBG_OFF
+#define DNS_DEBUG LWIP_DBG_OFF
 
 #define SYS_LIGHTWEIGHT_PROT 1
 
@@ -346,8 +346,8 @@
 
 /* Enable IPv4 Auto IP	*/
 #ifdef CONFIG_AUTOIP
-#define LWIP_AUTOIP                 1
-#define LWIP_DHCP_AUTOIP_COOP       1
+#define LWIP_AUTOIP 1
+#define LWIP_DHCP_AUTOIP_COOP 1
 #define LWIP_DHCP_AUTOIP_COOP_TRIES 5
 #endif
 
@@ -371,7 +371,7 @@
 /**
  * LWIP_SOCKET==1: Enable Socket API (require to use sockets.c)
  */
-#define LWIP_SOCKET    1
+#define LWIP_SOCKET 1
 #define LWIP_NETIF_API 1
 
 /**
@@ -381,7 +381,7 @@
 /**
  * SO_REUSE==1: Enable SO_REUSEADDR option.
  */
-#define SO_REUSE         1
+#define SO_REUSE 1
 #define SO_REUSE_RXTOALL 1
 
 /**
@@ -422,21 +422,21 @@
 /**
  * LWIP_DHCP==1: Enable DHCP module.
  */
-#define LWIP_DHCP                  1
+#define LWIP_DHCP 1
 #define LWIP_NETIF_STATUS_CALLBACK 1
 
 /**
  * DNS related options, revisit later to fine tune.
  */
-#define LWIP_DNS            1
-#define DNS_TABLE_SIZE      2  // number of table entries, default 4
+#define LWIP_DNS 1
+#define DNS_TABLE_SIZE 2       // number of table entries, default 4
 #define DNS_MAX_NAME_LENGTH 64 // max. name length, default 256
-#define DNS_MAX_SERVERS     2  // number of DNS servers, default 2
+#define DNS_MAX_SERVERS 2      // number of DNS servers, default 2
 #define DNS_DOES_NAME_CHECK 1  // compare received name with given,def 0
-#define DNS_MSG_SIZE        512
-#define MDNS_MSG_SIZE       512
+#define DNS_MSG_SIZE 512
+#define MDNS_MSG_SIZE 512
 
-#define MDNS_TABLE_SIZE  1 // number of mDNS table entries
+#define MDNS_TABLE_SIZE 1  // number of mDNS table entries
 #define MDNS_MAX_SERVERS 1 // number of mDNS multicast addresses
 /* TODO: Number of active UDP PCBs is equal to number of active UDP sockets plus
  * two. Need to find the users of these 2 PCBs
@@ -474,7 +474,7 @@
 
 /* wmsdk; This is not needed now as error codes are taken from standard libc */
 #define LWIP_PROVIDE_ERRNO 1
-#define ERRNO              1
+#define ERRNO 1
 
 //#define LWIP_SNMP 1
 

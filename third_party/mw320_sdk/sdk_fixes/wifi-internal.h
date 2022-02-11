@@ -29,33 +29,33 @@
 
 #include <mlan_api.h>
 
-#include <wm_os.h>
-#include <wifi_events.h>
 #include <wifi-decl.h>
+#include <wifi_events.h>
+#include <wm_os.h>
 
 typedef struct
 {
     int (*wifi_uap_set_params_p)();
-    int (*wifi_uap_downld_domain_params_p)(MrvlIEtypes_DomainParamSet_t *dp);
+    int (*wifi_uap_downld_domain_params_p)(MrvlIEtypes_DomainParamSet_t * dp);
     int (*wifi_uap_enable_11d_p)();
 } wifi_uap_11d_apis_t;
 
 typedef struct mcast_filter
 {
     uint8_t mac_addr[MLAN_MAC_ADDR_LENGTH];
-    struct mcast_filter *next;
+    struct mcast_filter * next;
 } mcast_filter;
 
 typedef struct
 {
     os_thread_t wm_wifi_main_thread;
     os_thread_t wm_wifi_core_thread;
-    os_queue_t *wlc_mgr_event_queue;
+    os_queue_t * wlc_mgr_event_queue;
 
-    void (*data_intput_callback)(const uint8_t interface, const uint8_t *buffer, const uint16_t len);
-    void (*amsdu_data_intput_callback)(uint8_t interface, uint8_t *buffer, uint16_t len);
-    void (*deliver_packet_above_callback)(t_u8 interface, t_void *lwip_pbuf);
-    bool (*wrapper_net_is_ip_or_ipv6_callback)(const t_u8 *buffer);
+    void (*data_intput_callback)(const uint8_t interface, const uint8_t * buffer, const uint16_t len);
+    void (*amsdu_data_intput_callback)(uint8_t interface, uint8_t * buffer, uint16_t len);
+    void (*deliver_packet_above_callback)(t_u8 interface, t_void * lwip_pbuf);
+    bool (*wrapper_net_is_ip_or_ipv6_callback)(const t_u8 * buffer);
 
     os_mutex_t command_lock;
     os_semaphore_t command_resp_sem;
@@ -67,7 +67,7 @@ typedef struct
     os_queue_t io_events;
     os_queue_pool_t io_events_queue_data;
 
-    mcast_filter *start_list;
+    mcast_filter * start_list;
 
     /*
      * Usage note:
@@ -81,8 +81,8 @@ typedef struct
      * Note to the developer: Please ensure to set this to NULL after
      * use in the wifi driver thread context.
      */
-    void *cmd_resp_priv;
-    void *cmd_resp_ioctl;
+    void * cmd_resp_priv;
+    void * cmd_resp_ioctl;
     /*
      * In continuation with the description written for the
      * cmd_resp_priv member above, the below member indicates the
@@ -94,14 +94,14 @@ typedef struct
      * Store 11D support status in Wi-Fi driver.
      */
     bool enable_11d_support;
-    wifi_uap_11d_apis_t *uap_support_11d_apis;
+    wifi_uap_11d_apis_t * uap_support_11d_apis;
     /*
      * This is updated when user calls the wifi_uap_set_domain_params()
      * functions. This is used later during uAP startup. Since the uAP
      * configuration needs to be done befor uAP is started we keep this
      * cache. This is needed to enable 11d support in uAP.
      */
-    MrvlIEtypes_DomainParamSet_t *dp;
+    MrvlIEtypes_DomainParamSet_t * dp;
     /** Broadcast ssid control */
     t_u8 bcast_ssid_ctl;
     /** beacon period */
@@ -126,7 +126,7 @@ typedef struct
      * \return WM_SUCCESS if opening of file is successful.
      * \return -WM_FAIL in case of failure.
      */
-    int (*wifi_usb_file_open_cb)(char *test_file_name);
+    int (*wifi_usb_file_open_cb)(char * test_file_name);
     /** This function will write data to file opened using wifi_usb_file_open_cb()
      *
      * \param[in] data Buffer containing FW dump data.
@@ -135,7 +135,7 @@ typedef struct
      * \return WM_SUCCESS if write is successful
      * \return -WM_FAIL in case of failure.
      */
-    int (*wifi_usb_file_write_cb)(uint8_t *data, size_t data_len);
+    int (*wifi_usb_file_write_cb)(uint8_t * data, size_t data_len);
     /** This function will close the file on which FW dump is written.
      *
      * \note This will close file that is opened using wifi_usb_file_open_cb().
@@ -153,7 +153,7 @@ struct bus_message
 {
     uint16_t event;
     uint16_t reason;
-    void *data;
+    void * data;
 };
 
 PACK_START struct ieee80211_hdr
@@ -170,13 +170,13 @@ PACK_START struct ieee80211_hdr
 /**
  * This function handles events received from the firmware.
  */
-int wifi_handle_fw_event(struct bus_message *msg);
+int wifi_handle_fw_event(struct bus_message * msg);
 
 /**
  * This function is used to send events to the upper layer through the
  * message queue registered by the upper layer.
  */
-void wifi_event_completion(int type, enum wifi_event_reason result, void *data);
+void wifi_event_completion(int type, enum wifi_event_reason result, void * data);
 
 /**
  * Use this function to know whether a split scan is in progress.
@@ -186,7 +186,7 @@ bool is_split_scan_complete(void);
 /**
  * Waits for Command processing to complete and waits for command response
  */
-int wifi_wait_for_cmdresp(void *cmd_resp_priv);
+int wifi_wait_for_cmdresp(void * cmd_resp_priv);
 
 /**
  * Register an event queue
@@ -194,7 +194,7 @@ int wifi_wait_for_cmdresp(void *cmd_resp_priv);
  * This queue is used to send events and command responses to the wifi
  * driver from the stack dispatcher thread.
  */
-int bus_register_event_queue(xQueueHandle *event_queue);
+int bus_register_event_queue(xQueueHandle * event_queue);
 
 /**
  * De-register the event queue.
@@ -204,7 +204,7 @@ void bus_deregister_event_queue(void);
 /**
  * Register a special queue for WPS
  */
-int bus_register_special_queue(xQueueHandle *special_queue);
+int bus_register_special_queue(xQueueHandle * special_queue);
 
 /**
  * Deregister special queue
@@ -217,8 +217,7 @@ void bus_deregister_special_queue(void);
  * This queue is used to DATA frames to the wifi
  * driver from the stack dispatcher thread.
  */
-int bus_register_data_input_function(int (*wifi_low_level_input)(const uint8_t interface,
-                                                                 const uint8_t *buffer,
+int bus_register_data_input_function(int (*wifi_low_level_input)(const uint8_t interface, const uint8_t * buffer,
                                                                  const uint16_t len));
 
 /**
@@ -246,30 +245,30 @@ int wifi_put_command_lock(void);
  * Change the type of param below to HostCmd_DS_COMMAND after mlan
  * integration complete and then move it to header file.
  */
-int wifi_process_cmd_response(HostCmd_DS_COMMAND *resp);
+int wifi_process_cmd_response(HostCmd_DS_COMMAND * resp);
 
 /*
  * @internal
  *
  *
  */
-void *wifi_mem_malloc_cmdrespbuf(int size);
+void * wifi_mem_malloc_cmdrespbuf(int size);
 
 /*
  * @internal
  *
  *
  */
-void *wifi_malloc_eventbuf(int size);
-void wifi_free_eventbuf(void *buffer);
+void * wifi_malloc_eventbuf(int size);
+void wifi_free_eventbuf(void * buffer);
 
 int wifi_mem_cleanup();
-void wifi_uap_handle_cmd_resp(HostCmd_DS_COMMAND *resp);
+void wifi_uap_handle_cmd_resp(HostCmd_DS_COMMAND * resp);
 
-mlan_status wrapper_moal_malloc(t_void *pmoal_handle, t_u32 size, t_u32 flag, t_u8 **ppbuf);
-mlan_status wrapper_moal_mfree(t_void *pmoal_handle, t_u8 *pbuf);
+mlan_status wrapper_moal_malloc(t_void * pmoal_handle, t_u32 size, t_u32 flag, t_u8 ** ppbuf);
+mlan_status wrapper_moal_mfree(t_void * pmoal_handle, t_u8 * pbuf);
 
 int wifi_sdio_lock();
 void wifi_sdio_unlock();
-mlan_status wrapper_wlan_cmd_mgmt_ie(int bss_type, void *buffer, unsigned int len, unsigned int action);
+mlan_status wrapper_wlan_cmd_mgmt_ie(int bss_type, void * buffer, unsigned int len, unsigned int action);
 #endif /* __WIFI_INTERNAL_H__ */

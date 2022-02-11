@@ -6,7 +6,7 @@ if [[ ! -d $MW320_SDK_ROOT ]]; then
 fi
 
 unzip ./third_party/mw320_sdk/sdk_fixes/mw320_matter_flash.zip -d "$MW320_SDK_ROOT"/
-echo "export MW320_SDK_ROOT=\"$MW320_SDK_ROOT\"" > ./third_party/mw320_sdk/sdk_fixes/set_env.sh
+echo "export MW320_SDK_ROOT=\"$MW320_SDK_ROOT\"" >./third_party/mw320_sdk/sdk_fixes/set_env.sh
 chmod +x+w ./third_party/mw320_sdk/sdk_fixes/set_env.sh
 
 cp ./third_party/mw320_sdk/sdk_fixes/mw_img_conv "$MW320_SDK_ROOT"/tools/mw_img_conv/src/
@@ -34,4 +34,3 @@ cp ./third_party/mw320_sdk/sdk_fixes/wlan_tests.c "$MW320_SDK_ROOT"/middleware/w
 
 echo "MW320 SDK and Flsahing tool was installed to $MW320_SDK_ROOT !"
 exit 0
-

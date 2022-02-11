@@ -26,15 +26,15 @@
 
 /* iperf.c: This file contains the support for network utility iperf */
 
-#include <string.h>
-#include <wm_os.h>
-#include <wm_net.h>
 #include <cli.h>
 #include <cli_utils.h>
+#include <string.h>
 #include <wlan.h>
+#include <wm_net.h>
+#include <wm_os.h>
 
-#include "lwiperf.h"
 #include "lwip/tcpip.h"
+#include "lwiperf.h"
 
 #ifndef IPERF_UDP_CLIENT_RATE
 #define IPERF_UDP_CLIENT_RATE (100 * 1024 * 1024) /* 100 Mbit/s */
@@ -49,7 +49,7 @@ struct iperf_test_context
     bool server_mode;
     bool tcp;
     enum lwiperf_client_type client_type;
-    void *iperf_session;
+    void * iperf_session;
 };
 
 static struct iperf_test_context ctx;
@@ -67,7 +67,7 @@ bool mcast_mac_valid;
 static void timer_poll_udp_client(TimerHandle_t timer);
 
 /* Report state => string */
-const char *report_type_str[] = {
+const char * report_type_str[] = {
     "TCP_DONE_SERVER (RX)",        /* LWIPERF_TCP_DONE_SERVER,*/
     "TCP_DONE_CLIENT (TX)",        /* LWIPERF_TCP_DONE_CLIENT,*/
     "TCP_ABORTED_LOCAL",           /* LWIPERF_TCP_ABORTED_LOCAL, */
@@ -84,60 +84,54 @@ const char *report_type_str[] = {
 
 /** Prototype of a report function that is called when a session is finished.
     This report function shows the test results. */
-static void lwiperf_report(void *arg,
-                           enum lwiperf_report_type report_type,
-                           const ip_addr_t *local_addr,
-                           u16_t local_port,
-                           const ip_addr_t *remote_addr,
-                           u16_t remote_port,
-                           u64_t bytes_transferred,
-                           u32_t ms_duration,
+static void lwiperf_report(void * arg, enum lwiperf_report_type report_type, const ip_addr_t * local_addr, u16_t local_port,
+                           const ip_addr_t * remote_addr, u16_t remote_port, u64_t bytes_transferred, u32_t ms_duration,
                            u32_t bandwidth_kbitpsec)
 {
-    (void)PRINTF("-------------------------------------------------\r\n");
+    (void) PRINTF("-------------------------------------------------\r\n");
     if (report_type < (sizeof(report_type_str) / sizeof(report_type_str[0])))
     {
-        (void)PRINTF(" %s \r\n", report_type_str[report_type]);
+        (void) PRINTF(" %s \r\n", report_type_str[report_type]);
         if (local_addr && remote_addr)
         {
 #ifdef CONFIG_IPV6
             if (ipv6)
-                (void)PRINTF(" Local address : %s ", inet6_ntoa(local_addr->u_addr.ip6));
+                (void) PRINTF(" Local address : %s ", inet6_ntoa(local_addr->u_addr.ip6));
             else
 #endif
-                (void)PRINTF(" Local address : %u.%u.%u.%u ", ((u8_t *)local_addr)[0], ((u8_t *)local_addr)[1],
-                             ((u8_t *)local_addr)[2], ((u8_t *)local_addr)[3]);
-            (void)PRINTF(" Port %d \r\n", local_port);
+                (void) PRINTF(" Local address : %u.%u.%u.%u ", ((u8_t *) local_addr)[0], ((u8_t *) local_addr)[1],
+                              ((u8_t *) local_addr)[2], ((u8_t *) local_addr)[3]);
+            (void) PRINTF(" Port %d \r\n", local_port);
 #ifdef CONFIG_IPV6
             if (ipv6)
-                (void)PRINTF(" Remote address : %s ", inet6_ntoa(remote_addr->u_addr.ip6));
+                (void) PRINTF(" Remote address : %s ", inet6_ntoa(remote_addr->u_addr.ip6));
             else
 #endif
-                (void)PRINTF(" Remote address : %u.%u.%u.%u ", ((u8_t *)remote_addr)[0], ((u8_t *)remote_addr)[1],
-                             ((u8_t *)remote_addr)[2], ((u8_t *)remote_addr)[3]);
-            (void)PRINTF(" Port %d \r\n", remote_port);
-            (void)PRINTF(" Bytes Transferred %llu \r\n", bytes_transferred);
-            (void)PRINTF(" Duration (ms) %d \r\n", ms_duration);
-            (void)PRINTF(" Bandwidth (Mbitpsec) %d \r\n", bandwidth_kbitpsec / 1000);
+                (void) PRINTF(" Remote address : %u.%u.%u.%u ", ((u8_t *) remote_addr)[0], ((u8_t *) remote_addr)[1],
+                              ((u8_t *) remote_addr)[2], ((u8_t *) remote_addr)[3]);
+            (void) PRINTF(" Port %d \r\n", remote_port);
+            (void) PRINTF(" Bytes Transferred %llu \r\n", bytes_transferred);
+            (void) PRINTF(" Duration (ms) %d \r\n", ms_duration);
+            (void) PRINTF(" Bandwidth (Mbitpsec) %d \r\n", bandwidth_kbitpsec / 1000);
         }
     }
     else
     {
-        (void)PRINTF(" IPERF Report error\r\n");
+        (void) PRINTF(" IPERF Report error\r\n");
     }
-    (void)PRINTF("\r\n");
+    (void) PRINTF("\r\n");
 }
 
 /*!
  * @brief Function to start iperf test.
  */
-static void iperf_test_start(void *arg)
+static void iperf_test_start(void * arg)
 {
-    struct iperf_test_context *ctx = (struct iperf_test_context *)arg;
+    struct iperf_test_context * ctx = (struct iperf_test_context *) arg;
 
     if (ctx->iperf_session != NULL)
     {
-        (void)PRINTF("Abort ongoing IPERF session\r\n");
+        (void) PRINTF("Abort ongoing IPERF session\r\n");
         lwiperf_abort(ctx->iperf_session);
         ctx->iperf_session = NULL;
     }
@@ -159,8 +153,8 @@ static void iperf_test_start(void *arg)
         {
 #ifdef CONFIG_IPV6
             if (ipv6)
-                ctx->iperf_session = lwiperf_start_tcp_server(netif_ip_addr6(netif_default, 0),
-                                                              LWIPERF_TCP_PORT_DEFAULT, lwiperf_report, 0);
+                ctx->iperf_session =
+                    lwiperf_start_tcp_server(netif_ip_addr6(netif_default, 0), LWIPERF_TCP_PORT_DEFAULT, lwiperf_report, 0);
             else
 #endif
                 ctx->iperf_session = lwiperf_start_tcp_server(IP_ADDR_ANY, LWIPERF_TCP_PORT_DEFAULT, lwiperf_report, 0);
@@ -176,7 +170,7 @@ static void iperf_test_start(void *arg)
 #endif
                 if (wifi_add_mcast_filter(mcast_mac) != WM_SUCCESS)
                 {
-                    (void)PRINTF("IPERF session init failed\r\n");
+                    (void) PRINTF("IPERF session init failed\r\n");
                     lwiperf_abort(ctx->iperf_session);
                     ctx->iperf_session = NULL;
                     return;
@@ -185,12 +179,11 @@ static void iperf_test_start(void *arg)
             }
 #ifdef CONFIG_IPV6
             if (ipv6)
-                ctx->iperf_session = lwiperf_start_udp_server(netif_ip_addr6(netif_default, 0),
-                                                              LWIPERF_TCP_PORT_DEFAULT, lwiperf_report, 0);
+                ctx->iperf_session =
+                    lwiperf_start_udp_server(netif_ip_addr6(netif_default, 0), LWIPERF_TCP_PORT_DEFAULT, lwiperf_report, 0);
             else
 #endif
-                ctx->iperf_session =
-                    lwiperf_start_udp_server(&bind_address, LWIPERF_TCP_PORT_DEFAULT, lwiperf_report, 0);     
+                ctx->iperf_session = lwiperf_start_udp_server(&bind_address, LWIPERF_TCP_PORT_DEFAULT, lwiperf_report, 0);
         }
     }
     else
@@ -201,8 +194,8 @@ static void iperf_test_start(void *arg)
             if (ipv6)
                 ip6_addr_assign_zone(ip_2_ip6(&server_address), IP6_UNICAST, netif_default);
 #endif
-            ctx->iperf_session = lwiperf_start_tcp_client(&server_address, LWIPERF_TCP_PORT_DEFAULT, ctx->client_type,
-                                                          amount, lwiperf_report, 0);
+            ctx->iperf_session =
+                lwiperf_start_tcp_client(&server_address, LWIPERF_TCP_PORT_DEFAULT, ctx->client_type, amount, lwiperf_report, 0);
         }
         else
         {
@@ -219,29 +212,29 @@ static void iperf_test_start(void *arg)
 #ifdef CONFIG_IPV6
             if (ipv6)
             {
-                ctx->iperf_session = lwiperf_start_udp_client(
-                    netif_ip_addr6(netif_default, 0), LWIPERF_TCP_PORT_DEFAULT, &server_address,
-                    LWIPERF_TCP_PORT_DEFAULT, ctx->client_type, amount, IPERF_UDP_CLIENT_RATE,
+                ctx->iperf_session =
+                    lwiperf_start_udp_client(netif_ip_addr6(netif_default, 0), LWIPERF_TCP_PORT_DEFAULT, &server_address,
+                                             LWIPERF_TCP_PORT_DEFAULT, ctx->client_type, amount, IPERF_UDP_CLIENT_RATE,
 #ifdef CONFIG_WMM
-                    qos,
+                                             qos,
 #else
-                    0,
+                                             0,
 #endif
 
-                    lwiperf_report, NULL);
+                                             lwiperf_report, NULL);
             }
             else
             {
 #endif
-                ctx->iperf_session = lwiperf_start_udp_client(
-                    &bind_address, LWIPERF_TCP_PORT_DEFAULT, &server_address, LWIPERF_TCP_PORT_DEFAULT,
-                    ctx->client_type, amount, IPERF_UDP_CLIENT_RATE, 
+                ctx->iperf_session =
+                    lwiperf_start_udp_client(&bind_address, LWIPERF_TCP_PORT_DEFAULT, &server_address, LWIPERF_TCP_PORT_DEFAULT,
+                                             ctx->client_type, amount, IPERF_UDP_CLIENT_RATE,
 #ifdef CONFIG_WMM
-                    qos,
+                                             qos,
 #else
-                    0,
+                                         0,
 #endif
-					lwiperf_report, NULL);
+                                             lwiperf_report, NULL);
 #ifdef CONFIG_IPV6
             }
 #endif
@@ -250,35 +243,35 @@ static void iperf_test_start(void *arg)
 
     if (ctx->iperf_session == NULL)
     {
-        (void)PRINTF("IPERF initialization failed!\r\n");
+        (void) PRINTF("IPERF initialization failed!\r\n");
     }
     else
     {
-        (void)PRINTF("IPERF initialization successful\r\n");
+        (void) PRINTF("IPERF initialization successful\r\n");
     }
 }
 
 /*!
  * @brief Function to abort iperf test.
  */
-static void iperf_test_abort(void *arg)
+static void iperf_test_abort(void * arg)
 {
-    struct iperf_test_context *test_ctx = (struct iperf_test_context *)arg;
+    struct iperf_test_context * test_ctx = (struct iperf_test_context *) arg;
 
-    (void)xTimerStop(timer, 0);
+    (void) xTimerStop(timer, 0);
     if (test_ctx->iperf_session != NULL)
     {
         lwiperf_abort(test_ctx->iperf_session);
         test_ctx->iperf_session = NULL;
     }
 
-    (void)memset(&ctx, 0, sizeof(struct iperf_test_context));
+    (void) memset(&ctx, 0, sizeof(struct iperf_test_context));
 }
 
 /*!
  * @brief Invokes UDP polling, to be run on tcpip_thread.
  */
-static void poll_udp_client(void *arg)
+static void poll_udp_client(void * arg)
 {
     LWIP_UNUSED_ARG(arg);
 
@@ -297,7 +290,7 @@ static void timer_poll_udp_client(TimerHandle_t timer)
 
 static void TESTAbort(void)
 {
-    iperf_test_abort((void *)&ctx);
+    iperf_test_abort((void *) &ctx);
 }
 
 static void TCPServer(void)
@@ -306,7 +299,7 @@ static void TCPServer(void)
     ctx.tcp         = true;
     ctx.client_type = LWIPERF_CLIENT;
 
-    tcpip_callback(iperf_test_start, (void *)&ctx);
+    tcpip_callback(iperf_test_start, (void *) &ctx);
 }
 
 static void TCPClient(void)
@@ -315,7 +308,7 @@ static void TCPClient(void)
     ctx.tcp         = true;
     ctx.client_type = LWIPERF_CLIENT;
 
-    tcpip_callback(iperf_test_start, (void *)&ctx);
+    tcpip_callback(iperf_test_start, (void *) &ctx);
 }
 
 static void TCPClientDual(void)
@@ -324,7 +317,7 @@ static void TCPClientDual(void)
     ctx.tcp         = true;
     ctx.client_type = LWIPERF_DUAL;
 
-    tcpip_callback(iperf_test_start, (void *)&ctx);
+    tcpip_callback(iperf_test_start, (void *) &ctx);
 }
 
 static void TCPClientTradeOff(void)
@@ -333,7 +326,7 @@ static void TCPClientTradeOff(void)
     ctx.tcp         = true;
     ctx.client_type = LWIPERF_TRADEOFF;
 
-    tcpip_callback(iperf_test_start, (void *)&ctx);
+    tcpip_callback(iperf_test_start, (void *) &ctx);
 }
 
 static void UDPServer(void)
@@ -342,7 +335,7 @@ static void UDPServer(void)
     ctx.tcp         = false;
     ctx.client_type = LWIPERF_CLIENT;
 
-    tcpip_callback(iperf_test_start, (void *)&ctx);
+    tcpip_callback(iperf_test_start, (void *) &ctx);
 }
 
 static void UDPClient(void)
@@ -351,7 +344,7 @@ static void UDPClient(void)
     ctx.tcp         = false;
     ctx.client_type = LWIPERF_CLIENT;
 
-    tcpip_callback(iperf_test_start, (void *)&ctx);
+    tcpip_callback(iperf_test_start, (void *) &ctx);
 }
 
 static void UDPClientDual(void)
@@ -360,7 +353,7 @@ static void UDPClientDual(void)
     ctx.tcp         = false;
     ctx.client_type = LWIPERF_DUAL;
 
-    tcpip_callback(iperf_test_start, (void *)&ctx);
+    tcpip_callback(iperf_test_start, (void *) &ctx);
 }
 
 static void UDPClientTradeOff(void)
@@ -369,36 +362,36 @@ static void UDPClientTradeOff(void)
     ctx.tcp         = false;
     ctx.client_type = LWIPERF_TRADEOFF;
 
-    tcpip_callback(iperf_test_start, (void *)&ctx);
+    tcpip_callback(iperf_test_start, (void *) &ctx);
 }
 
 /* Display the usage of iperf */
 static void display_iperf_usage()
 {
-    (void)PRINTF("Usage:\r\n");
-    (void)PRINTF("\tiperf [-s|-c <host>|-a] [options]\r\n");
-    (void)PRINTF("\tiperf [-h]\r\n");
-    (void)PRINTF("\r\n");
-    (void)PRINTF("\tClient/Server:\r\n");
-    (void)PRINTF("\t   -u             use UDP rather than TCP\r\n");
-    (void)PRINTF("\t   -B    <host>   bind to <host> (including multicast address)\r\n");
-    (void)PRINTF("\t   -a             abort ongoing iperf session\r\n");
-    (void)PRINTF("\tServer specific:\r\n");
-    (void)PRINTF("\t   -s             run in server mode\r\n");
-    (void)PRINTF("\tClient specific:\r\n");
-    (void)PRINTF("\t   -c    <host>   run in client mode, connecting to <host>\r\n");
-    (void)PRINTF("\t   -d             Do a bidirectional test simultaneously\r\n");
-    (void)PRINTF("\t   -r             Do a bidirectional test individually\r\n");
-    (void)PRINTF("\t   -t    #        time in seconds to transmit for (default 10 secs)\r\n");
+    (void) PRINTF("Usage:\r\n");
+    (void) PRINTF("\tiperf [-s|-c <host>|-a] [options]\r\n");
+    (void) PRINTF("\tiperf [-h]\r\n");
+    (void) PRINTF("\r\n");
+    (void) PRINTF("\tClient/Server:\r\n");
+    (void) PRINTF("\t   -u             use UDP rather than TCP\r\n");
+    (void) PRINTF("\t   -B    <host>   bind to <host> (including multicast address)\r\n");
+    (void) PRINTF("\t   -a             abort ongoing iperf session\r\n");
+    (void) PRINTF("\tServer specific:\r\n");
+    (void) PRINTF("\t   -s             run in server mode\r\n");
+    (void) PRINTF("\tClient specific:\r\n");
+    (void) PRINTF("\t   -c    <host>   run in client mode, connecting to <host>\r\n");
+    (void) PRINTF("\t   -d             Do a bidirectional test simultaneously\r\n");
+    (void) PRINTF("\t   -r             Do a bidirectional test individually\r\n");
+    (void) PRINTF("\t   -t    #        time in seconds to transmit for (default 10 secs)\r\n");
 #ifdef CONFIG_IPV6
-    (void)PRINTF("\t   -V             Set the domain to IPv6 (send packets over IPv6)\r\n");
+    (void) PRINTF("\t   -V             Set the domain to IPv6 (send packets over IPv6)\r\n");
 #endif
 }
 
-void cmd_iperf(int argc, char **argv)
+void cmd_iperf(int argc, char ** argv)
 {
     int arg = 1;
-	char ip_addr[128];
+    char ip_addr[128];
 
     struct
     {
@@ -429,11 +422,11 @@ void cmd_iperf(int argc, char **argv)
         mcast_mac_valid = false;
     }
 
-    (void)memset(&info, 0, sizeof(info));
+    (void) memset(&info, 0, sizeof(info));
 
     if (argc < 2)
     {
-        (void)PRINTF("Incorrect usage\r\n");
+        (void) PRINTF("Incorrect usage\r\n");
         display_iperf_usage();
         return;
     }
@@ -470,7 +463,7 @@ void cmd_iperf(int argc, char **argv)
                 strncpy(ip_addr, argv[arg], strlen(argv[arg]));
 
                 arg += 1;
-				info.chost = 1;
+                info.chost = 1;
             }
         }
         else if (!info.bind && string_equal("-B", argv[arg]))
@@ -482,13 +475,13 @@ void cmd_iperf(int argc, char **argv)
             {
                 inet_aton(argv[arg], &bind_address);
 
-				if (IP_IS_V4(&bind_address))
+                if (IP_IS_V4(&bind_address))
                     info.bhost = 1;
-				
+
                 if (ip_addr_ismulticast(&bind_address))
                 {
-                    multicast  = true;
-                    //info.bhost = 1;
+                    multicast = true;
+                    // info.bhost = 1;
                 }
 
                 arg += 1;
@@ -501,7 +494,7 @@ void cmd_iperf(int argc, char **argv)
             errno     = 0;
             amount    = -(100 * strtoul(argv[arg], NULL, 10));
             if (errno != 0)
-                (void)PRINTF("Error during strtoul errno:%d", errno);
+                (void) PRINTF("Error during strtoul errno:%d", errno);
             arg += 1;
         }
 #ifdef CONFIG_IPV6
@@ -524,9 +517,9 @@ void cmd_iperf(int argc, char **argv)
         }
         else
         {
-            (void)PRINTF("Incorrect usage\r\n");
+            (void) PRINTF("Incorrect usage\r\n");
             display_iperf_usage();
-            (void)PRINTF("Error: argument %d is invalid\r\n", arg);
+            (void) PRINTF("Error: argument %d is invalid\r\n", arg);
             return;
         }
     } while (arg < argc);
@@ -547,7 +540,7 @@ void cmd_iperf(int argc, char **argv)
 #endif
 
     if ((!info.abort && !info.server && !info.client) || (info.client && !info.chost) || (info.server && info.client) ||
-		(info.udp
+        (info.udp
 #ifdef CONFIG_IPV6
          && !info.ipv6
 #endif
@@ -556,9 +549,9 @@ void cmd_iperf(int argc, char **argv)
 #ifdef CONFIG_IPV6
         || (info.ipv6 && info.bind)
 #endif
-		)
+    )
     {
-        (void)PRINTF("Incorrect usage\r\n");
+        (void) PRINTF("Incorrect usage\r\n");
         display_iperf_usage();
         return;
     }
@@ -601,7 +594,7 @@ void cmd_iperf(int argc, char **argv)
 }
 
 static struct cli_command iperf[] = {
-    {"iperf", "[-s|-c <host>|-a|-h] [options]", cmd_iperf},
+    { "iperf", "[-s|-c <host>|-a|-h] [options]", cmd_iperf },
 };
 
 int iperf_cli_init(void)
@@ -611,12 +604,12 @@ int iperf_cli_init(void)
         if (cli_register_command(&iperf[i]) != 0)
             return -WM_FAIL;
 
-    (void)memset(&ctx, 0, sizeof(struct iperf_test_context));
+    (void) memset(&ctx, 0, sizeof(struct iperf_test_context));
 
-    timer = xTimerCreate("UDP Poll Timer", 1 / portTICK_PERIOD_MS, pdTRUE, (void *)0, timer_poll_udp_client);
+    timer = xTimerCreate("UDP Poll Timer", 1 / portTICK_PERIOD_MS, pdTRUE, (void *) 0, timer_poll_udp_client);
     if (timer == NULL)
     {
-        (void)PRINTF("Timer creation failed!\r\n");
+        (void) PRINTF("Timer creation failed!\r\n");
         while (true)
             ;
     }

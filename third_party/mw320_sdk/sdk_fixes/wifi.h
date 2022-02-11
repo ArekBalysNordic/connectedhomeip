@@ -99,7 +99,7 @@ typedef PACK_START enum {
  * \return WM_SUCCESS on success or -WM_FAIL on error.
  *
  */
-int wifi_init(const uint8_t *fw_ram_start_addr, const size_t size);
+int wifi_init(const uint8_t * fw_ram_start_addr, const size_t size);
 
 /**
  * Deinitialize Wi-Fi driver module.
@@ -123,8 +123,7 @@ void wifi_deinit(void);
  *
  * @return WM_SUCCESS
  */
-int wifi_register_data_input_callback(void (*data_intput_callback)(const uint8_t interface,
-                                                                   const uint8_t *buffer,
+int wifi_register_data_input_callback(void (*data_intput_callback)(const uint8_t interface, const uint8_t * buffer,
                                                                    const uint16_t len));
 
 /** Deregister Data callback function from Wi-Fi Driver */
@@ -142,19 +141,16 @@ void wifi_deregister_data_input_callback();
  * @return WM_SUCCESS
  *
  */
-int wifi_register_amsdu_data_input_callback(void (*amsdu_data_intput_callback)(uint8_t interface,
-                                                                               uint8_t *buffer,
-                                                                               uint16_t len));
+int wifi_register_amsdu_data_input_callback(void (*amsdu_data_intput_callback)(uint8_t interface, uint8_t * buffer, uint16_t len));
 
 /** Deregister Data callback function from Wi-Fi Driver */
 void wifi_deregister_amsdu_data_input_callback();
 
-int wifi_register_deliver_packet_above_callback(void (*deliver_packet_above_callback)(uint8_t interface,
-                                                                                      void *lwip_pbuf));
+int wifi_register_deliver_packet_above_callback(void (*deliver_packet_above_callback)(uint8_t interface, void * lwip_pbuf));
 
 void wifi_deregister_deliver_packet_above_callback();
 
-int wifi_register_wrapper_net_is_ip_or_ipv6_callback(bool (*wrapper_net_is_ip_or_ipv6_callback)(const t_u8 *buffer));
+int wifi_register_wrapper_net_is_ip_or_ipv6_callback(bool (*wrapper_net_is_ip_or_ipv6_callback)(const t_u8 * buffer));
 
 void wifi_deregister_wrapper_net_is_ip_or_ipv6_callback();
 
@@ -173,7 +169,7 @@ void wifi_deregister_wrapper_net_is_ip_or_ipv6_callback();
  *  or -WM_E_BUSY if SDIO is busy.
  *
  */
-int wifi_low_level_output(const uint8_t interface, const uint8_t *buffer, const uint16_t len);
+int wifi_low_level_output(const uint8_t interface, const uint8_t * buffer, const uint16_t len);
 
 /**
  * API to enable packet retries at wifi driver level.
@@ -221,7 +217,7 @@ void wifi_sta_ampdu_rx_disable(void);
  *
  * @return WM_SUCCESS
  */
-int wifi_get_device_mac_addr(wifi_mac_addr_t *mac_addr);
+int wifi_get_device_mac_addr(wifi_mac_addr_t * mac_addr);
 
 /**
  * Get the string representation of the wlan firmware version.
@@ -230,7 +226,7 @@ int wifi_get_device_mac_addr(wifi_mac_addr_t *mac_addr);
  *
  * @return WM_SUCCESS on success or error code.
  */
-int wifi_get_firmware_version(wifi_fw_version_t *ver);
+int wifi_get_firmware_version(wifi_fw_version_t * ver);
 
 /**
  * Get the string representation of the wlan firmware extended version.
@@ -239,7 +235,7 @@ int wifi_get_firmware_version(wifi_fw_version_t *ver);
  *
  * @return WM_SUCCESS on success or error code.
  */
-int wifi_get_firmware_version_ext(wifi_fw_version_ext_t *version_ext);
+int wifi_get_firmware_version_ext(wifi_fw_version_ext_t * version_ext);
 
 /**
  * Get the cached string representation of the wlan firmware extended version.
@@ -248,7 +244,7 @@ int wifi_get_firmware_version_ext(wifi_fw_version_ext_t *version_ext);
  *
  * @return WM_SUCCESS
  */
-int wifi_get_device_firmware_version_ext(wifi_fw_version_ext_t *fw_ver_ext);
+int wifi_get_device_firmware_version_ext(wifi_fw_version_ext_t * fw_ver_ext);
 
 /**
  * Get the timestamp of the last command sent to the firmware
@@ -259,9 +255,9 @@ unsigned wifi_get_last_cmd_sent_ms(void);
 
 uint32_t wifi_get_value1();
 
-uint8_t *wifi_get_outbuf(uint32_t *outbuf_len);
+uint8_t * wifi_get_outbuf(uint32_t * outbuf_len);
 
-int wifi_get_tsf(uint32_t *tsf_high, uint32_t *tsf_low);
+int wifi_get_tsf(uint32_t * tsf_high, uint32_t * tsf_low);
 
 /**
  * This will update the last command sent variable value to current
@@ -282,7 +278,7 @@ void wifi_update_last_cmd_sent_ms();
  *
  * @return Standard SDK return codes
  */
-int wifi_register_event_queue(os_queue_t *event_queue);
+int wifi_register_event_queue(os_queue_t * event_queue);
 
 /**
  * Unregister an event queue from the wifi driver.
@@ -292,7 +288,7 @@ int wifi_register_event_queue(os_queue_t *event_queue);
  *
  * @return Standard SDK return codes
  */
-int wifi_unregister_event_queue(os_queue_t *event_queue);
+int wifi_unregister_event_queue(os_queue_t * event_queue);
 
 /** Get scan list
  *
@@ -302,7 +298,7 @@ int wifi_unregister_event_queue(os_queue_t *event_queue);
  * @return WM_SUCCESS on success or error code.
  *
  */
-int wifi_get_scan_result(unsigned int index, struct wifi_scan_result **desc);
+int wifi_get_scan_result(unsigned int index, struct wifi_scan_result ** desc);
 
 /**
  * Get the count of elements in the scan list
@@ -320,20 +316,12 @@ int wifi_get_scan_result(unsigned int index, struct wifi_scan_result **desc);
  *
  * @return Standard SDK return codes.
  */
-int wifi_get_scan_result_count(unsigned *count);
+int wifi_get_scan_result_count(unsigned * count);
 
-int wifi_deauthenticate(uint8_t *bssid);
+int wifi_deauthenticate(uint8_t * bssid);
 
-int wifi_uap_start(int type,
-                   char *ssid,
-                   uint8_t *mac_addr,
-                   int security,
-                   char *passphrase,
-                   char *password,
-                   int channel,
-                   wifi_scan_chan_list_t scan_chan_list,
-                   bool mfpc,
-                   bool mfpr);
+int wifi_uap_start(int type, char * ssid, uint8_t * mac_addr, int security, char * passphrase, char * password, int channel,
+                   wifi_scan_chan_list_t scan_chan_list, bool mfpc, bool mfpr);
 
 int wifi_uap_stop(int type);
 
@@ -343,19 +331,19 @@ int wifi_uap_ctrl_deauth(bool enable);
 void wifi_uap_set_ecsa(const t_u8 chan_sw_count);
 void wifi_uap_set_htcapinfo(const t_u16 ht_cap_info);
 
-int wifi_get_uap_max_clients(unsigned int *max_sta_num);
-int wifi_set_uap_max_clients(unsigned int *max_sta_num);
+int wifi_get_uap_max_clients(unsigned int * max_sta_num);
+int wifi_set_uap_max_clients(unsigned int * max_sta_num);
 
-int wifi_get_mgmt_ie(unsigned int bss_type, IEEEtypes_ElementId_t index, void *buf, unsigned int *buf_len);
-int wifi_set_mgmt_ie(unsigned int bss_type, IEEEtypes_ElementId_t index, void *buf, unsigned int buf_len);
+int wifi_get_mgmt_ie(unsigned int bss_type, IEEEtypes_ElementId_t index, void * buf, unsigned int * buf_len);
+int wifi_set_mgmt_ie(unsigned int bss_type, IEEEtypes_ElementId_t index, void * buf, unsigned int buf_len);
 int wifi_clear_mgmt_ie(unsigned int bss_type, IEEEtypes_ElementId_t index);
 
-int wifi_send_enable_supplicant(int mode, const char *ssid);
-int wifi_send_clear_wpa_psk(int mode, const char *ssid);
-int wifi_send_add_wpa_psk(int mode, char *ssid, char *passphrase, unsigned int len);
-int wifi_send_add_wpa3_password(int mode, char *ssid, char *password, unsigned int len);
-int wifi_send_get_wpa_pmk(int mode, char *ssid);
-int wifi_send_add_wpa_pmk(int mode, char *bssid, char *ssid, char *pmk, unsigned int len);
+int wifi_send_enable_supplicant(int mode, const char * ssid);
+int wifi_send_clear_wpa_psk(int mode, const char * ssid);
+int wifi_send_add_wpa_psk(int mode, char * ssid, char * passphrase, unsigned int len);
+int wifi_send_add_wpa3_password(int mode, char * ssid, char * password, unsigned int len);
+int wifi_send_get_wpa_pmk(int mode, char * ssid);
+int wifi_send_add_wpa_pmk(int mode, char * bssid, char * ssid, char * pmk, unsigned int len);
 
 /**
  * Returns the current STA list connected to our uAP
@@ -374,7 +362,7 @@ int wifi_send_add_wpa_pmk(int mode, char *bssid, char *ssid, char *pmk, unsigned
  *
  * @return void
  */
-int wifi_uap_bss_sta_list(wifi_sta_list_t **list);
+int wifi_uap_bss_sta_list(wifi_sta_list_t ** list);
 
 #ifdef WLAN_LOW_POWER_ENABLE
 void wifi_enable_low_pwr_mode();
@@ -388,7 +376,7 @@ void wifi_enable_low_pwr_mode();
  * @param[in] clen Length of calibration data
  *
  */
-void wifi_set_cal_data(uint8_t *cdata, unsigned int clen);
+void wifi_set_cal_data(uint8_t * cdata, unsigned int clen);
 
 /** Set wifi MAC address in firmware at load time.
  *
@@ -397,7 +385,7 @@ void wifi_set_cal_data(uint8_t *cdata, unsigned int clen);
  * @param[in] mac The new MAC Address
  *
  */
-void wifi_set_mac_addr(uint8_t *mac);
+void wifi_set_mac_addr(uint8_t * mac);
 
 /** Set wifi MAC address in firmware at run time.
  *
@@ -406,22 +394,18 @@ void wifi_set_mac_addr(uint8_t *mac);
  * @param[in] mac The new MAC Address
  *
  */
-void _wifi_set_mac_addr(uint8_t *mac);
+void _wifi_set_mac_addr(uint8_t * mac);
 
 int wifi_sniffer_start(const t_u16 filter_flags, const t_u8 radio_type, const t_u8 channel);
 int wifi_sniffer_status();
 int wifi_sniffer_stop();
 
-int wifi_set_key(int bss_index,
-                 bool is_pairwise,
-                 const uint8_t key_index,
-                 const uint8_t *key,
-                 unsigned key_len,
-                 const uint8_t *mac_addr);
-int wifi_set_igtk_key(int bss_index, const uint8_t *pn, const uint16_t key_index, const uint8_t *key, unsigned key_len);
-int wifi_remove_key(int bss_index, bool is_pairwise, const uint8_t key_index, const uint8_t *mac_addr);
+int wifi_set_key(int bss_index, bool is_pairwise, const uint8_t key_index, const uint8_t * key, unsigned key_len,
+                 const uint8_t * mac_addr);
+int wifi_set_igtk_key(int bss_index, const uint8_t * pn, const uint16_t key_index, const uint8_t * key, unsigned key_len);
+int wifi_remove_key(int bss_index, bool is_pairwise, const uint8_t key_index, const uint8_t * mac_addr);
 
-int wifi_get_wpa_ie_in_assoc(uint8_t *wpa_ie);
+int wifi_get_wpa_ie_in_assoc(uint8_t * wpa_ie);
 
 /** Add Multicast Filter by MAC Address
  *
@@ -442,7 +426,7 @@ int wifi_get_wpa_ie_in_assoc(uint8_t *wpa_ie);
  *
  * \return 0 on Success or else Error
  */
-int wifi_add_mcast_filter(uint8_t *mac_addr);
+int wifi_add_mcast_filter(uint8_t * mac_addr);
 
 /** Remove Multicast Filter by MAC Address
  *
@@ -460,7 +444,7 @@ int wifi_add_mcast_filter(uint8_t *mac_addr);
  *
  * \return  0 on Success or else Error
  */
-int wifi_remove_mcast_filter(uint8_t *mac_addr);
+int wifi_remove_mcast_filter(uint8_t * mac_addr);
 
 /** Get Multicast Mapped Mac address from IPv4
  *
@@ -475,7 +459,7 @@ int wifi_remove_mcast_filter(uint8_t *mac_addr);
  *
  * \return  void
  */
-void wifi_get_ipv4_multicast_mac(uint32_t ipaddr, uint8_t *mac_addr);
+void wifi_get_ipv4_multicast_mac(uint32_t ipaddr, uint8_t * mac_addr);
 
 #ifdef CONFIG_IPV6
 /** Get Multicast Mapped Mac address from IPv6 address
@@ -490,22 +474,21 @@ void wifi_get_ipv4_multicast_mac(uint32_t ipaddr, uint8_t *mac_addr);
  *
  * \return void
  */
-void wifi_get_ipv6_multicast_mac(uint32_t ipaddr, uint8_t *mac_addr);
+void wifi_get_ipv6_multicast_mac(uint32_t ipaddr, uint8_t * mac_addr);
 #endif /* CONFIG_IPV6 */
 
-
 int wifi_set_antenna(t_u32 ant_mode, t_u16 evaluate_time);
-int wifi_get_antenna(t_u32 *ant_mode, t_u16 *evaluate_time);
+int wifi_get_antenna(t_u32 * ant_mode, t_u16 * evaluate_time);
 
-void wifi_process_hs_cfg_resp(t_u8 *cmd_res_buffer);
-enum wifi_event_reason wifi_process_ps_enh_response(t_u8 *cmd_res_buffer, t_u16 *ps_event, t_u16 *action);
+void wifi_process_hs_cfg_resp(t_u8 * cmd_res_buffer);
+enum wifi_event_reason wifi_process_ps_enh_response(t_u8 * cmd_res_buffer, t_u16 * ps_event, t_u16 * action);
 
-int wifi_uap_tx_power_getset(uint8_t action, uint8_t *tx_power_dbm);
-int wifi_uap_rates_getset(uint8_t action, char *rates, uint8_t num_rates);
-int wifi_uap_mcbc_rate_getset(uint8_t action, uint16_t *mcbc_rate);
-int wifi_uap_sta_ageout_timer_getset(uint8_t action, uint32_t *sta_ageout_timer);
-int wifi_uap_ps_sta_ageout_timer_getset(uint8_t action, uint32_t *sta_ageout_timer);
-int wifi_uap_group_rekey_timer_getset(uint8_t action, uint32_t *group_rekey_timer);
+int wifi_uap_tx_power_getset(uint8_t action, uint8_t * tx_power_dbm);
+int wifi_uap_rates_getset(uint8_t action, char * rates, uint8_t num_rates);
+int wifi_uap_mcbc_rate_getset(uint8_t action, uint16_t * mcbc_rate);
+int wifi_uap_sta_ageout_timer_getset(uint8_t action, uint32_t * sta_ageout_timer);
+int wifi_uap_ps_sta_ageout_timer_getset(uint8_t action, uint32_t * sta_ageout_timer);
+int wifi_uap_group_rekey_timer_getset(uint8_t action, uint32_t * group_rekey_timer);
 typedef enum
 {
     REG_MAC = 1,
@@ -513,10 +496,10 @@ typedef enum
     REG_RF
 } wifi_reg_t;
 
-int wifi_reg_access(wifi_reg_t reg_type, uint16_t action, uint32_t offset, uint32_t *value);
+int wifi_reg_access(wifi_reg_t reg_type, uint16_t action, uint32_t offset, uint32_t * value);
 
-int wifi_mem_access(uint16_t action, uint32_t addr, uint32_t *value);
-int wifi_get_eeprom_data(uint32_t offset, uint32_t byte_count, uint8_t *buf);
+int wifi_mem_access(uint16_t action, uint32_t addr, uint32_t * value);
+int wifi_get_eeprom_data(uint32_t offset, uint32_t byte_count, uint8_t * buf);
 /*
  * This function is supposed to be called after scan is complete from wlc
  * manager.
@@ -542,7 +525,7 @@ void wifi_scan_process_results(void);
  *
  * @return Standard WMSDK return codes.
  */
-int wifi_get_region_code(t_u32 *region_code);
+int wifi_get_region_code(t_u32 * region_code);
 
 /**
  * Set the wifi region code.
@@ -572,7 +555,7 @@ int wifi_set_region_code(t_u32 region_code);
  * callee
  * @return Standard WMSDK return code
  */
-int wifi_get_uap_channel(int *channel);
+int wifi_get_uap_channel(int * channel);
 
 /**
  * Sets the domain parameters for the uAP.
@@ -610,13 +593,13 @@ int wifi_get_uap_channel(int *channel);
  */
 int wifi_uap_enable_11d();
 int wifi_uap_enable_11d_support();
-int wifi_uap_set_domain_params(wifi_domain_param_t *dp);
+int wifi_uap_set_domain_params(wifi_domain_param_t * dp);
 int wifi_uap_set_params();
 bool wifi_11d_is_channel_allowed(int channel);
-wifi_sub_band_set_t *get_sub_band_from_country(int country, int *nr_sb);
+wifi_sub_band_set_t * get_sub_band_from_country(int country, int * nr_sb);
 int wifi_enable_11d_support();
 int wifi_enable_11d_support_APIs();
-int wifi_set_domain_params(wifi_domain_param_t *dp);
+int wifi_set_domain_params(wifi_domain_param_t * dp);
 int wifi_set_country(int country);
 int wifi_get_country();
 #ifdef OTP_CHANINFO
@@ -628,16 +611,9 @@ int wifi_set_htcapinfo(unsigned int htcapinfo);
 int wifi_set_httxcfg(unsigned short httxcfg);
 int wifi_get_tx_power();
 int wifi_set_tx_power(int power_level);
-int wifi_set_smart_mode_cfg(char *ssid,
-                            int beacon_period,
-                            wifi_chan_list_param_set_t *chan_list,
-                            uint8_t *smc_start_addr,
-                            uint8_t *smc_end_addr,
-                            uint16_t filter_type,
-                            int smc_frame_filter_len,
-                            uint8_t *smc_frame_filter,
-                            int custom_ie_len,
-                            uint8_t *custom_ie);
+int wifi_set_smart_mode_cfg(char * ssid, int beacon_period, wifi_chan_list_param_set_t * chan_list, uint8_t * smc_start_addr,
+                            uint8_t * smc_end_addr, uint16_t filter_type, int smc_frame_filter_len, uint8_t * smc_frame_filter,
+                            int custom_ie_len, uint8_t * custom_ie);
 int wifi_get_smart_mode_cfg();
 int wifi_start_smart_mode();
 int wifi_stop_smart_mode();
@@ -655,47 +631,41 @@ int wifi_exit_ieee_power_save(void);
 int wifi_enter_deepsleep_power_save(void);
 int wifi_exit_deepsleep_power_save(void);
 void send_sleep_confirm_command(mlan_bss_type interface);
-int wifi_send_rssi_info_cmd(wifi_rssi_info_t *rssi_info);
+int wifi_send_rssi_info_cmd(wifi_rssi_info_t * rssi_info);
 void wifi_configure_listen_interval(int listen_interval);
 void wifi_configure_null_pkt_interval(unsigned int null_pkt_interval);
-int wrapper_wifi_assoc(const unsigned char *bssid, int wlan_security, bool is_wpa_tkip, unsigned int owe_trans_mode);
+int wrapper_wifi_assoc(const unsigned char * bssid, int wlan_security, bool is_wpa_tkip, unsigned int owe_trans_mode);
 void wrapper_wlan_scan_process_results(void);
-void wifi_uap_enable_sticky_bit(const uint8_t *mac_addr);
+void wifi_uap_enable_sticky_bit(const uint8_t * mac_addr);
 bool wifi_get_xfer_pending();
 void wifi_set_xfer_pending(bool xfer_val);
 int wrapper_wlan_cmd_11n_ba_stream_timeout();
 
 int wifi_set_txratecfg(wifi_ds_rate ds_rate);
-int wifi_get_txratecfg(wifi_ds_rate *ds_rate);
-void wifi_wake_up_card(uint32_t *resp);
+int wifi_get_txratecfg(wifi_ds_rate * ds_rate);
+void wifi_wake_up_card(uint32_t * resp);
 
-int wifi_send_scan_cmd(t_u8 bss_mode,
-                       const t_u8 *specific_bssid,
-                       const char *ssid,
-                       const char *ssid2,
-                       const t_u8 num_channels,
-                       const wifi_scan_channel_list_t *chan_list,
-                       const t_u8 num_probes,
-                       const bool keep_previous_scan,
+int wifi_send_scan_cmd(t_u8 bss_mode, const t_u8 * specific_bssid, const char * ssid, const char * ssid2, const t_u8 num_channels,
+                       const wifi_scan_channel_list_t * chan_list, const t_u8 num_probes, const bool keep_previous_scan,
                        const bool active_scan_triggered);
 
-int wifi_send_remain_on_channel_cmd(unsigned int bss_type, wifi_remain_on_channel_t *remain_on_channel);
+int wifi_send_remain_on_channel_cmd(unsigned int bss_type, wifi_remain_on_channel_t * remain_on_channel);
 
-int wifi_set_chanlist(wifi_chanlist_t *chanlist);
+int wifi_set_chanlist(wifi_chanlist_t * chanlist);
 
-int wifi_get_chanlist(wifi_chanlist_t *chanlist);
+int wifi_get_chanlist(wifi_chanlist_t * chanlist);
 
-void wifi_get_active_channel_list(t_u8 *chan_list, t_u8 *num_chans);
+void wifi_get_active_channel_list(t_u8 * chan_list, t_u8 * num_chans);
 
-int wifi_set_txpwrlimit(wifi_txpwrlimit_t *txpwrlimit);
+int wifi_set_txpwrlimit(wifi_txpwrlimit_t * txpwrlimit);
 
-int wifi_get_txpwrlimit(wifi_SubBand_t subband, wifi_txpwrlimit_t *txpwrlimit);
+int wifi_get_txpwrlimit(wifi_SubBand_t subband, wifi_txpwrlimit_t * txpwrlimit);
 
 void wifi_set_curr_bss_channel(uint8_t channel);
 
-int wifi_set_ed_mac_mode(wifi_ed_mac_ctrl_t *wifi_ed_mac_ctrl);
+int wifi_set_ed_mac_mode(wifi_ed_mac_ctrl_t * wifi_ed_mac_ctrl);
 
-int wifi_get_ed_mac_mode(wifi_ed_mac_ctrl_t *wifi_ed_mac_ctrl);
+int wifi_get_ed_mac_mode(wifi_ed_mac_ctrl_t * wifi_ed_mac_ctrl);
 
 /**
  * Get User Data from OTP Memory
@@ -706,7 +676,7 @@ int wifi_get_ed_mac_mode(wifi_ed_mac_ctrl_t *wifi_ed_mac_ctrl);
  * \return WM_SUCCESS if user data read operation is successful.
  * \return -WM_FAIL if user data field is not present or command fails.
  */
-int wifi_get_otp_user_data(uint8_t *buf, uint16_t len);
+int wifi_get_otp_user_data(uint8_t * buf, uint16_t len);
 
 /**
  * Get Calibration data from WLAN firmware
@@ -721,29 +691,29 @@ int wifi_get_otp_user_data(uint8_t *buf, uint16_t len);
  *	 calibration data.
  *
  */
-int wifi_get_cal_data(wifi_cal_data_t *cal_data);
+int wifi_get_cal_data(wifi_cal_data_t * cal_data);
 
 int wifi_auto_reconnect_enable(wifi_auto_reconnect_config_t auto_reconnect_config);
 
 int wifi_auto_reconnect_disable();
 
-int wifi_get_auto_reconnect_config(wifi_auto_reconnect_config_t *auto_reconnect_config);
+int wifi_get_auto_reconnect_config(wifi_auto_reconnect_config_t * auto_reconnect_config);
 
 int wrapper_wlan_11d_enable();
 
 int wifi_set_rx_mgmt_indication(unsigned int bss_type, unsigned int mgmt_subtype_mask);
 
-int wrapper_wlan_cmd_11n_addba_rspgen(void *saved_event_buff);
+int wrapper_wlan_cmd_11n_addba_rspgen(void * saved_event_buff);
 
-int wrapper_wlan_cmd_11n_delba_rspgen(void *saved_event_buff);
+int wrapper_wlan_cmd_11n_delba_rspgen(void * saved_event_buff);
 
-char *wifi_get_country_str(int country);
+char * wifi_get_country_str(int country);
 
 int wrapper_wlan_ecsa_enable();
 
 int wrapper_wlan_sta_ampdu_enable();
 
-int wrapper_wlan_upa_ampdu_enable(uint8_t *addr);
+int wrapper_wlan_upa_ampdu_enable(uint8_t * addr);
 
 /** WiFi Statistics counter */
 typedef PACK_START struct
@@ -854,29 +824,29 @@ typedef PACK_START struct
     t_u32 ampdu_delimiter_crc_error_cnt;
 } PACK_END wifi_pkt_stats_t;
 
-int wifi_get_log(wifi_pkt_stats_t *stats);
+int wifi_get_log(wifi_pkt_stats_t * stats);
 
 void handle_cdint(int error);
 
-int wifi_get_data_rate(wifi_ds_rate *ds_rate);
+int wifi_get_data_rate(wifi_ds_rate * ds_rate);
 
 int wifi_set_pmfcfg(t_u8 mfpc, t_u8 mfpr);
 
-int wifi_get_pmfcfg(t_u8 *mfpc, t_u8 *mfpr);
+int wifi_get_pmfcfg(t_u8 * mfpc, t_u8 * mfpr);
 
-int wifi_get_tbtt_offset(wifi_tbtt_offset_t *tbtt_offset);
+int wifi_get_tbtt_offset(wifi_tbtt_offset_t * tbtt_offset);
 
-int wifi_set_packet_filters(wifi_flt_cfg_t *flt_cfg);
+int wifi_set_packet_filters(wifi_flt_cfg_t * flt_cfg);
 
-int wifi_set_auto_arp(t_u32 *ipv4_addr);
+int wifi_set_auto_arp(t_u32 * ipv4_addr);
 
-int wifi_tcp_keep_alive(wifi_tcp_keep_alive_t *keep_alive, t_u8 *src_mac, t_u32 src_ip);
+int wifi_tcp_keep_alive(wifi_tcp_keep_alive_t * keep_alive, t_u8 * src_mac, t_u32 src_ip);
 
-int wifi_nat_keep_alive(wifi_nat_keep_alive_t *keep_alive, t_u8 *src_mac, t_u32 src_ip, t_u16 src_port);
+int wifi_nat_keep_alive(wifi_nat_keep_alive_t * keep_alive, t_u8 * src_mac, t_u32 src_ip, t_u16 src_port);
 
-int wifi_raw_packet_send(const t_u8 *packet, t_u32 length);
+int wifi_raw_packet_send(const t_u8 * packet, t_u32 length);
 
-int wifi_raw_packet_recv(t_u8 **data, t_u32 *pkt_type);
+int wifi_raw_packet_recv(t_u8 ** data, t_u32 * pkt_type);
 
 #ifdef CONFIG_RF_TEST_MODE
 
@@ -884,49 +854,35 @@ int wifi_set_rf_test_mode();
 
 int wifi_set_rf_channel(const uint8_t channel);
 
-int wifi_get_rf_channel(uint8_t *channel);
+int wifi_get_rf_channel(uint8_t * channel);
 
 int wifi_set_rf_band(const uint8_t band);
 
-int wifi_get_rf_band(uint8_t *band);
+int wifi_get_rf_band(uint8_t * band);
 
 int wifi_set_rf_bandwidth(const uint8_t bandwidth);
 
-int wifi_get_rf_bandwidth(uint8_t *bandwidth);
+int wifi_get_rf_bandwidth(uint8_t * bandwidth);
 
-int wifi_get_rf_per(uint32_t *rx_tot_pkt_count, uint32_t *rx_mcast_bcast_count, uint32_t *rx_pkt_fcs_error);
+int wifi_get_rf_per(uint32_t * rx_tot_pkt_count, uint32_t * rx_mcast_bcast_count, uint32_t * rx_pkt_fcs_error);
 
-int wifi_set_rf_tx_cont_mode(const uint32_t enable_tx,
-                             const uint32_t cw_mode,
-                             const uint32_t payload_pattern,
-                             const uint32_t cs_mode,
-                             const uint32_t act_sub_ch,
-                             const uint32_t tx_rate);
+int wifi_set_rf_tx_cont_mode(const uint32_t enable_tx, const uint32_t cw_mode, const uint32_t payload_pattern,
+                             const uint32_t cs_mode, const uint32_t act_sub_ch, const uint32_t tx_rate);
 
 int wifi_set_rf_tx_antenna(const uint8_t antenna);
 
-int wifi_get_rf_tx_antenna(uint8_t *antenna);
+int wifi_get_rf_tx_antenna(uint8_t * antenna);
 
 int wifi_set_rf_rx_antenna(const uint8_t antenna);
 
-int wifi_get_rf_rx_antenna(uint8_t *antenna);
+int wifi_get_rf_rx_antenna(uint8_t * antenna);
 
 int wifi_set_rf_tx_power(const uint8_t power, const uint8_t mod, const uint8_t path_id);
 
-int wifi_set_rf_tx_frame(const uint32_t enable,
-                         const uint32_t data_rate,
-                         const uint32_t frame_pattern,
-                         const uint32_t frame_length,
-                         const uint32_t adjust_burst_sifs,
-                         const uint32_t burst_sifs_in_us,
-                         const uint32_t short_preamble,
-                         const uint32_t act_sub_ch,
-                         const uint32_t short_gi,
-                         const uint32_t adv_coding,
-                         const uint32_t tx_bf,
-                         const uint32_t gf_mode,
-                         const uint32_t stbc,
-                         const uint32_t *bssid);
+int wifi_set_rf_tx_frame(const uint32_t enable, const uint32_t data_rate, const uint32_t frame_pattern, const uint32_t frame_length,
+                         const uint32_t adjust_burst_sifs, const uint32_t burst_sifs_in_us, const uint32_t short_preamble,
+                         const uint32_t act_sub_ch, const uint32_t short_gi, const uint32_t adv_coding, const uint32_t tx_bf,
+                         const uint32_t gf_mode, const uint32_t stbc, const uint32_t * bssid);
 #endif
 #ifdef CONFIG_WIFI_FW_DEBUG
 /** This function registers callbacks which are used to generate FW Dump on USB
@@ -939,9 +895,7 @@ int wifi_set_rf_tx_frame(const uint32_t enable,
  *
  * \return void
  */
-void wifi_register_fw_dump_cb(int (*wifi_usb_mount_cb)(),
-                              int (*wifi_usb_file_open_cb)(char *test_file_name),
-                              int (*wifi_usb_file_write_cb)(uint8_t *data, size_t data_len),
-                              int (*wifi_usb_file_close_cb)());
+void wifi_register_fw_dump_cb(int (*wifi_usb_mount_cb)(), int (*wifi_usb_file_open_cb)(char * test_file_name),
+                              int (*wifi_usb_file_write_cb)(uint8_t * data, size_t data_len), int (*wifi_usb_file_close_cb)());
 #endif
 #endif

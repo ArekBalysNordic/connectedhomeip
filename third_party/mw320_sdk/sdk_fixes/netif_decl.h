@@ -22,25 +22,25 @@
  */
 
 #include <mlan_api.h>
+#include <wifi-internal.h>
+#include <wifi-sdio.h>
 #include <wm_net.h>
 #include <wmlog.h>
-#include <wifi-sdio.h>
-#include <wifi-internal.h>
 
-#include "lwip/opt.h"
 #include "lwip/def.h"
 #include "lwip/mem.h"
+#include "lwip/opt.h"
 #include "lwip/pbuf.h"
-#include "lwip/udp.h"
 #include "lwip/sys.h"
+#include "lwip/udp.h"
 #ifdef CONFIG_IPV6
 #include "lwip/ethip6.h"
 #endif /* CONFIG_IPV6 */
-#include <lwip/stats.h>
-#include <lwip/snmp.h>
 #include "netif/etharp.h"
 #include "netif/ethernet.h"
 #include "netif/ppp/pppoe.h"
+#include <lwip/snmp.h>
+#include <lwip/stats.h>
 
 /*------------------------------------------------------*/
 /*
@@ -79,18 +79,18 @@ PACK_STRUCT_END
  * So for 8801 based platforms the wait time is now 35 ms.
  */
 
-#define MAX_WAIT_TIME            35
+#define MAX_WAIT_TIME 35
 #define MAX_INTERFACES_SUPPORTED 3
 
 /* The time to block waiting for input. */
-#define emacBLOCK_TIME_WAITING_FOR_INPUT ((portTickType)100)
+#define emacBLOCK_TIME_WAITING_FOR_INPUT ((portTickType) 100)
 /*------------------------------------------------------*/
 extern int wlan_get_mac_address(t_u8 *);
 extern void wlan_wake_up_card();
 
-int wrapper_wlan_handle_rx_packet(t_u16 datalen, RxPD *rxpd, void *p, void *payload);
+int wrapper_wlan_handle_rx_packet(t_u16 datalen, RxPD * rxpd, void * p, void * payload);
 
-int wrapper_wlan_handle_amsdu_rx_packet(const t_u8 *rcvdata, const t_u16 datalen);
+int wrapper_wlan_handle_amsdu_rx_packet(const t_u8 * rcvdata, const t_u16 datalen);
 
 /**
  * Helper struct to hold private data used to operate your ethernet interface.
@@ -100,7 +100,7 @@ int wrapper_wlan_handle_amsdu_rx_packet(const t_u8 *rcvdata, const t_u16 datalen
  */
 struct ethernetif
 {
-    struct eth_addr *ethaddr;
+    struct eth_addr * ethaddr;
     /* Interface to bss type identification that tells the FW wherether
        the data is for STA for UAP */
     t_u8 interface;

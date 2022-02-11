@@ -32,15 +32,15 @@
 #include <wifi.h>
 #include <wm_os.h>
 
+#include "mlan_sdio.h"
 #include "wifi-internal.h"
 #include "wifi-sdio.h"
-#include "mlan_sdio.h"
 
 #define WIFI_COMMAND_RESPONSE_WAIT_MS 20000
-#define WIFI_CORE_STACK_SIZE          (350)
+#define WIFI_CORE_STACK_SIZE (350)
 /* We don't see events coming in quick succession,
  * MAX_EVENTS = 10 is fairly big value */
-#define MAX_EVENTS    20
+#define MAX_EVENTS 20
 #define MAX_MCAST_LEN (MLAN_MAX_MULTICAST_LIST_SIZE * MLAN_MAC_ADDR_LENGTH)
 #define MAX_WAIT_TIME 35
 
@@ -72,11 +72,11 @@ static os_thread_stack_define(wifi_core_stack, WIFI_CORE_STACK_SIZE * sizeof(por
 static os_thread_stack_define(wifi_drv_stack, 1024);
 static os_queue_pool_define(g_io_events_queue_data, sizeof(struct bus_message) * MAX_EVENTS);
 
-int wifi_set_mac_multicast_addr(const char *mlist, uint32_t num_of_addr);
-int wrapper_get_wpa_ie_in_assoc(uint8_t *wpa_ie);
+int wifi_set_mac_multicast_addr(const char * mlist, uint32_t num_of_addr);
+int wrapper_get_wpa_ie_in_assoc(uint8_t * wpa_ie);
 KEY_TYPE_ID get_sec_info();
-mlan_status wlan_process_int_status(void *pmadapter);
-void handle_data_packet(t_u8 interface, t_u8 *rcvdata, t_u16 datalen);
+mlan_status wlan_process_int_status(void * pmadapter);
+void handle_data_packet(t_u8 interface, t_u8 * rcvdata, t_u16 datalen);
 
 unsigned wifi_get_last_cmd_sent_ms()
 {
@@ -89,7 +89,7 @@ uint32_t wifi_get_value1()
 }
 
 /* Wake up Wi-Fi card */
-void wifi_wake_up_card(uint32_t *resp)
+void wifi_wake_up_card(uint32_t * resp)
 {
     sdio_drv_creg_write(0x0, 1, 0x02, resp);
 }
@@ -161,10 +161,8 @@ int wifi_put_command_lock()
 
 #ifdef CONFIG_WIFI_FW_DEBUG
 
-void wifi_register_fw_dump_cb(int (*wifi_usb_mount_cb)(),
-                              int (*wifi_usb_file_open_cb)(char *test_file_name),
-                              int (*wifi_usb_file_write_cb)(uint8_t *data, size_t data_len),
-                              int (*wifi_usb_file_close_cb)())
+void wifi_register_fw_dump_cb(int (*wifi_usb_mount_cb)(), int (*wifi_usb_file_open_cb)(char * test_file_name),
+                              int (*wifi_usb_file_write_cb)(uint8_t * data, size_t data_len), int (*wifi_usb_file_close_cb)())
 {
     wm_wifi.wifi_usb_mount_cb      = wifi_usb_mount_cb;
     wm_wifi.wifi_usb_file_open_cb  = wifi_usb_file_open_cb;
@@ -174,19 +172,19 @@ void wifi_register_fw_dump_cb(int (*wifi_usb_mount_cb)(),
 
 #ifdef SD8801
 
-#define DEBUG_HOST_READY     0xEE
-#define DEBUG_FW_DONE        0xFF
+#define DEBUG_HOST_READY 0xEE
+#define DEBUG_FW_DONE 0xFF
 #define DEBUG_MEMDUMP_FINISH 0xFE
-#define SDIO_SCRATCH_REG     0x60
-#define DEBUG_ITCM_DONE      0xaa
-#define DEBUG_DTCM_DONE      0xbb
-#define DEBUG_SQRAM_DONE     0xcc
+#define SDIO_SCRATCH_REG 0x60
+#define DEBUG_ITCM_DONE 0xaa
+#define DEBUG_DTCM_DONE 0xbb
+#define DEBUG_SQRAM_DONE 0xcc
 
-#define DEBUG_DUMP_CTRL_REG  0x63
+#define DEBUG_DUMP_CTRL_REG 0x63
 #define DEBUG_DUMP_FIRST_REG 0x62
 #define DEBUG_DUMP_START_REG 0x64
-#define DEBUG_DUMP_END_REG   0x6a
-#define ITCM_SIZE            0x60000
+#define DEBUG_DUMP_END_REG 0x6a
+#define ITCM_SIZE 0x60000
 
 #define SQRAM_SIZE 0x33500
 
@@ -303,87 +301,87 @@ void wifi_dump_firmware_info()
         }
         switch (ctrl_data)
         {
-            case DEBUG_ITCM_DONE:
-                if (wm_wifi.wifi_usb_file_close_cb != NULL)
+        case DEBUG_ITCM_DONE:
+            if (wm_wifi.wifi_usb_file_close_cb != NULL)
+            {
+                ret = wm_wifi.wifi_usb_file_close_cb();
+                if (ret != WM_SUCCESS)
                 {
-                    ret = wm_wifi.wifi_usb_file_close_cb();
-                    if (ret != WM_SUCCESS)
-                    {
-                        wifi_e("File closing failed");
-                        goto done;
-                    }
-                }
-                else
-                {
-                    wifi_e("File close callback is not registered");
+                    wifi_e("File closing failed");
                     goto done;
                 }
-                if (wm_wifi.wifi_usb_file_open_cb != NULL)
+            }
+            else
+            {
+                wifi_e("File close callback is not registered");
+                goto done;
+            }
+            if (wm_wifi.wifi_usb_file_open_cb != NULL)
+            {
+                ret = wm_wifi.wifi_usb_file_open_cb(dtcm_dump_file_name);
+                if (ret != WM_SUCCESS)
                 {
-                    ret = wm_wifi.wifi_usb_file_open_cb(dtcm_dump_file_name);
-                    if (ret != WM_SUCCESS)
-                    {
-                        wifi_e("File opening failed");
-                        goto done;
-                    }
-                    wifi_d("Start DTCM output %d, please wait...", os_get_timestamp());
-                }
-                else
-                {
-                    wifi_e("USB open callback is not registered");
+                    wifi_e("File opening failed");
                     goto done;
                 }
-                break;
-            case DEBUG_DTCM_DONE:
-                if (wm_wifi.wifi_usb_file_close_cb != NULL)
+                wifi_d("Start DTCM output %d, please wait...", os_get_timestamp());
+            }
+            else
+            {
+                wifi_e("USB open callback is not registered");
+                goto done;
+            }
+            break;
+        case DEBUG_DTCM_DONE:
+            if (wm_wifi.wifi_usb_file_close_cb != NULL)
+            {
+                ret = wm_wifi.wifi_usb_file_close_cb();
+                if (ret != WM_SUCCESS)
                 {
-                    ret = wm_wifi.wifi_usb_file_close_cb();
-                    if (ret != WM_SUCCESS)
-                    {
-                        wifi_e("File closing failed");
-                        goto done;
-                    }
-                }
-                else
-                {
-                    wifi_e("File close callback is not registered");
+                    wifi_e("File closing failed");
                     goto done;
                 }
-                if (wm_wifi.wifi_usb_file_open_cb != NULL)
+            }
+            else
+            {
+                wifi_e("File close callback is not registered");
+                goto done;
+            }
+            if (wm_wifi.wifi_usb_file_open_cb != NULL)
+            {
+                ret = wm_wifi.wifi_usb_file_open_cb(sqram_dump_file_name);
+                if (ret != WM_SUCCESS)
                 {
-                    ret = wm_wifi.wifi_usb_file_open_cb(sqram_dump_file_name);
-                    if (ret != WM_SUCCESS)
-                    {
-                        wifi_e("File opening failed");
-                        goto done;
-                    }
-                    wifi_d("Start SQRAM output %u.%06u, please wait...", os_get_timestamp());
-                }
-                else
-                {
-                    wifi_e("USB open cb is not registered");
+                    wifi_e("File opening failed");
                     goto done;
                 }
-                break;
-            case DEBUG_SQRAM_DONE:
-                if (wm_wifi.wifi_usb_file_close_cb != NULL)
+                wifi_d("Start SQRAM output %u.%06u, please wait...", os_get_timestamp());
+            }
+            else
+            {
+                wifi_e("USB open cb is not registered");
+                goto done;
+            }
+            break;
+        case DEBUG_SQRAM_DONE:
+            if (wm_wifi.wifi_usb_file_close_cb != NULL)
+            {
+                ret = wm_wifi.wifi_usb_file_close_cb();
+                if (ret != WM_SUCCESS)
                 {
-                    ret = wm_wifi.wifi_usb_file_close_cb();
-                    if (ret != WM_SUCCESS)
-                    {
-                        wifi_e("File closing failed");
-                        goto done;
-                    }
-                    wifi_d("End output!");
-                }
-                else
-                {
-                    wifi_e("File close callback is not registered");
+                    wifi_e("File closing failed");
                     goto done;
                 }
-                break;
-            default:
-                break;
+                wifi_d("End output!");
+            }
+            else
+            {
+                wifi_e("File close callback is not registered");
+                goto done;
+            }
+            break;
+        default:
+            break;
         }
     } while (ctrl_data != DEBUG_SQRAM_DONE);
 
@@ -407,7 +405,7 @@ void wifi_sdio_reg_dbg()
     t_u8 loop, index = 0, func, data;
     unsigned int reg, reg_start, reg_end;
     unsigned int scratch_reg = SDIO_SCRATCH_REG;
-    unsigned int reg_table[] = {0x28, 0x30, 0x34, 0x38, 0x3c};
+    unsigned int reg_table[] = { 0x28, 0x30, 0x34, 0x38, 0x3c };
     char buf[256], *ptr;
     uint32_t resp;
 
@@ -474,14 +472,14 @@ void wifi_sdio_reg_dbg()
 
 #elif defined(SD8977) || defined(SD8978) || defined(SD8987) || defined(SD8997) || defined(SD9097) || defined(SD9098)
 
-#define DEBUG_HOST_READY     0xCC
-#define DEBUG_FW_DONE        0xFF
+#define DEBUG_HOST_READY 0xCC
+#define DEBUG_FW_DONE 0xFF
 #define DEBUG_MEMDUMP_FINISH 0xFE
 
-#define DEBUG_DUMP_CTRL_REG  0xF9
+#define DEBUG_DUMP_CTRL_REG 0xF9
 #define DEBUG_DUMP_START_REG 0xF1
-#define DEBUG_DUMP_END_REG   0xF8
-#define SDIO_SCRATCH_REG     0xE8
+#define DEBUG_DUMP_END_REG 0xF8
+#define SDIO_SCRATCH_REG 0xE8
 
 char fw_dump_file_name[] = _T("1:/fw_dump.bin");
 
@@ -504,19 +502,19 @@ typedef enum
     DUMP_TYPE_EXTEND_LAST = 14
 } dumped_mem_type;
 
-#define MAX_NAME_LEN      8
+#define MAX_NAME_LEN 8
 #define MAX_FULL_NAME_LEN 32
 
 typedef struct
 {
     t_u8 mem_name[MAX_NAME_LEN];
-    t_u8 *mem_Ptr;
-    struct file *pfile_mem;
+    t_u8 * mem_Ptr;
+    struct file * pfile_mem;
     t_u8 done_flag;
     t_u8 type;
 } memory_type_mapping;
 
-memory_type_mapping mem_type_mapping_tbl = {"DUMP", NULL, NULL, 0xDD};
+memory_type_mapping mem_type_mapping_tbl = { "DUMP", NULL, NULL, 0xDD };
 
 typedef enum
 {
@@ -596,9 +594,9 @@ void wifi_dump_firmware_info()
     t_u8 start_flag = 0;
     t_u8 doneflag   = 0;
     rdwr_status stat;
-    t_u8 dbg_dump_start_reg                    = 0;
-    t_u8 dbg_dump_end_reg                      = 0;
-    memory_type_mapping *pmem_type_mapping_tbl = &mem_type_mapping_tbl;
+    t_u8 dbg_dump_start_reg                     = 0;
+    t_u8 dbg_dump_end_reg                       = 0;
+    memory_type_mapping * pmem_type_mapping_tbl = &mem_type_mapping_tbl;
     t_u8 data[8], i;
     uint32_t resp;
 
@@ -722,7 +720,7 @@ void wifi_sdio_reg_dbg()
     t_u8 loop, index = 0, func, data;
     unsigned int reg, reg_start, reg_end;
     unsigned int scratch_reg = SDIO_SCRATCH_REG;
-    unsigned int reg_table[] = {0x08, 0x58, 0x5C, 0x5D, 0x60, 0x61, 0x62, 0x64, 0x65, 0x66, 0x68, 0x69, 0x6a};
+    unsigned int reg_table[] = { 0x08, 0x58, 0x5C, 0x5D, 0x60, 0x61, 0x62, 0x64, 0x65, 0x66, 0x68, 0x69, 0x6a };
     char buf[256], *ptr;
     uint32_t resp;
 
@@ -789,11 +787,11 @@ void wifi_sdio_reg_dbg()
 #endif
 #endif
 
-int wifi_wait_for_cmdresp(void *cmd_resp_priv)
+int wifi_wait_for_cmdresp(void * cmd_resp_priv)
 {
     int ret;
-    HostCmd_DS_COMMAND *cmd = wifi_get_command_buffer();
-    t_u32 buf_len           = MLAN_SDIO_BLOCK_SIZE;
+    HostCmd_DS_COMMAND * cmd = wifi_get_command_buffer();
+    t_u32 buf_len            = MLAN_SDIO_BLOCK_SIZE;
     t_u32 tx_blocks;
 
 #if defined(CONFIG_ENABLE_WARNING_LOGS) || defined(CONFIG_WIFI_CMD_RESP_DEBUG)
@@ -862,7 +860,7 @@ int wifi_wait_for_cmdresp(void *cmd_resp_priv)
     return ret;
 }
 
-void wifi_event_completion(int event, enum wifi_event_reason result, void *data)
+void wifi_event_completion(int event, enum wifi_event_reason result, void * data)
 {
     struct wifi_message msg;
     if (!wm_wifi.wlc_mgr_event_queue)
@@ -874,7 +872,7 @@ void wifi_event_completion(int event, enum wifi_event_reason result, void *data)
     os_queue_send(wm_wifi.wlc_mgr_event_queue, &msg, OS_NO_WAIT);
 }
 
-static int cmp_mac_addr(uint8_t *mac_addr1, uint8_t *mac_addr2)
+static int cmp_mac_addr(uint8_t * mac_addr1, uint8_t * mac_addr2)
 {
     int i = 0;
 
@@ -887,7 +885,7 @@ static int cmp_mac_addr(uint8_t *mac_addr1, uint8_t *mac_addr2)
     return 0;
 }
 
-static int add_mcast_ip(uint8_t *mac_addr)
+static int add_mcast_ip(uint8_t * mac_addr)
 {
     mcast_filter *node_t, *new_node;
     wifi_get_mcastf_lock();
@@ -927,7 +925,7 @@ static int add_mcast_ip(uint8_t *mac_addr)
     return WM_SUCCESS;
 }
 
-static int remove_mcast_ip(uint8_t *mac_addr)
+static int remove_mcast_ip(uint8_t * mac_addr)
 {
     mcast_filter *curr_node, *prev_node;
     wifi_get_mcastf_lock();
@@ -970,16 +968,16 @@ static int remove_mcast_ip(uint8_t *mac_addr)
     return -WM_FAIL;
 }
 
-static int make_filter_list(char *mlist, int maxlen)
+static int make_filter_list(char * mlist, int maxlen)
 {
-    mcast_filter *node_t;
+    mcast_filter * node_t;
     uint8_t maddr_cnt = 0;
     wifi_get_mcastf_lock();
     node_t = wm_wifi.start_list;
     while (node_t != NULL)
     {
         memcpy(mlist, node_t->mac_addr, MLAN_MAC_ADDR_LENGTH);
-        node_t = (struct mcast_filter *)node_t->next;
+        node_t = (struct mcast_filter *) node_t->next;
         mlist  = mlist + MLAN_MAC_ADDR_LENGTH;
         maddr_cnt++;
         if (maddr_cnt > (maxlen / 6))
@@ -989,7 +987,7 @@ static int make_filter_list(char *mlist, int maxlen)
     return maddr_cnt;
 }
 
-void wifi_get_ipv4_multicast_mac(uint32_t ipaddr, uint8_t *mac_addr)
+void wifi_get_ipv4_multicast_mac(uint32_t ipaddr, uint8_t * mac_addr)
 {
     int i = 0, j = 0;
     uint32_t mac_addr_r = 0x01005E;
@@ -1003,14 +1001,14 @@ void wifi_get_ipv4_multicast_mac(uint32_t ipaddr, uint8_t *mac_addr)
      * 9bits).
      */
     for (i = 2; i >= 0; i--, j++)
-        mac_addr[j] = (char)(mac_addr_r >> 8 * i) & 0xFF;
+        mac_addr[j] = (char) (mac_addr_r >> 8 * i) & 0xFF;
 
     for (i = 2; i >= 0; i--, j++)
-        mac_addr[j] = (char)(ipaddr >> 8 * i) & 0xFF;
+        mac_addr[j] = (char) (ipaddr >> 8 * i) & 0xFF;
 }
 
 #ifdef CONFIG_IPV6
-void wifi_get_ipv6_multicast_mac(uint32_t ipaddr, uint8_t *mac_addr)
+void wifi_get_ipv6_multicast_mac(uint32_t ipaddr, uint8_t * mac_addr)
 {
     int i = 0, j = 0;
     uint32_t mac_addr_r = 0x3333;
@@ -1021,14 +1019,14 @@ void wifi_get_ipv6_multicast_mac(uint32_t ipaddr, uint8_t *mac_addr)
      * 2) Fill lower 24-bits with from IP address
      */
     for (i = 1; i >= 0; i--, j++)
-        mac_addr[j] = (char)(mac_addr_r >> 8 * i) & 0xFF;
+        mac_addr[j] = (char) (mac_addr_r >> 8 * i) & 0xFF;
 
     for (i = 3; i >= 0; i--, j++)
-        mac_addr[j] = (char)(ipaddr >> 8 * i) & 0xFF;
+        mac_addr[j] = (char) (ipaddr >> 8 * i) & 0xFF;
 }
 #endif /* CONFIG_IPV6 */
 
-int wifi_add_mcast_filter(uint8_t *mac_addr)
+int wifi_add_mcast_filter(uint8_t * mac_addr)
 {
     char mlist[MAX_MCAST_LEN];
     int len, ret;
@@ -1048,7 +1046,7 @@ int wifi_add_mcast_filter(uint8_t *mac_addr)
     return wifi_set_mac_multicast_addr(mlist, len);
 }
 
-int wifi_remove_mcast_filter(uint8_t *mac_addr)
+int wifi_remove_mcast_filter(uint8_t * mac_addr)
 {
     char mlist[MAX_MCAST_LEN];
     int len, ret;
@@ -1070,44 +1068,24 @@ int wifi_remove_mcast_filter(uint8_t *mac_addr)
 }
 
 /* Since we do not have the descriptor list we will using this adaptor function */
-int wrapper_bssdesc_first_set(int bss_index,
-                              uint8_t *BssId,
-                              bool *is_ibss_bit_set,
-                              int *ssid_len,
-                              uint8_t *ssid,
-                              uint8_t *Channel,
-                              uint8_t *RSSI,
-                              uint16_t *beacon_period,
-                              uint8_t *dtim_period,
-                              _SecurityMode_t *WPA_WPA2_WEP,
-                              _Cipher_t *wpa_mcstCipher,
-                              _Cipher_t *wpa_ucstCipher,
-                              _Cipher_t *rsn_mcstCipher,
-                              _Cipher_t *rsn_ucstCipher,
-                              bool *is_pmf_required);
+int wrapper_bssdesc_first_set(int bss_index, uint8_t * BssId, bool * is_ibss_bit_set, int * ssid_len, uint8_t * ssid,
+                              uint8_t * Channel, uint8_t * RSSI, uint16_t * beacon_period, uint8_t * dtim_period,
+                              _SecurityMode_t * WPA_WPA2_WEP, _Cipher_t * wpa_mcstCipher, _Cipher_t * wpa_ucstCipher,
+                              _Cipher_t * rsn_mcstCipher, _Cipher_t * rsn_ucstCipher, bool * is_pmf_required);
 
-int wrapper_bssdesc_second_set(int bss_index,
-                               bool *phtcap_ie_present,
-                               bool *phtinfo_ie_present,
-                               bool *wmm_ie_present,
-                               uint8_t *band,
-                               bool *wps_IE_exist,
-                               uint16_t *wps_session,
-                               bool *wpa2_entp_IE_exist,
-                               uint8_t *trans_mode,
-                               uint8_t *trans_bssid,
-                               int *trans_ssid_len,
-                               uint8_t *trans_ssid);
+int wrapper_bssdesc_second_set(int bss_index, bool * phtcap_ie_present, bool * phtinfo_ie_present, bool * wmm_ie_present,
+                               uint8_t * band, bool * wps_IE_exist, uint16_t * wps_session, bool * wpa2_entp_IE_exist,
+                               uint8_t * trans_mode, uint8_t * trans_bssid, int * trans_ssid_len, uint8_t * trans_ssid);
 
 static struct wifi_scan_result common_desc;
-int wifi_get_scan_result(unsigned int index, struct wifi_scan_result **desc)
+int wifi_get_scan_result(unsigned int index, struct wifi_scan_result ** desc)
 {
     memset(&common_desc, 0x00, sizeof(struct wifi_scan_result));
-    int rv = wrapper_bssdesc_first_set(
-        index, common_desc.bssid, &common_desc.is_ibss_bit_set, &common_desc.ssid_len, common_desc.ssid,
-        &common_desc.Channel, &common_desc.RSSI, &common_desc.beacon_period, &common_desc.dtim_period,
-        &common_desc.WPA_WPA2_WEP, &common_desc.wpa_mcstCipher, &common_desc.wpa_ucstCipher,
-        &common_desc.rsn_mcstCipher, &common_desc.rsn_ucstCipher, &common_desc.is_pmf_required);
+    int rv =
+        wrapper_bssdesc_first_set(index, common_desc.bssid, &common_desc.is_ibss_bit_set, &common_desc.ssid_len, common_desc.ssid,
+                                  &common_desc.Channel, &common_desc.RSSI, &common_desc.beacon_period, &common_desc.dtim_period,
+                                  &common_desc.WPA_WPA2_WEP, &common_desc.wpa_mcstCipher, &common_desc.wpa_ucstCipher,
+                                  &common_desc.rsn_mcstCipher, &common_desc.rsn_ucstCipher, &common_desc.is_pmf_required);
     if (rv != WM_SUCCESS)
     {
         wifi_e("wifi_get_scan_result failed");
@@ -1131,7 +1109,7 @@ int wifi_get_scan_result(unsigned int index, struct wifi_scan_result **desc)
     return WM_SUCCESS;
 }
 
-int wifi_register_event_queue(os_queue_t *event_queue)
+int wifi_register_event_queue(os_queue_t * event_queue)
 {
     if (!event_queue)
         return -WM_E_INVAL;
@@ -1143,7 +1121,7 @@ int wifi_register_event_queue(os_queue_t *event_queue)
     return WM_SUCCESS;
 }
 
-int wifi_unregister_event_queue(os_queue_t *event_queue)
+int wifi_unregister_event_queue(os_queue_t * event_queue)
 {
     if (!wm_wifi.wlc_mgr_event_queue || wm_wifi.wlc_mgr_event_queue != event_queue)
         return -WM_FAIL;
@@ -1152,14 +1130,14 @@ int wifi_unregister_event_queue(os_queue_t *event_queue)
     return WM_SUCCESS;
 }
 
-int wifi_get_wpa_ie_in_assoc(uint8_t *wpa_ie)
+int wifi_get_wpa_ie_in_assoc(uint8_t * wpa_ie)
 {
     return wrapper_get_wpa_ie_in_assoc(wpa_ie);
 }
 
 #define WL_ID_WIFI_MAIN_LOOP "wifi_main_loop"
 
-static void wifi_driver_main_loop(void *argv)
+static void wifi_driver_main_loop(void * argv)
 {
     int ret;
     struct bus_message msg;
@@ -1183,7 +1161,7 @@ static void wifi_driver_main_loop(void *argv)
             }
             else if (msg.event == MLAN_TYPE_CMD)
             {
-                wifi_process_cmd_response((HostCmd_DS_COMMAND *)((uint8_t *)msg.data + INTF_HEADER_LEN));
+                wifi_process_cmd_response((HostCmd_DS_COMMAND *) ((uint8_t *) msg.data + INTF_HEADER_LEN));
                 wifi_update_last_cmd_sent_ms();
                 wifi_put_command_resp_sem();
             }
@@ -1228,7 +1206,7 @@ static void wifi_core_input()
 }
 
 static void wifi_core_deinit();
-static int wifi_low_level_input(const uint8_t interface, const uint8_t *buffer, const uint16_t len);
+static int wifi_low_level_input(const uint8_t interface, const uint8_t * buffer, const uint16_t len);
 
 static int wifi_core_init(void)
 {
@@ -1281,8 +1259,7 @@ static int wifi_core_init(void)
         goto fail;
     }
 
-    ret = os_thread_create(&wm_wifi.wm_wifi_main_thread, "wifi_driver", wifi_driver_main_loop, NULL, &wifi_drv_stack,
-                           OS_PRIO_3);
+    ret = os_thread_create(&wm_wifi.wm_wifi_main_thread, "wifi_driver", wifi_driver_main_loop, NULL, &wifi_drv_stack, OS_PRIO_3);
     if (ret != WM_SUCCESS)
     {
         wifi_e("Create wifi driver thread failed");
@@ -1296,8 +1273,8 @@ static int wifi_core_init(void)
         goto fail;
     }
 
-    ret = os_thread_create(&wm_wifi.wm_wifi_core_thread, "stack_dispatcher", (void (*)(os_thread_arg_t))wifi_core_input,
-                           NULL, &wifi_core_stack, OS_PRIO_1);
+    ret = os_thread_create(&wm_wifi.wm_wifi_core_thread, "stack_dispatcher", (void (*)(os_thread_arg_t)) wifi_core_input, NULL,
+                           &wifi_core_stack, OS_PRIO_1);
 
     if (ret != WM_SUCCESS)
     {
@@ -1357,7 +1334,7 @@ static void wifi_core_deinit()
     }
 }
 
-int wifi_init(const uint8_t *fw_ram_start_addr, const size_t size)
+int wifi_init(const uint8_t * fw_ram_start_addr, const size_t size)
 {
     if (wifi_init_done)
         return WM_SUCCESS;
@@ -1368,19 +1345,19 @@ int wifi_init(const uint8_t *fw_ram_start_addr, const size_t size)
         wifi_e("sd_wifi_init failed. status code %d", ret);
         switch (ret)
         {
-            case MLAN_CARD_CMD_TIMEOUT:
-            case MLAN_CARD_NOT_DETECTED:
-                ret = -WIFI_ERROR_CARD_NOT_DETECTED;
-                break;
-            case MLAN_STATUS_FW_DNLD_FAILED:
-                ret = -WIFI_ERROR_FW_DNLD_FAILED;
-                break;
-            case MLAN_STATUS_FW_NOT_DETECTED:
-                ret = -WIFI_ERROR_FW_NOT_DETECTED;
-                break;
-            case MLAN_STATUS_FW_NOT_READY:
-                ret = -WIFI_ERROR_FW_NOT_READY;
-                break;
+        case MLAN_CARD_CMD_TIMEOUT:
+        case MLAN_CARD_NOT_DETECTED:
+            ret = -WIFI_ERROR_CARD_NOT_DETECTED;
+            break;
+        case MLAN_STATUS_FW_DNLD_FAILED:
+            ret = -WIFI_ERROR_FW_DNLD_FAILED;
+            break;
+        case MLAN_STATUS_FW_NOT_DETECTED:
+            ret = -WIFI_ERROR_FW_NOT_DETECTED;
+            break;
+        case MLAN_STATUS_FW_NOT_READY:
+            ret = -WIFI_ERROR_FW_NOT_READY;
+            break;
         }
         return ret;
     }
@@ -1430,8 +1407,7 @@ void wifi_sta_ampdu_rx_disable(void)
     sta_ampdu_rx_enable = false;
 }
 
-int wifi_register_data_input_callback(void (*data_intput_callback)(const uint8_t interface,
-                                                                   const uint8_t *buffer,
+int wifi_register_data_input_callback(void (*data_intput_callback)(const uint8_t interface, const uint8_t * buffer,
                                                                    const uint16_t len))
 {
     if (wm_wifi.data_intput_callback)
@@ -1447,9 +1423,7 @@ void wifi_deregister_data_input_callback()
     wm_wifi.data_intput_callback = NULL;
 }
 
-int wifi_register_amsdu_data_input_callback(void (*amsdu_data_intput_callback)(uint8_t interface,
-                                                                               uint8_t *buffer,
-                                                                               uint16_t len))
+int wifi_register_amsdu_data_input_callback(void (*amsdu_data_intput_callback)(uint8_t interface, uint8_t * buffer, uint16_t len))
 {
     if (wm_wifi.amsdu_data_intput_callback)
         return -WM_FAIL;
@@ -1464,8 +1438,7 @@ void wifi_deregister_amsdu_data_input_callback()
     wm_wifi.amsdu_data_intput_callback = NULL;
 }
 
-int wifi_register_deliver_packet_above_callback(void (*deliver_packet_above_callback)(uint8_t interface,
-                                                                                      void *lwip_pbuf))
+int wifi_register_deliver_packet_above_callback(void (*deliver_packet_above_callback)(uint8_t interface, void * lwip_pbuf))
 {
     if (wm_wifi.deliver_packet_above_callback)
         return -WM_FAIL;
@@ -1480,7 +1453,7 @@ void wifi_deregister_deliver_packet_above_callback()
     wm_wifi.deliver_packet_above_callback = NULL;
 }
 
-int wifi_register_wrapper_net_is_ip_or_ipv6_callback(bool (*wrapper_net_is_ip_or_ipv6_callback)(const t_u8 *buffer))
+int wifi_register_wrapper_net_is_ip_or_ipv6_callback(bool (*wrapper_net_is_ip_or_ipv6_callback)(const t_u8 * buffer))
 {
     if (wm_wifi.wrapper_net_is_ip_or_ipv6_callback)
         return -WM_FAIL;
@@ -1495,7 +1468,7 @@ void wifi_deregister_wrapper_net_is_ip_or_ipv6_callback()
     wm_wifi.wrapper_net_is_ip_or_ipv6_callback = NULL;
 }
 
-static int wifi_low_level_input(const uint8_t interface, const uint8_t *buffer, const uint16_t len)
+static int wifi_low_level_input(const uint8_t interface, const uint8_t * buffer, const uint16_t len)
 {
     if (wm_wifi.data_intput_callback)
     {
@@ -1510,7 +1483,7 @@ static int wifi_low_level_input(const uint8_t interface, const uint8_t *buffer, 
 
 #define WL_ID_LL_OUTPUT "wifi_low_level_output"
 
-int wifi_low_level_output(const uint8_t interface, const uint8_t *buffer, const uint16_t len)
+int wifi_low_level_output(const uint8_t interface, const uint8_t * buffer, const uint16_t len)
 {
     int i, ret, retry = retry_attempts;
     unsigned long pkt_len;
@@ -1566,7 +1539,7 @@ retry_xmit:
     if (interface == BSS_TYPE_UAP)
     {
         if (wm_wifi.wrapper_net_is_ip_or_ipv6_callback(buffer))
-            wrapper_wlan_upa_ampdu_enable((uint8_t *)buffer);
+            wrapper_wlan_upa_ampdu_enable((uint8_t *) buffer);
     }
 
     ret = WM_SUCCESS;
@@ -1579,7 +1552,7 @@ exit_fn:
     return ret;
 }
 
-uint8_t *wifi_get_outbuf(uint32_t *outbuf_len)
+uint8_t * wifi_get_outbuf(uint32_t * outbuf_len)
 {
     return wifi_get_sdio_outbuf(outbuf_len);
 }

@@ -24,22 +24,22 @@
  *
  */
 
-#include <wlan.h>
 #include <cli.h>
 #include <cli_utils.h>
 #include <string.h>
-#include <wm_net.h> /* for net_inet_aton */
 #include <wifi.h>
+#include <wlan.h>
 #include <wlan_tests.h>
+#include <wm_net.h> /* for net_inet_aton */
 
 /*
  * NXP Test Framework (MTF) functions
  */
 
-static void print_address(struct wlan_ip_config *addr, enum wlan_bss_role role)
+static void print_address(struct wlan_ip_config * addr, enum wlan_bss_role role)
 {
     struct in_addr ip, gw, nm, dns1, dns2;
-    char addr_type[10] = {0};
+    char addr_type[10] = { 0 };
 
     /* If the current network role is STA and ipv4 is not connected then do
      * not print the addresses */
@@ -70,37 +70,37 @@ out:
     if (role == WLAN_BSS_ROLE_STA || role == WLAN_BSS_ROLE_UAP)
     {
         int i;
-        (void)PRINTF("\r\n\tIPv6 Addresses\r\n");
+        (void) PRINTF("\r\n\tIPv6 Addresses\r\n");
         for (i = 0; i < MAX_IPV6_ADDRESSES; i++)
         {
             if (addr->ipv6[i].addr_state != IP6_ADDR_INVALID)
             {
-                (void)PRINTF("\t%-13s:\t%s (%s)\r\n", ipv6_addr_type_to_desc(&addr->ipv6[i]),
-                             inet6_ntoa(addr->ipv6[i].address), ipv6_addr_state_to_desc(addr->ipv6[i].addr_state));
+                (void) PRINTF("\t%-13s:\t%s (%s)\r\n", ipv6_addr_type_to_desc(&addr->ipv6[i]), inet6_ntoa(addr->ipv6[i].address),
+                              ipv6_addr_state_to_desc(addr->ipv6[i].addr_state));
             }
         }
-        (void)PRINTF("\r\n");
+        (void) PRINTF("\r\n");
     }
 #endif
     return;
 }
 
-static const char *print_role(enum wlan_bss_role role)
+static const char * print_role(enum wlan_bss_role role)
 {
     switch (role)
     {
-        case WLAN_BSS_ROLE_STA:
-            return "Infra";
-        case WLAN_BSS_ROLE_UAP:
-            return "uAP";
-        case WLAN_BSS_ROLE_ANY:
-            return "any";
+    case WLAN_BSS_ROLE_STA:
+        return "Infra";
+    case WLAN_BSS_ROLE_UAP:
+        return "uAP";
+    case WLAN_BSS_ROLE_ANY:
+        return "any";
     }
 
     return "unknown";
 }
 
-static void print_network(struct wlan_network *network)
+static void print_network(struct wlan_network * network)
 {
     PRINTF("\"%s\"\r\n\tSSID: %s\r\n\tBSSID: ", network->name, network->ssid[0] ? network->ssid : "(hidden)");
     print_mac(network->bssid);
@@ -110,39 +110,39 @@ static void print_network(struct wlan_network *network)
         PRINTF("\r\n\tchannel: %s", "(Auto)");
     PRINTF("\r\n\trole: %s\r\n", print_role(network->role));
 
-    char *sec_tag = "\tsecurity";
+    char * sec_tag = "\tsecurity";
     if (!network->security_specific)
     {
         sec_tag = "\tsecurity [Wildcard]";
     }
     switch (network->security.type)
     {
-        case WLAN_SECURITY_NONE:
-            PRINTF("%s: none\r\n", sec_tag);
-            break;
-        case WLAN_SECURITY_WEP_OPEN:
-            PRINTF("%s: WEP (open)\r\n", sec_tag);
-            break;
-        case WLAN_SECURITY_WEP_SHARED:
-            PRINTF("%s: WEP (shared)\r\n", sec_tag);
-            break;
-        case WLAN_SECURITY_WPA:
-            PRINTF("%s: WPA\r\n", sec_tag);
-            break;
-        case WLAN_SECURITY_WPA2:
-            PRINTF("%s: WPA2\r\n", sec_tag);
-            break;
-        case WLAN_SECURITY_WPA_WPA2_MIXED:
-            PRINTF("%s: WPA/WPA2 Mixed\r\n", sec_tag);
-            break;
-        case WLAN_SECURITY_WPA3_SAE:
-            PRINTF("%s: WPA3 SAE\r\n", sec_tag);
-            break;
-        case WLAN_SECURITY_WPA2_WPA3_SAE_MIXED:
-            PRINTF("%s: WPA2/WPA3 SAE Mixed\r\n", sec_tag);
-            break;
-        default:
-            break;
+    case WLAN_SECURITY_NONE:
+        PRINTF("%s: none\r\n", sec_tag);
+        break;
+    case WLAN_SECURITY_WEP_OPEN:
+        PRINTF("%s: WEP (open)\r\n", sec_tag);
+        break;
+    case WLAN_SECURITY_WEP_SHARED:
+        PRINTF("%s: WEP (shared)\r\n", sec_tag);
+        break;
+    case WLAN_SECURITY_WPA:
+        PRINTF("%s: WPA\r\n", sec_tag);
+        break;
+    case WLAN_SECURITY_WPA2:
+        PRINTF("%s: WPA2\r\n", sec_tag);
+        break;
+    case WLAN_SECURITY_WPA_WPA2_MIXED:
+        PRINTF("%s: WPA/WPA2 Mixed\r\n", sec_tag);
+        break;
+    case WLAN_SECURITY_WPA3_SAE:
+        PRINTF("%s: WPA3 SAE\r\n", sec_tag);
+        break;
+    case WLAN_SECURITY_WPA2_WPA3_SAE_MIXED:
+        PRINTF("%s: WPA2/WPA3 SAE Mixed\r\n", sec_tag);
+        break;
+    default:
+        break;
     }
 
     print_address(&network->ip, network->role);
@@ -150,7 +150,7 @@ static void print_network(struct wlan_network *network)
 
 /* Parse the 'arg' string as "ip:ipaddr,gwaddr,netmask,[dns1,dns2]" into
  * a wlan_ip_config data structure */
-static int get_address(char *arg, struct wlan_ip_config *ip)
+static int get_address(char * arg, struct wlan_ip_config * ip)
 {
     char *ipaddr = NULL, *gwaddr = NULL, *netmask = NULL;
     char *dns1 = NULL, *dns2 = NULL;
@@ -189,33 +189,33 @@ static int get_address(char *arg, struct wlan_ip_config *ip)
     return 0;
 }
 
-int get_security(int argc, char **argv, enum wlan_security_type type, struct wlan_network_security *sec)
+int get_security(int argc, char ** argv, enum wlan_security_type type, struct wlan_network_security * sec)
 {
     if (argc < 1)
         return 1;
 
     switch (type)
     {
-        case WLAN_SECURITY_WPA:
-        case WLAN_SECURITY_WPA2:
-            if (argc < 1)
-                return 1;
-            /* copy the PSK phrase */
-            sec->psk_len = strlen(argv[0]);
-            if (sec->psk_len < sizeof(sec->psk))
-                strcpy(sec->psk, argv[0]);
-            else
-                return 1;
-            sec->type = type;
-            break;
-        default:
+    case WLAN_SECURITY_WPA:
+    case WLAN_SECURITY_WPA2:
+        if (argc < 1)
             return 1;
+        /* copy the PSK phrase */
+        sec->psk_len = strlen(argv[0]);
+        if (sec->psk_len < sizeof(sec->psk))
+            strcpy(sec->psk, argv[0]);
+        else
+            return 1;
+        sec->type = type;
+        break;
+    default:
+        return 1;
     }
 
     return 0;
 }
 
-static int get_role(char *arg, enum wlan_bss_role *role)
+static int get_role(char * arg, enum wlan_bss_role * role)
 {
     if (!arg)
         return 1;
@@ -241,36 +241,30 @@ static void dump_wlan_add_usage()
     PRINTF("Usage:\r\n");
     PRINTF("For Station interface\r\n");
     PRINTF("  For DHCP IP Address assignment:\r\n");
-    PRINTF(
-        "    wlan-add <profile_name> ssid <ssid> [wpa2 <secret>]"
-        "\r\n");
+    PRINTF("    wlan-add <profile_name> ssid <ssid> [wpa2 <secret>]"
+           "\r\n");
     PRINTF("      If using WPA2 security, set the PMF configuration if required.\r\n");
-    PRINTF(
-        "    wlan-add <profile_name> ssid <ssid> [wpa3 sae <secret> mfpc <1> mfpr <0/1>]"
-        "\r\n");
+    PRINTF("    wlan-add <profile_name> ssid <ssid> [wpa3 sae <secret> mfpc <1> mfpr <0/1>]"
+           "\r\n");
     PRINTF("      If using WPA3 SAE security, always set the PMF configuration.\r\n");
 
     PRINTF("  For static IP address assignment:\r\n");
-    PRINTF(
-        "    wlan-add <profile_name> ssid <ssid>\r\n"
-        "    ip:<ip_addr>,<gateway_ip>,<netmask>\r\n");
-    PRINTF(
-        "    [bssid <bssid>] [channel <channel number>]\r\n"
-        "    [wpa2 <secret>]"
-        "\r\n");
+    PRINTF("    wlan-add <profile_name> ssid <ssid>\r\n"
+           "    ip:<ip_addr>,<gateway_ip>,<netmask>\r\n");
+    PRINTF("    [bssid <bssid>] [channel <channel number>]\r\n"
+           "    [wpa2 <secret>]"
+           "\r\n");
 
     PRINTF("For Micro-AP interface\r\n");
-    PRINTF(
-        "    wlan-add <profile_name> ssid <ssid>\r\n"
-        "    ip:<ip_addr>,<gateway_ip>,<netmask>\r\n");
-    PRINTF(
-        "    role uap [bssid <bssid>]\r\n"
-        "    [channel <channelnumber>]\r\n");
+    PRINTF("    wlan-add <profile_name> ssid <ssid>\r\n"
+           "    ip:<ip_addr>,<gateway_ip>,<netmask>\r\n");
+    PRINTF("    role uap [bssid <bssid>]\r\n"
+           "    [channel <channelnumber>]\r\n");
     PRINTF("    [wpa2 <secret>] [wpa3 sae <secret>]\r\n");
     PRINTF("    [mfpc <0/1>] [mfpr <0/1>]\r\n");
 }
 
-void test_wlan_add(int argc, char **argv)
+void test_wlan_add(int argc, char ** argv)
 {
     struct wlan_network network;
     int ret = 0;
@@ -325,9 +319,8 @@ void test_wlan_add(int argc, char **argv)
             ret = get_mac(argv[arg + 1], network.bssid, ':');
             if (ret)
             {
-                PRINTF(
-                    "Error: invalid BSSID argument"
-                    "\r\n");
+                PRINTF("Error: invalid BSSID argument"
+                       "\r\n");
                 return;
             }
             arg += 2;
@@ -337,9 +330,8 @@ void test_wlan_add(int argc, char **argv)
         {
             if (arg + 1 >= argc || get_uint(argv[arg + 1], &network.channel, strlen(argv[arg + 1])))
             {
-                PRINTF(
-                    "Error: invalid channel"
-                    " argument\n");
+                PRINTF("Error: invalid channel"
+                       " argument\n");
                 return;
             }
             arg += 2;
@@ -350,9 +342,8 @@ void test_wlan_add(int argc, char **argv)
             ret = get_address(argv[arg], &network.ip);
             if (ret)
             {
-                PRINTF(
-                    "Error: invalid address"
-                    " argument\n");
+                PRINTF("Error: invalid address"
+                       " argument\n");
                 return;
             }
             arg++;
@@ -363,9 +354,8 @@ void test_wlan_add(int argc, char **argv)
             ret = get_security(argc - arg - 1, argv + arg + 1, WLAN_SECURITY_WPA, &network.security);
             if (ret)
             {
-                PRINTF(
-                    "Error: invalid WPA security"
-                    " argument\r\n");
+                PRINTF("Error: invalid WPA security"
+                       " argument\r\n");
                 return;
             }
             arg += 2;
@@ -376,9 +366,8 @@ void test_wlan_add(int argc, char **argv)
             ret = get_security(argc - arg - 1, argv + arg + 1, WLAN_SECURITY_WPA2, &network.security);
             if (ret)
             {
-                PRINTF(
-                    "Error: invalid WPA2 security"
-                    " argument\r\n");
+                PRINTF("Error: invalid WPA2 security"
+                       " argument\r\n");
                 return;
             }
             arg += 2;
@@ -393,27 +382,24 @@ void test_wlan_add(int argc, char **argv)
                 network.security.password_len = strlen(argv[arg + 2]);
                 if (!network.security.password_len)
                 {
-                    PRINTF(
-                        "Error: invalid WPA3 security"
-                        " argument\r\n");
+                    PRINTF("Error: invalid WPA3 security"
+                           " argument\r\n");
                     return;
                 }
                 if (network.security.password_len < sizeof(network.security.password))
                     strcpy(network.security.password, argv[arg + 2]);
                 else
                 {
-                    PRINTF(
-                        "Error: invalid WPA3 security"
-                        " argument\r\n");
+                    PRINTF("Error: invalid WPA3 security"
+                           " argument\r\n");
                     return;
                 }
                 arg += 3;
             }
             else
             {
-                PRINTF(
-                    "Error: invalid WPA3 security"
-                    " argument\r\n");
+                PRINTF("Error: invalid WPA3 security"
+                       " argument\r\n");
                 return;
             }
             info.security2++;
@@ -422,9 +408,8 @@ void test_wlan_add(int argc, char **argv)
         {
             if (arg + 1 >= argc || get_role(argv[arg + 1], &network.role))
             {
-                PRINTF(
-                    "Error: invalid wireless"
-                    " network role\r\n");
+                PRINTF("Error: invalid wireless"
+                       " network role\r\n");
                 return;
             }
             arg += 2;
@@ -435,9 +420,8 @@ void test_wlan_add(int argc, char **argv)
             network.security.mfpc = atoi(argv[arg + 1]);
             if (arg + 1 >= argc || (network.security.mfpc != 0 && network.security.mfpc != 1))
             {
-                PRINTF(
-                    "Error: invalid wireless"
-                    " network mfpc\r\n");
+                PRINTF("Error: invalid wireless"
+                       " network mfpc\r\n");
                 return;
             }
             arg += 2;
@@ -448,9 +432,8 @@ void test_wlan_add(int argc, char **argv)
             network.security.mfpr = atoi(argv[arg + 1]);
             if (arg + 1 >= argc || (network.security.mfpr != 0 && network.security.mfpr != 1))
             {
-                PRINTF(
-                    "Error: invalid wireless"
-                    " network mfpr\r\n");
+                PRINTF("Error: invalid wireless"
+                       " network mfpr\r\n");
                 return;
             }
             arg += 2;
@@ -487,23 +470,22 @@ void test_wlan_add(int argc, char **argv)
     ret = wlan_add_network(&network);
     switch (ret)
     {
-        case WM_SUCCESS:
-            PRINTF("Added \"%s\"\r\n", network.name);
-            break;
-        case -WM_E_INVAL:
-            PRINTF("Error: network already exists or invalid arguments\r\n");
-            break;
-        case -WM_E_NOMEM:
-            PRINTF("Error: network list is full\r\n");
-            break;
-        case WLAN_ERROR_STATE:
-            PRINTF("Error: can't add networks in this state\r\n");
-            break;
-        default:
-            PRINTF(
-                "Error: unable to add network for unknown"
-                " reason\r\n");
-            break;
+    case WM_SUCCESS:
+        PRINTF("Added \"%s\"\r\n", network.name);
+        break;
+    case -WM_E_INVAL:
+        PRINTF("Error: network already exists or invalid arguments\r\n");
+        break;
+    case -WM_E_NOMEM:
+        PRINTF("Error: network list is full\r\n");
+        break;
+    case WLAN_ERROR_STATE:
+        PRINTF("Error: can't add networks in this state\r\n");
+        break;
+    default:
+        PRINTF("Error: unable to add network for unknown"
+               " reason\r\n");
+        break;
     }
 }
 
@@ -573,7 +555,7 @@ int __scan_cb(unsigned int count)
     return 0;
 }
 
-void test_wlan_scan(int argc, char **argv)
+void test_wlan_scan(int argc, char ** argv)
 {
     if (wlan_scan(__scan_cb))
         PRINTF("Error: scan request failed\r\n");
@@ -584,13 +566,12 @@ void test_wlan_scan(int argc, char **argv)
 static void dump_wlan_scan_opt_usage()
 {
     PRINTF("Usage:\r\n");
-    PRINTF(
-        "    wlan-scan-opt ssid <ssid> bssid <bssid> "
-        "channel <channel> probes <probes>"
-        "\r\n");
+    PRINTF("    wlan-scan-opt ssid <ssid> bssid <bssid> "
+           "channel <channel> probes <probes>"
+           "\r\n");
 }
 
-void test_wlan_scan_opt(int argc, char **argv)
+void test_wlan_scan_opt(int argc, char ** argv)
 {
     wlan_scan_params_v2_t wlan_scan_param;
     int ret = 0;
@@ -627,12 +608,11 @@ void test_wlan_scan_opt(int argc, char **argv)
         }
         else if (!info.bssid && string_equal("bssid", argv[arg]))
         {
-            ret = get_mac(argv[arg + 1], (char *)wlan_scan_param.bssid, ':');
+            ret = get_mac(argv[arg + 1], (char *) wlan_scan_param.bssid, ':');
             if (ret)
             {
-                PRINTF(
-                    "Error: invalid BSSID argument"
-                    "\r\n");
+                PRINTF("Error: invalid BSSID argument"
+                       "\r\n");
                 return;
             }
             arg += 2;
@@ -640,12 +620,11 @@ void test_wlan_scan_opt(int argc, char **argv)
         }
         else if (!info.channel && string_equal("channel", argv[arg]))
         {
-            if (arg + 1 >= argc || get_uint(argv[arg + 1], (unsigned int *)&wlan_scan_param.chan_list[0].chan_number,
-                                            strlen(argv[arg + 1])))
+            if (arg + 1 >= argc ||
+                get_uint(argv[arg + 1], (unsigned int *) &wlan_scan_param.chan_list[0].chan_number, strlen(argv[arg + 1])))
             {
-                PRINTF(
-                    "Error: invalid channel"
-                    " argument\n");
+                PRINTF("Error: invalid channel"
+                       " argument\n");
                 return;
             }
             wlan_scan_param.num_channels           = 1;
@@ -656,19 +635,16 @@ void test_wlan_scan_opt(int argc, char **argv)
         }
         else if (!info.probes && string_equal("probes", argv[arg]))
         {
-            if (arg + 1 >= argc ||
-                get_uint(argv[arg + 1], (unsigned int *)&wlan_scan_param.num_probes, strlen(argv[arg + 1])))
+            if (arg + 1 >= argc || get_uint(argv[arg + 1], (unsigned int *) &wlan_scan_param.num_probes, strlen(argv[arg + 1])))
             {
-                PRINTF(
-                    "Error: invalid probes"
-                    " argument\n");
+                PRINTF("Error: invalid probes"
+                       " argument\n");
                 return;
             }
             if (wlan_scan_param.num_probes > 4)
             {
-                PRINTF(
-                    "Error: invalid number of probes"
-                    "\r\n");
+                PRINTF("Error: invalid number of probes"
+                       "\r\n");
                 return;
             }
             arg += 2;
@@ -701,7 +677,7 @@ void test_wlan_scan_opt(int argc, char **argv)
         if (info.bssid)
         {
             PRINTF("bssid ");
-            print_mac((const char *)wlan_scan_param.bssid);
+            print_mac((const char *) wlan_scan_param.bssid);
         }
         if (info.probes)
             PRINTF("with %d probes ", wlan_scan_param.num_probes);
@@ -709,7 +685,7 @@ void test_wlan_scan_opt(int argc, char **argv)
     }
 }
 
-static void test_wlan_remove(int argc, char **argv)
+static void test_wlan_remove(int argc, char ** argv)
 {
     int ret;
 
@@ -723,22 +699,22 @@ static void test_wlan_remove(int argc, char **argv)
     ret = wlan_remove_network(argv[1]);
     switch (ret)
     {
-        case WM_SUCCESS:
-            PRINTF("Removed \"%s\"\r\n", argv[1]);
-            break;
-        case -WM_E_INVAL:
-            PRINTF("Error: network not found\r\n");
-            break;
-        case WLAN_ERROR_STATE:
-            PRINTF("Error: can't remove network in this state\r\n");
-            break;
-        default:
-            PRINTF("Error: unable to remove network\r\n");
-            break;
+    case WM_SUCCESS:
+        PRINTF("Removed \"%s\"\r\n", argv[1]);
+        break;
+    case -WM_E_INVAL:
+        PRINTF("Error: network not found\r\n");
+        break;
+    case WLAN_ERROR_STATE:
+        PRINTF("Error: can't remove network in this state\r\n");
+        break;
+    default:
+        PRINTF("Error: unable to remove network\r\n");
+        break;
     }
 }
 
-static void test_wlan_connect(int argc, char **argv)
+static void test_wlan_connect(int argc, char ** argv)
 {
     int ret = wlan_connect(argc >= 2 ? argv[1] : NULL);
 
@@ -754,12 +730,11 @@ static void test_wlan_connect(int argc, char **argv)
         PRINTF("Error: specify a network to connect\r\n");
         return;
     }
-    PRINTF(
-        "Connecting to network...\r\nUse 'wlan-stat' for "
-        "current connection status.\r\n");
+    PRINTF("Connecting to network...\r\nUse 'wlan-stat' for "
+           "current connection status.\r\n");
 }
 
-static void test_wlan_start_network(int argc, char **argv)
+static void test_wlan_start_network(int argc, char ** argv)
 {
     int ret;
 
@@ -775,7 +750,7 @@ static void test_wlan_start_network(int argc, char **argv)
         PRINTF("Error: unable to start network\r\n");
 }
 
-void test_wlan_stop_network(int argc, char **argv)
+void test_wlan_stop_network(int argc, char ** argv)
 {
     int ret;
     struct wlan_network network;
@@ -786,13 +761,13 @@ void test_wlan_stop_network(int argc, char **argv)
         PRINTF("Error: unable to stop network\r\n");
 }
 
-void test_wlan_disconnect(int argc, char **argv)
+void test_wlan_disconnect(int argc, char ** argv)
 {
     if (wlan_disconnect() != WM_SUCCESS)
         PRINTF("Error: unable to disconnect\r\n");
 }
 
-static void test_wlan_stat(int argc, char **argv)
+static void test_wlan_stat(int argc, char ** argv)
 {
     enum wlan_connection_state state;
     enum wlan_ps_mode ps_mode;
@@ -800,88 +775,83 @@ static void test_wlan_stat(int argc, char **argv)
 
     if (wlan_get_ps_mode(&ps_mode))
     {
-        PRINTF(
-            "Error: unable to get power save"
-            " mode\r\n");
+        PRINTF("Error: unable to get power save"
+               " mode\r\n");
         return;
     }
 
     switch (ps_mode)
     {
-        case WLAN_IEEE:
-            strcpy(ps_mode_str, "IEEE ps");
-            break;
-        case WLAN_DEEP_SLEEP:
-            strcpy(ps_mode_str, "Deep sleep");
-            break;
-        case WLAN_ACTIVE:
-        default:
-            strcpy(ps_mode_str, "Active");
-            break;
+    case WLAN_IEEE:
+        strcpy(ps_mode_str, "IEEE ps");
+        break;
+    case WLAN_DEEP_SLEEP:
+        strcpy(ps_mode_str, "Deep sleep");
+        break;
+    case WLAN_ACTIVE:
+    default:
+        strcpy(ps_mode_str, "Active");
+        break;
     }
 
     if (wlan_get_connection_state(&state))
     {
-        PRINTF(
-            "Error: unable to get STA connection"
-            " state\r\n");
+        PRINTF("Error: unable to get STA connection"
+               " state\r\n");
     }
     else
     {
         switch (state)
         {
-            case WLAN_DISCONNECTED:
-                PRINTF("Station disconnected (%s)\r\n", ps_mode_str);
-                break;
-            case WLAN_SCANNING:
-                PRINTF("Station scanning (%s)\r\n", ps_mode_str);
-                break;
-            case WLAN_ASSOCIATING:
-                PRINTF("Station associating (%s)\r\n", ps_mode_str);
-                break;
-            case WLAN_ASSOCIATED:
-                PRINTF("Station associated (%s)\r\n", ps_mode_str);
-                break;
-            case WLAN_CONNECTING:
-                PRINTF("Station connecting (%s)\r\n", ps_mode_str);
-                break;
-            case WLAN_CONNECTED:
-                PRINTF("Station connected (%s)\r\n", ps_mode_str);
-                break;
-            default:
-                PRINTF(
-                    "Error: invalid STA state"
-                    " %d\r\n",
-                    state);
+        case WLAN_DISCONNECTED:
+            PRINTF("Station disconnected (%s)\r\n", ps_mode_str);
+            break;
+        case WLAN_SCANNING:
+            PRINTF("Station scanning (%s)\r\n", ps_mode_str);
+            break;
+        case WLAN_ASSOCIATING:
+            PRINTF("Station associating (%s)\r\n", ps_mode_str);
+            break;
+        case WLAN_ASSOCIATED:
+            PRINTF("Station associated (%s)\r\n", ps_mode_str);
+            break;
+        case WLAN_CONNECTING:
+            PRINTF("Station connecting (%s)\r\n", ps_mode_str);
+            break;
+        case WLAN_CONNECTED:
+            PRINTF("Station connected (%s)\r\n", ps_mode_str);
+            break;
+        default:
+            PRINTF("Error: invalid STA state"
+                   " %d\r\n",
+                   state);
         }
     }
     if (wlan_get_uap_connection_state(&state))
     {
-        PRINTF(
-            "Error: unable to get uAP connection"
-            " state\r\n");
+        PRINTF("Error: unable to get uAP connection"
+               " state\r\n");
     }
     else
     {
         switch (state)
         {
-            case WLAN_UAP_STARTED:
-                strcpy(ps_mode_str, "Active");
-                PRINTF("uAP started (%s)\r\n", ps_mode_str);
-                break;
-            case WLAN_UAP_STOPPED:
-                PRINTF("uAP stopped\r\n");
-                break;
-            default:
-                PRINTF(
-                    "Error: invalid uAP state"
-                    " %d\r\n",
-                    state);
+        case WLAN_UAP_STARTED:
+            strcpy(ps_mode_str, "Active");
+            PRINTF("uAP started (%s)\r\n", ps_mode_str);
+            break;
+        case WLAN_UAP_STOPPED:
+            PRINTF("uAP stopped\r\n");
+            break;
+        default:
+            PRINTF("Error: invalid uAP state"
+                   " %d\r\n",
+                   state);
         }
     }
 }
 
-static void test_wlan_list(int argc, char **argv)
+static void test_wlan_list(int argc, char ** argv)
 {
     struct wlan_network network;
     unsigned int count;
@@ -901,7 +871,7 @@ static void test_wlan_list(int argc, char **argv)
     }
 }
 
-static void test_wlan_info(int argc, char **argv)
+static void test_wlan_info(int argc, char ** argv)
 {
     enum wlan_connection_state state;
     struct wlan_network sta_network;
@@ -910,27 +880,26 @@ static void test_wlan_info(int argc, char **argv)
 
     if (wlan_get_connection_state(&state))
     {
-        PRINTF(
-            "Error: unable to get STA connection"
-            " state\r\n");
+        PRINTF("Error: unable to get STA connection"
+               " state\r\n");
     }
     else
     {
         switch (state)
         {
-            case WLAN_CONNECTED:
-                if (!wlan_get_current_network(&sta_network))
-                {
-                    PRINTF("Station connected to:\r\n");
-                    print_network(&sta_network);
-                    sta_found = 1;
-                }
-                else
-                    PRINTF("Station not connected\r\n");
-                break;
-            default:
+        case WLAN_CONNECTED:
+            if (!wlan_get_current_network(&sta_network))
+            {
+                PRINTF("Station connected to:\r\n");
+                print_network(&sta_network);
+                sta_found = 1;
+            }
+            else
                 PRINTF("Station not connected\r\n");
-                break;
+            break;
+        default:
+            PRINTF("Station not connected\r\n");
+            break;
         }
     }
 
@@ -950,7 +919,7 @@ static void test_wlan_info(int argc, char **argv)
     }
 }
 
-static void test_wlan_address(int argc, char **argv)
+static void test_wlan_address(int argc, char ** argv)
 {
     struct wlan_network network;
 
@@ -962,7 +931,7 @@ static void test_wlan_address(int argc, char **argv)
     print_address(&network.ip, network.role);
 }
 
-static void test_wlan_get_uap_channel(int argc, char **argv)
+static void test_wlan_get_uap_channel(int argc, char ** argv)
 {
     int channel;
     int rv = wifi_get_uap_channel(&channel);
@@ -972,10 +941,10 @@ static void test_wlan_get_uap_channel(int argc, char **argv)
         PRINTF("uAP channel: %d\r\n", channel);
 }
 
-static void test_wlan_get_uap_sta_list(int argc, char **argv)
+static void test_wlan_get_uap_sta_list(int argc, char ** argv)
 {
     int i;
-    wifi_sta_list_t *sl = NULL;
+    wifi_sta_list_t * sl = NULL;
 
     wifi_uap_bss_sta_list(&sl);
 
@@ -985,7 +954,7 @@ static void test_wlan_get_uap_sta_list(int argc, char **argv)
         return;
     }
 
-    wifi_sta_info_t *si = (wifi_sta_info_t *)(&sl->count + 1);
+    wifi_sta_info_t * si = (wifi_sta_info_t *) (&sl->count + 1);
 
     PRINTF("Number of STA = %d \r\n\r\n", sl->count);
     for (i = 0; i < sl->count; i++)
@@ -995,27 +964,27 @@ static void test_wlan_get_uap_sta_list(int argc, char **argv)
         PRINTF("MAC Address: %02X:%02X:%02X:%02X:%02X:%02X\r\n", si[i].mac[0], si[i].mac[1], si[i].mac[2], si[i].mac[3],
                si[i].mac[4], si[i].mac[5]);
         PRINTF("Power mfg status: %s\r\n", (si[i].power_mgmt_status == 0) ? "active" : "power save");
-        PRINTF("Rssi : %d dBm\r\n\r\n", (signed char)si[i].rssi);
+        PRINTF("Rssi : %d dBm\r\n\r\n", (signed char) si[i].rssi);
     }
 
     os_mem_free(sl);
 }
 
 static struct cli_command tests[] = {
-    {"wlan-scan", NULL, test_wlan_scan},
-    {"wlan-scan-opt", "ssid <ssid> bssid ...", test_wlan_scan_opt},
-    {"wlan-add", "<profile_name> ssid <ssid> bssid...", test_wlan_add},
-    {"wlan-remove", "<profile_name>", test_wlan_remove},
-    {"wlan-list", NULL, test_wlan_list},
-    {"wlan-connect", "<profile_name>", test_wlan_connect},
-    {"wlan-start-network", "<profile_name>", test_wlan_start_network},
-    {"wlan-stop-network", NULL, test_wlan_stop_network},
-    {"wlan-disconnect", NULL, test_wlan_disconnect},
-    {"wlan-stat", NULL, test_wlan_stat},
-    {"wlan-info", NULL, test_wlan_info},
-    {"wlan-address", NULL, test_wlan_address},
-    {"wlan-get-uap-channel", NULL, test_wlan_get_uap_channel},
-    {"wlan-get-uap-sta-list", NULL, test_wlan_get_uap_sta_list},
+    { "wlan-scan", NULL, test_wlan_scan },
+    { "wlan-scan-opt", "ssid <ssid> bssid ...", test_wlan_scan_opt },
+    { "wlan-add", "<profile_name> ssid <ssid> bssid...", test_wlan_add },
+    { "wlan-remove", "<profile_name>", test_wlan_remove },
+    { "wlan-list", NULL, test_wlan_list },
+    { "wlan-connect", "<profile_name>", test_wlan_connect },
+    { "wlan-start-network", "<profile_name>", test_wlan_start_network },
+    { "wlan-stop-network", NULL, test_wlan_stop_network },
+    { "wlan-disconnect", NULL, test_wlan_disconnect },
+    { "wlan-stat", NULL, test_wlan_stat },
+    { "wlan-info", NULL, test_wlan_info },
+    { "wlan-address", NULL, test_wlan_address },
+    { "wlan-get-uap-channel", NULL, test_wlan_get_uap_channel },
+    { "wlan-get-uap-sta-list", NULL, test_wlan_get_uap_sta_list },
 };
 
 /* Register our commands with the MTF. */

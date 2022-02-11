@@ -44,61 +44,61 @@
 /*------------------------------------------------------*/
 uint16_t g_data_nf_last;
 uint16_t g_data_snr_last;
-static struct netif *netif_arr[MAX_INTERFACES_SUPPORTED];
-static t_u8 rfc1042_eth_hdr[MLAN_MAC_ADDR_LENGTH] = {0xaa, 0xaa, 0x03, 0x00, 0x00, 0x00};
+static struct netif * netif_arr[MAX_INTERFACES_SUPPORTED];
+static t_u8 rfc1042_eth_hdr[MLAN_MAC_ADDR_LENGTH] = { 0xaa, 0xaa, 0x03, 0x00, 0x00, 0x00 };
 /*------------------------------------------------------*/
-static void register_interface(struct netif *iface, mlan_bss_type iface_type)
+static void register_interface(struct netif * iface, mlan_bss_type iface_type)
 {
     netif_arr[iface_type] = iface;
 }
 
-void deliver_packet_above(struct pbuf *p, int recv_interface)
+void deliver_packet_above(struct pbuf * p, int recv_interface)
 {
     err_t lwiperr = ERR_OK;
     /* points to packet payload, which starts with an Ethernet header */
-    struct eth_hdr *ethhdr = p->payload;
+    struct eth_hdr * ethhdr = p->payload;
 
     switch (htons(ethhdr->type))
     {
-        case ETHTYPE_IP:
+    case ETHTYPE_IP:
 #ifdef CONFIG_IPV6
-        case ETHTYPE_IPV6:
+    case ETHTYPE_IPV6:
 #endif
-        case ETHTYPE_ARP:
-            if (recv_interface >= MAX_INTERFACES_SUPPORTED)
-            {
-                while (true)
-                    ;
-            }
+    case ETHTYPE_ARP:
+        if (recv_interface >= MAX_INTERFACES_SUPPORTED)
+        {
+            while (true)
+                ;
+        }
 
-            /* full packet send to tcpip_thread to process */
-            lwiperr = netif_arr[recv_interface]->input(p, netif_arr[recv_interface]);
-            if (lwiperr != ERR_OK)
-            {
-                LINK_STATS_INC(link.proterr);
-                LWIP_DEBUGF(NETIF_DEBUG, ("ethernetif_input: IP input error\n"));
-                pbuf_free(p);
-                p = NULL;
-            }
-            break;
-        case ETHTYPE_EAPOL:
-
+        /* full packet send to tcpip_thread to process */
+        lwiperr = netif_arr[recv_interface]->input(p, netif_arr[recv_interface]);
+        if (lwiperr != ERR_OK)
+        {
+            LINK_STATS_INC(link.proterr);
+            LWIP_DEBUGF(NETIF_DEBUG, ("ethernetif_input: IP input error\n"));
             pbuf_free(p);
             p = NULL;
-            break;
-        default:
-            /* drop the packet */
-            LINK_STATS_INC(link.drop);
-            pbuf_free(p);
-            p = NULL;
-            break;
+        }
+        break;
+    case ETHTYPE_EAPOL:
+
+        pbuf_free(p);
+        p = NULL;
+        break;
+    default:
+        /* drop the packet */
+        LINK_STATS_INC(link.drop);
+        pbuf_free(p);
+        p = NULL;
+        break;
     }
 }
 
-static struct pbuf *gen_pbuf_from_data(t_u8 *payload, t_u16 datalen)
+static struct pbuf * gen_pbuf_from_data(t_u8 * payload, t_u16 datalen)
 {
     /* We allocate a pbuf chain of pbufs from the pool. */
-    struct pbuf *p = pbuf_alloc(PBUF_RAW, datalen, PBUF_POOL);
+    struct pbuf * p = pbuf_alloc(PBUF_RAW, datalen, PBUF_POOL);
     if (!p)
         return NULL;
 
@@ -111,9 +111,9 @@ static struct pbuf *gen_pbuf_from_data(t_u8 *payload, t_u16 datalen)
     return p;
 }
 
-static void process_data_packet(const t_u8 *rcvdata, const t_u16 datalen)
+static void process_data_packet(const t_u8 * rcvdata, const t_u16 datalen)
 {
-    RxPD *rxpd         = (RxPD *)((t_u8 *)rcvdata + INTF_HEADER_LEN);
+    RxPD * rxpd        = (RxPD *) ((t_u8 *) rcvdata + INTF_HEADER_LEN);
     int recv_interface = rxpd->bss_type;
 
     if (rxpd->rx_pkt_type == PKT_TYPE_AMSDU)
@@ -128,8 +128,8 @@ static void process_data_packet(const t_u8 *rcvdata, const t_u16 datalen)
         g_data_snr_last = rxpd->snr;
     }
 
-    t_u8 *payload  = (t_u8 *)rxpd + rxpd->rx_pkt_offset;
-    struct pbuf *p = gen_pbuf_from_data(payload, rxpd->rx_pkt_length);
+    t_u8 * payload  = (t_u8 *) rxpd + rxpd->rx_pkt_offset;
+    struct pbuf * p = gen_pbuf_from_data(payload, rxpd->rx_pkt_length);
     /* If there are no more buffers, we do nothing, so the data is
        lost. We have to go back and read the other ports */
     if (p == NULL)
@@ -140,7 +140,7 @@ static void process_data_packet(const t_u8 *rcvdata, const t_u16 datalen)
     }
 
     /* points to packet payload, which starts with an Ethernet header */
-    struct eth_hdr *ethhdr = p->payload;
+    struct eth_hdr * ethhdr = p->payload;
 
 #ifdef CONFIG_FILTER_LOCALLY_ADMINISTERED_AND_SELF_MAC_ADDR
     if ((ISLOCALLY_ADMINISTERED_ADDR(ethhdr->src.addr[0]) &&
@@ -153,63 +153,63 @@ static void process_data_packet(const t_u8 *rcvdata, const t_u16 datalen)
     }
 #endif
 
-    if (!memcmp((t_u8 *)p->payload + SIZEOF_ETH_HDR, rfc1042_eth_hdr, sizeof(rfc1042_eth_hdr)))
+    if (!memcmp((t_u8 *) p->payload + SIZEOF_ETH_HDR, rfc1042_eth_hdr, sizeof(rfc1042_eth_hdr)))
     {
-        struct eth_llc_hdr *ethllchdr = (struct eth_llc_hdr *)((t_u8 *)p->payload + SIZEOF_ETH_HDR);
-        ethhdr->type                  = ethllchdr->type;
+        struct eth_llc_hdr * ethllchdr = (struct eth_llc_hdr *) ((t_u8 *) p->payload + SIZEOF_ETH_HDR);
+        ethhdr->type                   = ethllchdr->type;
         p->len -= SIZEOF_ETH_LLC_HDR;
-        (void)memcpy((t_u8 *)p->payload + SIZEOF_ETH_HDR, (t_u8 *)p->payload + SIZEOF_ETH_HDR + SIZEOF_ETH_LLC_HDR,
-                     p->len - SIZEOF_ETH_LLC_HDR);
+        (void) memcpy((t_u8 *) p->payload + SIZEOF_ETH_HDR, (t_u8 *) p->payload + SIZEOF_ETH_HDR + SIZEOF_ETH_LLC_HDR,
+                      p->len - SIZEOF_ETH_LLC_HDR);
     }
     switch (htons(ethhdr->type))
     {
-        case ETHTYPE_IP:
+    case ETHTYPE_IP:
 #ifdef CONFIG_IPV6
-        case ETHTYPE_IPV6:
+    case ETHTYPE_IPV6:
 #endif
-            /* To avoid processing of unwanted udp broadcast packets, adding
-             * filter for dropping packets received on ports other than
-             * pre-defined ports.
-             */
-            LINK_STATS_INC(link.recv);
-            if (recv_interface == MLAN_BSS_TYPE_STA)
+        /* To avoid processing of unwanted udp broadcast packets, adding
+         * filter for dropping packets received on ports other than
+         * pre-defined ports.
+         */
+        LINK_STATS_INC(link.recv);
+        if (recv_interface == MLAN_BSS_TYPE_STA)
+        {
+            int rv = wrapper_wlan_handle_rx_packet(datalen, rxpd, p, payload);
+            if (rv != WM_SUCCESS)
             {
-                int rv = wrapper_wlan_handle_rx_packet(datalen, rxpd, p, payload);
-                if (rv != WM_SUCCESS)
-                {
-                    /* mlan was unsuccessful in delivering the
-                       packet */
-                    LINK_STATS_INC(link.drop);
-                    pbuf_free(p);
-                }
+                /* mlan was unsuccessful in delivering the
+                   packet */
+                LINK_STATS_INC(link.drop);
+                pbuf_free(p);
             }
-            else
-                deliver_packet_above(p, recv_interface);
-            p = NULL;
-            break;
-        case ETHTYPE_ARP:
-        case ETHTYPE_EAPOL:
-            LINK_STATS_INC(link.recv);
+        }
+        else
             deliver_packet_above(p, recv_interface);
-            break;
-        default:
-            /* fixme: avoid pbuf allocation in this case */
-            LINK_STATS_INC(link.drop);
-            pbuf_free(p);
-            break;
+        p = NULL;
+        break;
+    case ETHTYPE_ARP:
+    case ETHTYPE_EAPOL:
+        LINK_STATS_INC(link.recv);
+        deliver_packet_above(p, recv_interface);
+        break;
+    default:
+        /* fixme: avoid pbuf allocation in this case */
+        LINK_STATS_INC(link.drop);
+        pbuf_free(p);
+        break;
     }
 }
 
 /* Callback function called from the wifi module */
-void handle_data_packet(const t_u8 interface, const t_u8 *rcvdata, const t_u16 datalen)
+void handle_data_packet(const t_u8 interface, const t_u8 * rcvdata, const t_u16 datalen)
 {
     if (netif_arr[interface] != NULL)
         process_data_packet(rcvdata, datalen);
 }
 
-void handle_amsdu_data_packet(t_u8 interface, t_u8 *rcvdata, t_u16 datalen)
+void handle_amsdu_data_packet(t_u8 interface, t_u8 * rcvdata, t_u16 datalen)
 {
-    struct pbuf *p = gen_pbuf_from_data(rcvdata, datalen);
+    struct pbuf * p = gen_pbuf_from_data(rcvdata, datalen);
     if (!p)
     {
         w_pkt_e("[amsdu] No pbuf available. Dropping packet");
@@ -219,14 +219,14 @@ void handle_amsdu_data_packet(t_u8 interface, t_u8 *rcvdata, t_u16 datalen)
     deliver_packet_above(p, interface);
 }
 
-void handle_deliver_packet_above(t_u8 interface, t_void *lwip_pbuf)
+void handle_deliver_packet_above(t_u8 interface, t_void * lwip_pbuf)
 {
-    struct pbuf *p = (struct pbuf *)lwip_pbuf;
+    struct pbuf * p = (struct pbuf *) lwip_pbuf;
 
     deliver_packet_above(p, interface);
 }
 
-bool wrapper_net_is_ip_or_ipv6(const t_u8 *buffer)
+bool wrapper_net_is_ip_or_ipv6(const t_u8 * buffer)
 {
     return net_is_ip_or_ipv6(buffer);
 }
@@ -239,7 +239,7 @@ bool wrapper_net_is_ip_or_ipv6(const t_u8 *buffer)
  * @param netif the already initialized lwip network interface structure
  *        for this ethernetif
  */
-void low_level_init(struct netif *netif)
+void low_level_init(struct netif * netif)
 {
     /* set MAC hardware address length */
     netif->hwaddr_len = ETHARP_HWADDR_LEN;
@@ -271,11 +271,11 @@ void low_level_init(struct netif *netif)
  *       dropped because of memory failure (except for the TCP timers).
  */
 
-static err_t low_level_output(struct netif *netif, struct pbuf *p)
+static err_t low_level_output(struct netif * netif, struct pbuf * p)
 {
     int ret;
-    struct pbuf *q;
-    struct ethernetif *ethernetif = netif->state;
+    struct pbuf * q;
+    struct ethernetif * ethernetif = netif->state;
     u32_t pkt_len, outbuf_len;
 #ifdef CONFIG_WMM
     t_u8 tid;
@@ -289,16 +289,16 @@ static err_t low_level_output(struct netif *netif, struct pbuf *p)
     {
         return ERR_MEM;
     }
-    uint8_t *outbuf = wifi_wmm_get_outbuf(&outbuf_len, pkt_prio);
+    uint8_t * outbuf = wifi_wmm_get_outbuf(&outbuf_len, pkt_prio);
 #else
-    uint8_t *outbuf = wifi_get_outbuf(&outbuf_len);
+    uint8_t * outbuf = wifi_get_outbuf(&outbuf_len);
 #endif
     if (!outbuf)
         return ERR_MEM;
 
     pkt_len = sizeof(TxPD) + INTF_HEADER_LEN;
 
-    (void)memset(outbuf, 0x00, pkt_len);
+    (void) memset(outbuf, 0x00, pkt_len);
 
     for (q = p; q != NULL; q = q->next)
     {
@@ -306,12 +306,13 @@ static err_t low_level_output(struct netif *netif, struct pbuf *p)
         {
             while (true)
             {
-                LWIP_DEBUGF(NETIF_DEBUG, ("PANIC: Xmit packet"
-                                          "is bigger than inbuf.\r\n"));
+                LWIP_DEBUGF(NETIF_DEBUG,
+                            ("PANIC: Xmit packet"
+                             "is bigger than inbuf.\r\n"));
                 vTaskDelay((3000) / portTICK_RATE_MS);
             }
         }
-        (void)memcpy((u8_t *)outbuf + pkt_len, (u8_t *)q->payload, q->len);
+        (void) memcpy((u8_t *) outbuf + pkt_len, (u8_t *) q->payload, q->len);
         pkt_len += q->len;
     }
 
@@ -348,15 +349,15 @@ static err_t low_level_output(struct netif *netif, struct pbuf *p)
 /* Below struct is used for creating IGMP IPv4 multicast list */
 typedef struct group_ip4_addr
 {
-    struct group_ip4_addr *next;
+    struct group_ip4_addr * next;
     uint32_t group_ip;
 } group_ip4_addr_t;
 
 /* Head of list that will contain IPv4 multicast IP's */
-static group_ip4_addr_t *igmp_ip4_list;
+static group_ip4_addr_t * igmp_ip4_list;
 
 /* Callback called by LwiP to add or delete an entry in the multicast filter table */
-static err_t igmp_mac_filter(struct netif *netif, const ip4_addr_t *group, enum netif_mac_filter_action action)
+static err_t igmp_mac_filter(struct netif * netif, const ip4_addr_t * group, enum netif_mac_filter_action action)
 {
     uint8_t mcast_mac[6];
     err_t result;
@@ -368,88 +369,88 @@ static err_t igmp_mac_filter(struct netif *netif, const ip4_addr_t *group, enum 
 
     switch (action)
     {
-        case NETIF_ADD_MAC_FILTER:
-            /* LwIP takes care of duplicate IP addresses and it always send
-             * unique IP address. Simply add IP to top of list*/
-            curr = (group_ip4_addr_t *)os_mem_alloc(sizeof(group_ip4_addr_t));
-            if (curr == NULL)
+    case NETIF_ADD_MAC_FILTER:
+        /* LwIP takes care of duplicate IP addresses and it always send
+         * unique IP address. Simply add IP to top of list*/
+        curr = (group_ip4_addr_t *) os_mem_alloc(sizeof(group_ip4_addr_t));
+        if (curr == NULL)
+        {
+            result = ERR_IF;
+            goto done;
+        }
+        curr->group_ip = group->addr;
+        curr->next     = igmp_ip4_list;
+        igmp_ip4_list  = curr;
+        /* Add multicast MAC filter */
+        error = wifi_add_mcast_filter(mcast_mac);
+        if (error == 0)
+        {
+            result = ERR_OK;
+        }
+        else if (error == -WM_E_EXIST)
+        {
+            result = ERR_OK;
+        }
+        else
+        {
+            /* In case of failure remove IP from list */
+            curr          = igmp_ip4_list;
+            igmp_ip4_list = curr->next;
+            os_mem_free(curr);
+            curr   = NULL;
+            result = ERR_IF;
+        }
+        break;
+    case NETIF_DEL_MAC_FILTER:
+        /* Remove multicast IP address from list */
+        curr = igmp_ip4_list;
+        prev = curr;
+        while (curr != NULL)
+        {
+            if (curr->group_ip == group->addr)
             {
-                result = ERR_IF;
+                if (prev == curr)
+                {
+                    igmp_ip4_list = curr->next;
+                    os_mem_free(curr);
+                }
+                else
+                {
+                    prev->next = curr->next;
+                    os_mem_free(curr);
+                }
+                curr = NULL;
+                break;
+            }
+            prev = curr;
+            curr = curr->next;
+        }
+        /* Check if other IP is mapped to same MAC */
+        curr = igmp_ip4_list;
+        while (curr != NULL)
+        {
+            /* If other IP is mapped to same MAC than skip Multicast MAC removal */
+            if ((ntohl(curr->group_ip) & 0x7FFFFF) == (ntohl(group->addr) & 0x7FFFFF))
+            {
+                result = ERR_OK;
                 goto done;
             }
-            curr->group_ip = group->addr;
-            curr->next     = igmp_ip4_list;
-            igmp_ip4_list  = curr;
-            /* Add multicast MAC filter */
-            error = wifi_add_mcast_filter(mcast_mac);
-            if (error == 0)
-            {
-                result = ERR_OK;
-            }
-            else if (error == -WM_E_EXIST)
-            {
-                result = ERR_OK;
-            }
-            else
-            {
-                /* In case of failure remove IP from list */
-                curr          = igmp_ip4_list;
-                igmp_ip4_list = curr->next;
-                os_mem_free(curr);
-                curr   = NULL;
-                result = ERR_IF;
-            }
-            break;
-        case NETIF_DEL_MAC_FILTER:
-            /* Remove multicast IP address from list */
-            curr = igmp_ip4_list;
-            prev = curr;
-            while (curr != NULL)
-            {
-                if (curr->group_ip == group->addr)
-                {
-                    if (prev == curr)
-                    {
-                        igmp_ip4_list = curr->next;
-                        os_mem_free(curr);
-                    }
-                    else
-                    {
-                        prev->next = curr->next;
-                        os_mem_free(curr);
-                    }
-                    curr = NULL;
-                    break;
-                }
-                prev = curr;
-                curr = curr->next;
-            }
-            /* Check if other IP is mapped to same MAC */
-            curr = igmp_ip4_list;
-            while (curr != NULL)
-            {
-                /* If other IP is mapped to same MAC than skip Multicast MAC removal */
-                if ((ntohl(curr->group_ip) & 0x7FFFFF) == (ntohl(group->addr) & 0x7FFFFF))
-                {
-                    result = ERR_OK;
-                    goto done;
-                }
-                curr = curr->next;
-            }
-            /* Remove Multicast MAC filter */
-            error = wifi_remove_mcast_filter(mcast_mac);
-            if (error == 0)
-            {
-                result = ERR_OK;
-            }
-            else
-            {
-                result = ERR_IF;
-            }
-            break;
-        default:
+            curr = curr->next;
+        }
+        /* Remove Multicast MAC filter */
+        error = wifi_remove_mcast_filter(mcast_mac);
+        if (error == 0)
+        {
+            result = ERR_OK;
+        }
+        else
+        {
             result = ERR_IF;
-            break;
+        }
+        break;
+    default:
+        result = ERR_IF;
+        break;
     }
 done:
     return result;
@@ -459,15 +460,15 @@ done:
 /* Below struct is used for creating IGMP IPv6 multicast list */
 typedef struct group_ip6_addr
 {
-    struct group_ip6_addr *next;
+    struct group_ip6_addr * next;
     uint32_t group_ip;
 } group_ip6_addr_t;
 
 /* Head of list that will contain IPv6 multicast IP's */
-static group_ip6_addr_t *mld_ip6_list;
+static group_ip6_addr_t * mld_ip6_list;
 
 /* Callback called by LwiP to add or delete an entry in the IPv6 multicast filter table */
-static err_t mld_mac_filter(struct netif *netif, const ip6_addr_t *group, enum netif_mac_filter_action action)
+static err_t mld_mac_filter(struct netif * netif, const ip6_addr_t * group, enum netif_mac_filter_action action)
 {
     uint8_t mcast_mac[6];
     err_t result;
@@ -479,88 +480,88 @@ static err_t mld_mac_filter(struct netif *netif, const ip6_addr_t *group, enum n
 
     switch (action)
     {
-        case NETIF_ADD_MAC_FILTER:
-            /* LwIP takes care of duplicate IP addresses and it always send
-             * unique IP address. Simply add IP to top of list*/
-            curr = (group_ip6_addr_t *)os_mem_alloc(sizeof(group_ip6_addr_t));
-            if (curr == NULL)
+    case NETIF_ADD_MAC_FILTER:
+        /* LwIP takes care of duplicate IP addresses and it always send
+         * unique IP address. Simply add IP to top of list*/
+        curr = (group_ip6_addr_t *) os_mem_alloc(sizeof(group_ip6_addr_t));
+        if (curr == NULL)
+        {
+            result = ERR_IF;
+            goto done;
+        }
+        curr->group_ip = group->addr[3];
+        curr->next     = mld_ip6_list;
+        mld_ip6_list   = curr;
+        /* Add multicast MAC filter */
+        error = wifi_add_mcast_filter(mcast_mac);
+        if (error == 0)
+        {
+            result = ERR_OK;
+        }
+        else if (error == -WM_E_EXIST)
+        {
+            result = ERR_OK;
+        }
+        else
+        {
+            /* In case of failure remove IP from list */
+            curr         = mld_ip6_list;
+            mld_ip6_list = mld_ip6_list->next;
+            os_mem_free(curr);
+            curr   = NULL;
+            result = ERR_IF;
+        }
+        break;
+    case NETIF_DEL_MAC_FILTER:
+        /* Remove multicast IP address from list */
+        curr = mld_ip6_list;
+        prev = curr;
+        while (curr != NULL)
+        {
+            if (curr->group_ip == group->addr[3])
             {
-                result = ERR_IF;
+                if (prev == curr)
+                {
+                    mld_ip6_list = curr->next;
+                    os_mem_free(curr);
+                }
+                else
+                {
+                    prev->next = curr->next;
+                    os_mem_free(curr);
+                }
+                curr = NULL;
+                break;
+            }
+            prev = curr;
+            curr = curr->next;
+        }
+        /* Check if other IP is mapped to same MAC */
+        curr = mld_ip6_list;
+        while (curr != NULL)
+        {
+            /* If other IP is mapped to same MAC than skip Multicast MAC removal */
+            if ((ntohl(curr->group_ip) & 0xFFFFFF) == (ntohl(group->addr[3]) & 0xFFFFFF))
+            {
+                result = ERR_OK;
                 goto done;
             }
-            curr->group_ip = group->addr[3];
-            curr->next     = mld_ip6_list;
-            mld_ip6_list   = curr;
-            /* Add multicast MAC filter */
-            error = wifi_add_mcast_filter(mcast_mac);
-            if (error == 0)
-            {
-                result = ERR_OK;
-            }
-            else if (error == -WM_E_EXIST)
-            {
-                result = ERR_OK;
-            }
-            else
-            {
-                /* In case of failure remove IP from list */
-                curr         = mld_ip6_list;
-                mld_ip6_list = mld_ip6_list->next;
-                os_mem_free(curr);
-                curr   = NULL;
-                result = ERR_IF;
-            }
-            break;
-        case NETIF_DEL_MAC_FILTER:
-            /* Remove multicast IP address from list */
-            curr = mld_ip6_list;
-            prev = curr;
-            while (curr != NULL)
-            {
-                if (curr->group_ip == group->addr[3])
-                {
-                    if (prev == curr)
-                    {
-                        mld_ip6_list = curr->next;
-                        os_mem_free(curr);
-                    }
-                    else
-                    {
-                        prev->next = curr->next;
-                        os_mem_free(curr);
-                    }
-                    curr = NULL;
-                    break;
-                }
-                prev = curr;
-                curr = curr->next;
-            }
-            /* Check if other IP is mapped to same MAC */
-            curr = mld_ip6_list;
-            while (curr != NULL)
-            {
-                /* If other IP is mapped to same MAC than skip Multicast MAC removal */
-                if ((ntohl(curr->group_ip) & 0xFFFFFF) == (ntohl(group->addr[3]) & 0xFFFFFF))
-                {
-                    result = ERR_OK;
-                    goto done;
-                }
-                curr = curr->next;
-            }
-			/* Remove Multicast MAC filter */
-            error = wifi_remove_mcast_filter(mcast_mac);
-            if (error == 0)
-            {
-                result = ERR_OK;
-            }
-            else
-            {
-                result = ERR_IF;
-            }
-            break;
-        default:
+            curr = curr->next;
+        }
+        /* Remove Multicast MAC filter */
+        error = wifi_remove_mcast_filter(mcast_mac);
+        if (error == 0)
+        {
+            result = ERR_OK;
+        }
+        else
+        {
             result = ERR_IF;
-            break;
+        }
+        break;
+    default:
+        result = ERR_IF;
+        break;
     }
 done:
     return result;
@@ -579,9 +580,9 @@ done:
  *         ERR_MEM if private data couldn't be allocated
  *         any other err_t on error
  */
-err_t lwip_netif_init(struct netif *netif)
+err_t lwip_netif_init(struct netif * netif)
 {
-    struct ethernetif *ethernetif;
+    struct ethernetif * ethernetif;
 
     LWIP_ASSERT("netif != NULL", (netif != NULL));
 
@@ -613,7 +614,7 @@ err_t lwip_netif_init(struct netif *netif)
     netif->output_ip6 = ethip6_output;
 #endif
 
-    ethernetif->ethaddr = (struct eth_addr *)&(netif->hwaddr[0]);
+    ethernetif->ethaddr = (struct eth_addr *) &(netif->hwaddr[0]);
 
     /* initialize the hardware */
     low_level_init(netif);
@@ -629,9 +630,9 @@ err_t lwip_netif_init(struct netif *netif)
     return ERR_OK;
 }
 
-err_t lwip_netif_uap_init(struct netif *netif)
+err_t lwip_netif_uap_init(struct netif * netif)
 {
-    struct ethernetif *ethernetif;
+    struct ethernetif * ethernetif;
 
     LWIP_ASSERT("netif != NULL", (netif != NULL));
 
@@ -657,7 +658,7 @@ err_t lwip_netif_uap_init(struct netif *netif)
     netif->output_ip6 = ethip6_output;
 #endif
 
-    ethernetif->ethaddr = (struct eth_addr *)&(netif->hwaddr[0]);
+    ethernetif->ethaddr = (struct eth_addr *) &(netif->hwaddr[0]);
 
     /* initialize the hardware */
     low_level_init(netif);
