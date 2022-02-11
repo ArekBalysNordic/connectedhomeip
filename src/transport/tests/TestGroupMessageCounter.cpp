@@ -65,7 +65,7 @@ void AddPeerTest(nlTestSuite * inSuite, void * inContext)
 void RemovePeerTest(nlTestSuite * inSuite, void * inContext)
 {
     NodeId peerNodeId                             = 1234;
-    FabricIndex fabricIndex                             = 1;
+    FabricIndex fabricIndex                       = 1;
     CHIP_ERROR err                                = CHIP_NO_ERROR;
     chip::Transport::PeerMessageCounter * counter = nullptr;
     chip::Transport::GroupPeerTable mGroupPeerMsgCounter;
@@ -84,8 +84,8 @@ void RemovePeerTest(nlTestSuite * inSuite, void * inContext)
     NL_TEST_ASSERT(inSuite, err == CHIP_ERROR_TOO_MANY_PEER_NODES);
 
     // Clear all Peer
-    fabricIndex   = 1;
-    peerNodeId = 1234;
+    fabricIndex = 1;
+    peerNodeId  = 1234;
     for (uint32_t it = 0; it < CHIP_CONFIG_MAX_FABRICS; it++)
     {
         for (uint32_t peerId = 0; peerId < GROUP_MSG_COUNTER_MAX_NUMBER_OF_GROUP_CONTROL_PEER; peerId++)
@@ -104,7 +104,7 @@ void RemovePeerTest(nlTestSuite * inSuite, void * inContext)
 void PeerRetrievalTest(nlTestSuite * inSuite, void * inContext)
 {
     NodeId peerNodeId                              = 1234;
-    FabricIndex fabricIndex                              = 1;
+    FabricIndex fabricIndex                        = 1;
     CHIP_ERROR err                                 = CHIP_NO_ERROR;
     chip::Transport::PeerMessageCounter * counter  = nullptr;
     chip::Transport::PeerMessageCounter * counter2 = nullptr;

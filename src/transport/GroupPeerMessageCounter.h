@@ -25,11 +25,11 @@
 #include <bitset>
 
 #include <lib/core/CHIPPersistentStorageDelegate.h>
+#include <lib/core/DataModelTypes.h>
 #include <lib/core/NodeId.h>
 #include <lib/core/PeerId.h>
 #include <lib/support/Span.h>
 #include <transport/PeerMessageCounter.h>
-#include <lib/core/DataModelTypes.h>
 
 #define GROUP_MSG_COUNTER_MAX_NUMBER_OF_GROUP_DATA_PEER 15
 #define GROUP_MSG_COUNTER_MAX_NUMBER_OF_GROUP_CONTROL_PEER 15
@@ -49,7 +49,7 @@ public:
 class GroupFabric
 {
 public:
-    FabricIndex mFabricIndex        = kUndefinedFabricIndex;
+    FabricIndex mFabricIndex  = kUndefinedFabricIndex;
     uint8_t mControlPeerCount = 0;
     uint8_t mDataPeerCount    = 0;
     GroupSender mDataGroupSenders[GROUP_MSG_COUNTER_MAX_NUMBER_OF_GROUP_DATA_PEER];
@@ -59,7 +59,8 @@ public:
 class GroupPeerTable
 {
 public:
-    CHIP_ERROR FindOrAddPeer(FabricIndex fabricIndex, NodeId nodeId, bool isControl, chip::Transport::PeerMessageCounter *& counter);
+    CHIP_ERROR FindOrAddPeer(FabricIndex fabricIndex, NodeId nodeId, bool isControl,
+                             chip::Transport::PeerMessageCounter *& counter);
 
     // Used in case of MCSP failure
     CHIP_ERROR RemovePeer(FabricIndex fabricIndex, NodeId nodeId, bool isControl);

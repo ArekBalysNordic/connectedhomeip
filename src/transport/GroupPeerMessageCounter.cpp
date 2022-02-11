@@ -112,8 +112,8 @@ CHIP_ERROR GroupPeerTable::FindOrAddPeer(FabricIndex fabricIndex, NodeId nodeId,
 // Used in case of MCSP failure
 CHIP_ERROR GroupPeerTable::RemovePeer(FabricIndex fabricIndex, NodeId nodeId, bool isControl)
 {
-    CHIP_ERROR err       = CHIP_ERROR_NOT_FOUND;
-    uint32_t fabricIt    = CHIP_CONFIG_MAX_FABRICS;
+    CHIP_ERROR err    = CHIP_ERROR_NOT_FOUND;
+    uint32_t fabricIt = CHIP_CONFIG_MAX_FABRICS;
 
     if (fabricIndex == kUndefinedFabricIndex || nodeId == kUndefinedNodeId)
     {
@@ -130,7 +130,7 @@ CHIP_ERROR GroupPeerTable::RemovePeer(FabricIndex fabricIndex, NodeId nodeId, bo
                 {
                     if (mGroupFabrics[it].mControlGroupSenders[nodeIt].mNodeId == nodeId)
                     {
-                        fabricIt                                            = it;
+                        fabricIt                                               = it;
                         mGroupFabrics[it].mControlGroupSenders[nodeIt].mNodeId = kUndefinedNodeId;
                         mGroupFabrics[it].mControlGroupSenders[nodeIt].msgCounter.Reset();
                         mGroupFabrics[it].mControlPeerCount--;
@@ -144,7 +144,7 @@ CHIP_ERROR GroupPeerTable::RemovePeer(FabricIndex fabricIndex, NodeId nodeId, bo
                 {
                     if (mGroupFabrics[it].mDataGroupSenders[nodeIt].mNodeId == nodeId)
                     {
-                        fabricIt                                         = it;
+                        fabricIt                                            = it;
                         mGroupFabrics[it].mDataGroupSenders[nodeIt].mNodeId = kUndefinedNodeId;
                         mGroupFabrics[it].mDataGroupSenders[nodeIt].msgCounter.Reset();
                         mGroupFabrics[it].mDataPeerCount--;
