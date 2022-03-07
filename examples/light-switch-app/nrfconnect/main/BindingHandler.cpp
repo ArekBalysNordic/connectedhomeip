@@ -1,0 +1,292 @@
+/*
+ *
+ *    Copyright (c) 2022 Project CHIP Authors
+ *    All rights reserved.
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
+
+#include "BindingHandler.h"
+#ifdef CONFIG_CHIP_LIB_SHELL
+#include "ShellCommands.h"
+#endif
+
+#include <logging/log.h>
+LOG_MODULE_DECLARE(app);
+
+using namespace chip;
+using namespace chip::app;
+
+void BindingHandler::Init()
+{
+#ifdef CONFIG_CHIP_LIB_SHELL
+    SwitchCommands::RegisterSwitchCommands();
+#endif
+    chip::DeviceLayer::PlatformMgr().ScheduleWork(InitInternal);
+}
+
+void BindingHandler::OnOffProcessCommandUnicast(CommandId commandId, const EmberBindingTableEntry & binding, DeviceProxy * device,
+                                                void * context)
+{
+    CHIP_ERROR ret = CHIP_NO_ERROR;
+
+    auto onSuccess = [](const ConcreteCommandPath & commandPath, const StatusIB & status, const auto & dataResponse) {
+        ChipLogProgress(NotSpecified, "Binding command applied successfully!");
+    };
+
+    auto onFailure = [](CHIP_ERROR error) {
+        ChipLogError(NotSpecified, "Binding command was not applied! Reason: %" CHIP_ERROR_FORMAT, error.Format());
+    };
+
+    switch (commandId)
+    {
+    case Clusters::OnOff::Commands::Toggle::Id:
+        Clusters::OnOff::Commands::Toggle::Type toggleCommand;
+        ret = Controller::InvokeCommandRequest(device->GetExchangeManager(), device->GetSecureSession().Value(), binding.remote,
+                                               toggleCommand, onSuccess, onFailure);
+        break;
+
+    case Clusters::OnOff::Commands::On::Id:
+        Clusters::OnOff::Commands::On::Type onCommand;
+        ret = Controller::InvokeCommandRequest(device->GetExchangeManager(), device->GetSecureSession().Value(), binding.remote,
+                                               onCommand, onSuccess, onFailure);
+        break;
+
+    case Clusters::OnOff::Commands::Off::Id:
+        Clusters::OnOff::Commands::Off::Type offCommand;
+        ret = Controller::InvokeCommandRequest(device->GetExchangeManager(), device->GetSecureSession().Value(), binding.remote,
+                                               offCommand, onSuccess, onFailure);
+        break;
+    default:
+        ChipLogError(NotSpecified, "Invalid binding command data - commandId is not supported");
+        break;
+    }
+    if (CHIP_NO_ERROR != ret)
+    {
+        LOG_ERR("Invoke Unicast Command Request ERROR: %s", chip::ErrorStr(ret));
+    }
+}
+
+void BindingHandler::OnOffProcessCommandGroup(CommandId commandId, const EmberBindingTableEntry & binding, void * context)
+{
+    LOG_INF("Group OnOff Process Binding command...");
+    auto sourceNodeId = Server::GetInstance().GetFabricTable().FindFabricWithIndex(binding.fabricIndex)->GetNodeId();
+    Messaging::ExchangeManager & exchangeMgr = Server::GetInstance().GetExchangeManager();
+    CHIP_ERROR ret                           = CHIP_NO_ERROR;
+    switch (commandId)
+    {
+    case Clusters::OnOff::Commands::Toggle::Id:
+        Clusters::OnOff::Commands::Toggle::Type toggleCommand;
+        ret =
+            Controller::InvokeGroupCommandRequest(&exchangeMgr, binding.fabricIndex, binding.groupId, sourceNodeId, toggleCommand);
+        break;
+
+    case Clusters::OnOff::Commands::On::Id:
+        Clusters::OnOff::Commands::On::Type onCommand;
+        ret = Controller::InvokeGroupCommandRequest(&exchangeMgr, binding.fabricIndex, binding.groupId, sourceNodeId, onCommand);
+        break;
+
+    case Clusters::OnOff::Commands::Off::Id:
+        Clusters::OnOff::Commands::Off::Type offCommand;
+        ret = Controller::InvokeGroupCommandRequest(&exchangeMgr, binding.fabricIndex, binding.groupId, sourceNodeId, offCommand);
+        break;
+    }
+    if (CHIP_NO_ERROR != ret)
+    {
+        LOG_ERR("Invoke Group Command Request ERROR: %s", chip::ErrorStr(ret));
+    }
+}
+
+void BindingHandler::LevelControlProcessCommandUnicast(CommandId commandId, const EmberBindingTableEntry & binding,
+                                                       DeviceProxy * device, void * context)
+{
+    LOG_INF("Unicast Level Control Process Binding command {0x%x}-> {%d}...", binding.remote, (uint16_t) commandId);
+    auto onSuccess = [](const ConcreteCommandPath & commandPath, const StatusIB & status, const auto & dataResponse) {
+        ChipLogProgress(NotSpecified, "Binding command applied successfully!");
+    };
+
+    auto onFailure = [](CHIP_ERROR error) {
+        ChipLogError(NotSpecified, "Binding command was not applied! Reason: %" CHIP_ERROR_FORMAT, error.Format());
+    };
+
+    switch (commandId)
+    {
+    case Clusters::LevelControl::Commands::MoveToLevel::Id: {
+        Clusters::LevelControl::Commands::MoveToLevel::Type moveToLevelCommand;
+        BindingData * data       = reinterpret_cast<BindingData *>(context);
+        moveToLevelCommand.level = data->value;
+        Controller::InvokeCommandRequest(device->GetExchangeManager(), device->GetSecureSession().Value(), binding.remote,
+                                         moveToLevelCommand, onSuccess, onFailure);
+    }
+    break;
+    default:
+        ChipLogError(NotSpecified, "Invalid binding command data - commandId is not supported");
+        break;
+    }
+}
+
+void BindingHandler::LevelControlProcessCommandGroup(CommandId commandId, const EmberBindingTableEntry & binding, void * context)
+{
+    LOG_INF("Group Level Control Process Binding command...");
+    auto sourceNodeId = Server::GetInstance().GetFabricTable().FindFabricWithIndex(binding.fabricIndex)->GetNodeId();
+    Messaging::ExchangeManager & exchangeMgr = Server::GetInstance().GetExchangeManager();
+
+    switch (commandId)
+    {
+    case Clusters::LevelControl::Commands::MoveToLevel::Id: {
+        Clusters::LevelControl::Commands::MoveToLevel::Type moveToLevelCommand;
+        BindingData * data       = reinterpret_cast<BindingData *>(context);
+        moveToLevelCommand.level = data->value;
+        Controller::InvokeGroupCommandRequest(&exchangeMgr, binding.fabricIndex, binding.groupId, sourceNodeId, moveToLevelCommand);
+    }
+    break;
+    default:
+        ChipLogError(NotSpecified, "Invalid binding command data - commandId is not supported");
+        break;
+    }
+}
+
+void BindingHandler::LightSwitchChangedHandler(const EmberBindingTableEntry & binding, DeviceProxy * deviceProxy, void * context)
+{
+    VerifyOrReturn(context != nullptr, ChipLogError(NotSpecified, "Invalid context for Light switch handler"););
+    BindingData * data = static_cast<BindingData *>(context);
+
+    if (binding.type == EMBER_MULTICAST_BINDING && data->isGroup)
+    {
+        switch (data->clusterId)
+        {
+        case Clusters::OnOff::Id:
+            OnOffProcessCommandGroup(data->commandId, binding, context);
+            break;
+        case Clusters::LevelControl::Id:
+            LevelControlProcessCommandGroup(data->commandId, binding, context);
+            break;
+        default:
+            ChipLogError(NotSpecified, "Invalid binding group command data");
+            break;
+        }
+    }
+    else if (binding.type == EMBER_UNICAST_BINDING && !data->isGroup)
+    {
+        switch (data->clusterId)
+        {
+        case Clusters::OnOff::Id:
+            OnOffProcessCommandUnicast(data->commandId, binding, deviceProxy, context);
+            break;
+        case Clusters::LevelControl::Id:
+            LevelControlProcessCommandUnicast(data->commandId, binding, deviceProxy, context);
+            break;
+        default:
+            ChipLogError(NotSpecified, "Invalid binding unicast command data");
+            break;
+        }
+    }
+}
+
+void BindingHandler::BindingAddeddHandler(const EmberBindingTableEntry & binding)
+{
+    switch (binding.type)
+    {
+    case EMBER_UNICAST_BINDING:
+        LOG_INF("Bound new unicast entry:\n \
+                FabricId: % d\n \
+                LocalEndpointId: % d\n \
+                ClusterId: % d\n \
+                RemoteEndpointId: % d\n \
+                NodeId: %d ",
+                (int) binding.fabricIndex, (int) binding.local, (int) binding.clusterId.Value(), (int) binding.remote,
+                (int) binding.nodeId);
+        break;
+    case EMBER_MULTICAST_BINDING:
+
+        LOG_INF("Bound new multicast entry\n \
+                FabricId: % d\n \
+                LocalEndpointId: %d \n \
+                RemoteEndpointId: % d\n \
+                GroupId: %d ",
+                (int) binding.fabricIndex, (int) binding.local, (int) binding.remote, (int) binding.groupId);
+        break;
+    default:
+        break;
+    }
+}
+
+void BindingHandler::InitInternal(intptr_t arg)
+{
+    LOG_INF("Initialize binding Handler");
+    auto & server = chip::Server::GetInstance();
+    if (CHIP_NO_ERROR !=
+        chip::BindingManager::GetInstance().Init(
+            { &server.GetFabricTable(), server.GetCASESessionManager(), &server.GetPersistentStorage() }))
+    {
+        LOG_ERR("BindingHandler::InitInternal failed");
+    }
+
+    chip::BindingManager::GetInstance().RegisterBoundDeviceChangedHandler(LightSwitchChangedHandler);
+    if (CHIP_NO_ERROR != chip::BindingManager::GetInstance().RegisterBindingAddedHandler(BindingAddeddHandler))
+    {
+        LOG_ERR("BindingHandler::RegisterBindingAddedHandler failed");
+    }
+    PrintBindingTable();
+}
+
+void BindingHandler::PrintBindingTable()
+{
+    chip::BindingTable & bindingTable = chip::BindingTable::GetInstance();
+
+    LOG_INF("Binding Table [%d]:", bindingTable.Size());
+    uint8_t i = 0;
+    for (auto & entry : bindingTable)
+    {
+        switch (entry.type)
+        {
+        case EMBER_UNICAST_BINDING:
+            LOG_INF("[%d] UNICAST:", i++);
+            LOG_INF("\t\t+ Fabric: %d\n \
+            \t+ LocalEndpoint %d \n \
+            \t+ ClusterId %d \n \
+            \t+ RemoteEndpointId %d \n \
+            \t+ NodeId %d",
+                    (int) entry.fabricIndex, (int) entry.local, (int) entry.clusterId.Value(), (int) entry.remote,
+                    (int) entry.nodeId);
+            break;
+        case EMBER_MULTICAST_BINDING:
+            LOG_INF("[%d] GROUP:", i++);
+            LOG_INF("\t\t+ Fabric: %d\n \
+            \t+ LocalEndpoint %d \n \
+            \t+ RemoteEndpointId %d \n \
+            \t+ GroupId %d",
+                    (int) entry.fabricIndex, (int) entry.local, (int) entry.remote, (int) entry.groupId);
+            break;
+        case EMBER_UNUSED_BINDING:
+            LOG_INF("[%d] UNUSED", i++);
+            break;
+        case EMBER_MANY_TO_ONE_BINDING:
+            LOG_INF("[%d] MANY TO ONE", i++);
+            break;
+        default:
+            break;
+        }
+    }
+}
+
+void BindingHandler::SwitchWorkerHandler(intptr_t context)
+{
+    VerifyOrReturn(context != 0, ChipLogError(NotSpecified, "Invalid Swich data"));
+
+    BindingData * data = reinterpret_cast<BindingData *>(context);
+    LOG_INF("Notify Bounded Cluster | endpoint: %d cluster: %d", data->endpointId, data->clusterId);
+    BindingManager::GetInstance().NotifyBoundClusterChanged(data->endpointId, data->clusterId, static_cast<void *>(data));
+
+    Platform::Delete(data);
+}
