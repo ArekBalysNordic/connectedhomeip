@@ -1,0 +1,52 @@
+/*
+ *
+ *    Copyright (c) 2022 Project CHIP Authors
+ *    All rights reserved.
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
+
+#pragma once
+
+#include <app-common/zap-generated/ids/Clusters.h>
+#include <app-common/zap-generated/ids/Commands.h>
+#include <app/CommandSender.h>
+#include <app/clusters/bindings/BindingManager.h>
+#include <controller/InvokeInteraction.h>
+#include <platform/CHIPDeviceLayer.h>
+
+class BindingHandler
+{
+public:
+    static void Init();
+    static void SwitchWorkerHandler(intptr_t);
+
+    struct BindingData
+    {
+        chip::EndpointId endpointId = 1;
+        chip::CommandId commandId;
+        chip::ClusterId clusterId;
+        uint8_t value;
+        bool isGroup = false;
+    };
+
+private:
+    static void OnOffProcessCommandUnicast(chip::CommandId, const EmberBindingTableEntry &, chip::DeviceProxy *, void *);
+    static void OnOffProcessCommandGroup(chip::CommandId, const EmberBindingTableEntry &, void *);
+    static void LevelControlProcessCommandUnicast(chip::CommandId, const EmberBindingTableEntry &, chip::DeviceProxy *, void *);
+    static void LevelControlProcessCommandGroup(chip::CommandId, const EmberBindingTableEntry &, void *);
+    static void LightSwitchChangedHandler(const EmberBindingTableEntry &, chip::DeviceProxy *, void *);
+    static void BindingAddeddHandler(const EmberBindingTableEntry & binding);
+    static void InitInternal(intptr_t);
+    static void PrintBindingTable();
+};
