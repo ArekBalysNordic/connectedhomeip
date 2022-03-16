@@ -132,12 +132,7 @@ CHIP_ERROR AppTask::Init()
         return err;
     }
 
-    err = sLightSwitch.Init();
-    if (err != CHIP_NO_ERROR)
-    {
-        LOG_ERR("sLightSwitch.Init() failed");
-        return err;
-    }
+    sLightSwitch.Init();
 
     // Initialize UI components
     LEDWidget::InitGpio();
@@ -376,15 +371,16 @@ void AppTask::DimmerTimerEventHandler()
 void AppTask::StartBLEAdvertisingHandler()
 {
     /// Don't allow on starting Matter service BLE advertising after Thread provisioning.
-    if (ConnectivityMgr().IsThreadProvisioned())
+    if (Server::GetInstance().GetFabricTable().FabricCount() != 0)
     {
-        LOG_WRN("NFC Tag emulation and Matter service BLE advertising not started - device is commissioned to a Thread network.");
+        LOG_INF("NFC Tag emulation and Matter service BLE advertising not started - device is commissioned to a Thread network.");
+        LOG_INF("Matter service BLE advertising not started - device is already commissioned");
         return;
     }
 
     if (ConnectivityMgr().IsBLEAdvertisingEnabled())
     {
-        LOG_WRN("BLE advertising is already enabled");
+        LOG_INF("BLE advertising is already enabled");
         return;
     }
 
@@ -582,5 +578,3 @@ void AppTask::RequestSMPAdvertisingStart(void)
     sAppTask.PostEvent(AppEvent{ AppEvent::StartSMPAdvertising });
 }
 #endif
-
-void AppTask::UpdateClusterState() {}

@@ -16,7 +16,6 @@
  *    limitations under the License.
  */
 
-#include "AppTask.h"
 
 #include <app-common/zap-generated/ids/Attributes.h>
 #include <app-common/zap-generated/ids/Clusters.h>
@@ -49,5 +48,4 @@ void MatterPreAttributeWriteCallback(const chip::app::ConcreteAttributePath & at
  */
 void emberAfOnOffClusterInitCallback(EndpointId endpoint)
 {
-    GetAppTask().UpdateClusterState();
 }
