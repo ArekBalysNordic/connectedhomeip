@@ -151,22 +151,6 @@ CHIP_ERROR AppTask::Init()
         return chip::System::MapErrorZephyr(ret);
     }
 
-    SetDeviceAttestationCredentialsProvider(Examples::GetExampleDACProvider());
-
-    // Initialize DFU
-#ifdef CONFIG_MCUMGR_SMP_BT
-    GetDFUOverSMP().Init(RequestSMPAdvertisingStart);
-    GetDFUOverSMP().ConfirmNewImage();
-#endif
-#ifdef CONFIG_CHIP_OTA_REQUESTOR
-    sOTAImageProcessor.SetOTADownloader(&sBDXDownloader);
-    sBDXDownloader.SetImageProcessorDelegate(&sOTAImageProcessor);
-    sOTARequestorDriver.Init(&sOTARequestor, &sOTAImageProcessor);
-    sRequestorStorage.Init(Server::GetInstance().GetPersistentStorage());
-    sOTARequestor.Init(Server::GetInstance(), sRequestorStorage, sOTARequestorDriver, sBDXDownloader);
-    chip::SetRequestorInstance(&sOTARequestor);
-#endif
-
     // Initialize Timers
     k_timer_init(&sFunctionTimer, AppTask::TimerEventHandler, nullptr);
     k_timer_init(&sDimmerPressKeyTimer, AppTask::TimerEventHandler, nullptr);
@@ -175,7 +159,15 @@ CHIP_ERROR AppTask::Init()
     k_timer_user_data_set(&sDimmerPressKeyTimer, this);
     k_timer_user_data_set(&sFunctionTimer, this);
 
+    // Initialize DFU
+#ifdef CONFIG_MCUMGR_SMP_BT
+    GetDFUOverSMP().Init(RequestSMPAdvertisingStart);
+    GetDFUOverSMP().ConfirmNewImage();
+#endif
+
     // Print initial configs
+    SetDeviceAttestationCredentialsProvider(Examples::GetExampleDACProvider());
+    InitOTARequestor();
     ReturnErrorOnFailure(chip::Server::GetInstance().Init());
     ConfigurationMgr().LogDeviceConfig();
     PrintOnboardingCodes(chip::RendezvousInformationFlags(chip::RendezvousInformationFlag::kBLE));
@@ -192,9 +184,19 @@ CHIP_ERROR AppTask::Init()
         return err;
     }
 
-    LOG_INF("Init CHIP stack done...");
+    return err;
+}
 
-    return CHIP_NO_ERROR;
+void AppTask::InitOTARequestor()
+{
+#ifdef CONFIG_CHIP_OTA_REQUESTOR
+    sOTAImageProcessor.SetOTADownloader(&sBDXDownloader);
+    sBDXDownloader.SetImageProcessorDelegate(&sOTAImageProcessor);
+    sOTARequestorDriver.Init(&sOTARequestor, &sOTAImageProcessor);
+    sRequestorStorage.Init(Server::GetInstance().GetPersistentStorage());
+    sOTARequestor.Init(Server::GetInstance(), sRequestorStorage, sOTARequestorDriver, sBDXDownloader);
+    chip::SetRequestorInstance(&sOTARequestor);
+#endif
 }
 
 CHIP_ERROR AppTask::StartApp()
