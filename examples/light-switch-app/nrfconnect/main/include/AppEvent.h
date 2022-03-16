@@ -30,6 +30,11 @@ struct AppEvent
 
     enum SimpleEventType : uint8_t
     {
+#ifdef CONFIG_MCUMGR_SMP_BT
+        StartSMPAdvertising,
+
+#endif
+        StartBLEAdvertising,
         FunctionButtonPress,
         FunctionButtonRelease,
         DimmerButtonPress,
@@ -39,7 +44,6 @@ struct AppEvent
         DimmerTimer,
         SwitchToggle,
         SwitchOn,
-        SwitchOff,
         FunctionTimer
     };
 
@@ -47,34 +51,15 @@ struct AppEvent
     {
         UpdateLedState = FunctionTimer + 1
     };
-    enum BLEEventType : uint8_t
-    {
-        StartBLEAdvertising = UpdateLedState + 1,
-#ifdef CONFIG_MCUMGR_SMP_BT
-        StartSMPAdvertising
-#endif
-    };
 
     AppEvent() = default;
     explicit AppEvent(SimpleEventType type) : Type(type) {}
     AppEvent(UpdateLedStateEventType type, LEDWidget * ledWidget) : Type(type), UpdateLedStateEvent{ ledWidget } {}
-    AppEvent(BLEEventType type) : Type(type) {}
 
     uint8_t Type;
 
-    union
+    struct
     {
-        struct
-        {
-            uint8_t Level;
-        } LightLevelEvent;
-        struct
-        {
-            IPAddress PeerAddress;
-        } LightFoundEvent;
-        struct
-        {
-            LEDWidget * LedWidget;
-        } UpdateLedStateEvent;
-    };
+        LEDWidget * LedWidget;
+    } UpdateLedStateEvent;
 };
