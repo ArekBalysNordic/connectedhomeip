@@ -27,11 +27,9 @@
 using namespace chip;
 using namespace chip::app;
 
-CHIP_ERROR LightSwitch::Init()
+void LightSwitch::Init()
 {
     BindingHandler::Init();
-
-    return CHIP_NO_ERROR;
 }
 
 void LightSwitch::InitiateActionSwitch(Action mAction)
@@ -63,7 +61,7 @@ void LightSwitch::DimmerChangeBrightness()
     data->commandId                    = chip::app::Clusters::LevelControl::Commands::MoveToLevel::Id;
     data->clusterId                    = chip::app::Clusters::LevelControl::Id;
     data->value                        = brightness++;
-    if (brightness == 100)
+    if (brightness == 255)
     {
         brightness = 0;
     }

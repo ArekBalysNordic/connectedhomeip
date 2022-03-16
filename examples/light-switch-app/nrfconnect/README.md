@@ -498,7 +498,9 @@ directory:
 
 <hr>
 
-## Binding Lighting-App device
+## Testing the example
+
+### Binding Lighting-App device
 
 A Lighting device should be connected to light-switch device via Matter network. A process of connecting lighting device to light-switch is called binding. 
 
@@ -563,7 +565,6 @@ To use light switch without brightness dimmer apply only first binding command.
 
  If Light switch device is rebooting a binding table is restoring from flash memory and device tries to bind known lighting-app device.
 
-## Testing the example
 
 After binding process a lighting device can be controlled by light-switch in two ways - by pressing [button 2](#device-ui) or using matter command-line interface. 
 
