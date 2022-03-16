@@ -17,7 +17,6 @@
 cmake_minimum_required(VERSION 3.20.0)
 
 get_filename_component(CHIP_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/third_party/connectedhomeip REALPATH)
-get_filename_component(NLIO_ROOT ${CHIP_ROOT}/third_party/nlio/repo/include REALPATH)
 get_filename_component(NRFCONNECT_COMMON ${CHIP_ROOT}/examples/platform/nrfconnect REALPATH)
 get_filename_component(GEN_DIR ${CHIP_ROOT}/zzz_generated/ REALPATH)
 
@@ -75,7 +74,6 @@ target_include_directories(app PRIVATE
                            main/include
                            ${GEN_DIR}/app-common
                            ${GEN_DIR}/light-switch-app
-                           ${NLIO_ROOT}
                            ${NRFCONNECT_COMMON}/util/include
                            ${NRFCONNECT_COMMON}/app/include)
 
