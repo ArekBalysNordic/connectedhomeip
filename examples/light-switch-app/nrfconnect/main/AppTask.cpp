@@ -67,7 +67,7 @@ LightSwitch sLightSwitch;
 LEDWidget sStatusLED;
 LEDWidget sDiscoveryLED;
 LEDWidget sBleLED;
-LEDWidget sUnsedLED;
+LEDWidget sUnusedLED;
 
 static bool sIsThreadProvisioned    = false;
 static bool sIsThreadEnabled        = false;
@@ -95,7 +95,7 @@ AppTask AppTask::sAppTask;
 
 CHIP_ERROR AppTask::Init()
 {
-    /* Initialize CHIP */
+    // Initialize CHIP
     LOG_INF("Init CHIP stack");
 
     CHIP_ERROR err = chip::Platform::MemoryInit();
@@ -119,12 +119,10 @@ CHIP_ERROR AppTask::Init()
         return err;
     }
 
-#ifdef CONFIG_OPENTHREAD_MTD
 #ifdef CONFIG_OPENTHREAD_MTD_SED
     err = ConnectivityMgr().SetThreadDeviceType(ConnectivityManager::kThreadDeviceType_SleepyEndDevice);
-#else
+#elif CONFIG_OPENTHREAD_MTD
     err = ConnectivityMgr().SetThreadDeviceType(ConnectivityManager::kThreadDeviceType_MinimalEndDevice);
-#endif
 #else
     err = ConnectivityMgr().SetThreadDeviceType(ConnectivityManager::kThreadDeviceType_FullEndDevice);
 #endif
@@ -141,13 +139,13 @@ CHIP_ERROR AppTask::Init()
         return err;
     }
 
-    /* Initialize UI components */
+    // Initialize UI components
     LEDWidget::InitGpio();
     LEDWidget::SetStateUpdateCallback(LEDStateUpdateHandler);
     sStatusLED.Init(DK_LED1);
     sBleLED.Init(DK_LED2);
     sDiscoveryLED.Init(DK_LED3);
-    sUnsedLED.Init(DK_LED4);
+    sUnusedLED.Init(DK_LED4);
     UpdateStatusLED();
 
     int ret = dk_buttons_init(ButtonEventHandler);
@@ -160,14 +158,11 @@ CHIP_ERROR AppTask::Init()
 
     SetDeviceAttestationCredentialsProvider(Examples::GetExampleDACProvider());
 
-    /* Initialize DFU */
-
+    // Initialize DFU
 #ifdef CONFIG_MCUMGR_SMP_BT
-    /* Initialize DFU over SMP */
     GetDFUOverSMP().Init(RequestSMPAdvertisingStart);
     GetDFUOverSMP().ConfirmNewImage();
 #endif
-
 #ifdef CONFIG_CHIP_OTA_REQUESTOR
     sOTAImageProcessor.SetOTADownloader(&sBDXDownloader);
     sBDXDownloader.SetImageProcessorDelegate(&sOTAImageProcessor);
@@ -177,7 +172,7 @@ CHIP_ERROR AppTask::Init()
     chip::SetRequestorInstance(&sOTARequestor);
 #endif
 
-    /* Initialize Timers */
+    // Initialize Timers
     k_timer_init(&sFunctionTimer, AppTask::TimerEventHandler, nullptr);
     k_timer_init(&sDimmerPressKeyTimer, AppTask::TimerEventHandler, nullptr);
     k_timer_init(&sDimmerTimer, AppTask::TimerEventHandler, nullptr);
@@ -185,16 +180,14 @@ CHIP_ERROR AppTask::Init()
     k_timer_user_data_set(&sDimmerPressKeyTimer, this);
     k_timer_user_data_set(&sFunctionTimer, this);
 
-    /* Print initial configs */
+    // Print initial configs
     ReturnErrorOnFailure(chip::Server::GetInstance().Init());
     ConfigurationMgr().LogDeviceConfig();
     PrintOnboardingCodes(chip::RendezvousInformationFlags(chip::RendezvousInformationFlag::kBLE));
 
-    /*
-     * Add CHIP aEvent handler and start CHIP thread.
-     * Note that all the initialization code should happen prior to this point
-     * to avoid data races between the main and the CHIP threads.
-     */
+    // Add CHIP aEvent handler and start CHIP thread.
+    // Note that all the initialization code should happen prior to this point
+    // to avoid data races between the main and the CHIP threads.
     PlatformMgr().AddEventHandler(ChipEventHandler, 0);
 
     err = PlatformMgr().StartEventLoopTask();
@@ -359,12 +352,12 @@ void AppTask::FunctionTimerEventHandler()
         sStatusLED.Set(false);
         sDiscoveryLED.Set(false);
         sBleLED.Set(false);
-        sUnsedLED.Set(false);
+        sUnusedLED.Set(false);
 
         sStatusLED.Blink(500);
         sDiscoveryLED.Blink(500);
         sBleLED.Blink(500);
-        sUnsedLED.Blink(500);
+        sUnusedLED.Blink(500);
     }
     else if (sAppTask.mFunction == TimerFunction::FactoryReset)
     {
@@ -385,7 +378,7 @@ void AppTask::DimmerTimerEventHandler()
 
 void AppTask::StartBLEAdvertisingHandler()
 {
-    /* Don't allow on starting Matter service BLE advertising after Thread provisioning. */
+    /// Don't allow on starting Matter service BLE advertising after Thread provisioning.
     if (ConnectivityMgr().IsThreadProvisioned())
     {
         LOG_WRN("NFC Tag emulation and Matter service BLE advertising not started - device is commissioned to a Thread network.");
@@ -451,13 +444,12 @@ void AppTask::ChipEventHandler(const ChipDeviceEvent * aEvent, intptr_t /* arg *
 
 void AppTask::UpdateStatusLED()
 {
-    sUnsedLED.Set(false);
+    sUnusedLED.Set(false);
 
-    /* Status LED indicates:
-     * - blinking 1 s - advertising, ready to commission
-     * - blinking 200 ms - commissioning in progress
-     * - constant lightning means commissioned with Thread network
-     */
+    // Status LED indicates:
+    // - blinking 1 s - advertising, ready to commission
+    // - blinking 200 ms - commissioning in progress
+    // - constant lightning means commissioned with Thread network
     if (sIsThreadBLEAdvertising && !sHaveBLEConnections)
     {
         sStatusLED.Blink(50, 950);
@@ -475,9 +467,8 @@ void AppTask::UpdateStatusLED()
         sStatusLED.Set(false);
     }
 
-    /* Ble LED indicates BLE connectivity:
-     * - blinking 200 ms means BLE advertising
-     */
+    // Ble LED indicates BLE connectivity:
+    //- blinking 200 ms means BLE advertising
     if (sIsSMPAdvertising)
     {
         sBleLED.Blink(30, 170);
@@ -487,10 +478,9 @@ void AppTask::UpdateStatusLED()
         sBleLED.Set(false);
     }
 
-    /* Binded LED indicates connection with light-bulb:
-     * - constant lighting means at least one light bulb is connected
-     * - blinking means looking for light bulb publishing
-     */
+    // Binded LED indicates connection with light-bulb:
+    // - constant lighting means at least one light bulb is connected
+    // - blinking means looking for light bulb publishing
     if (sIsDiscoveryEnabled)
     {
         sDiscoveryLED.Blink(30, 170);
@@ -596,6 +586,4 @@ void AppTask::RequestSMPAdvertisingStart(void)
 }
 #endif
 
-void AppTask::UpdateClusterState()
-{
-}
+void AppTask::UpdateClusterState() {}
