@@ -35,7 +35,7 @@ into an existing Matter network and can be controlled by this network.
 -   [Configuring the example](#configuring-the-example)
 -   [Flashing and debugging](#flashing-and-debugging)
 -   [Testing the example](#testing-the-example)
-    -   [Testing using CHIPTool](#testing-using-chiptool)
+    -   [Binding process](#binding-process)
     -   [Testing Device Firmware Upgrade](#testing-device-firmware-upgrade)
 
 <hr>
@@ -535,18 +535,21 @@ _In these steps following variables should be replace_:
  
  - < lighting id > &mdash; node_id of lighting-app used in commissioning
  - < switch id > &mdash; node_id of light_switch-app used in commissioning
+
  
 1) Add ACL (Access Control List) in Lighting-App device:
 
+To give the lighting endpoint permissions to receive commands from light switch an ACL should be written. An ACL should contain information about all clusters which can be called by light-switch.
+
 Command: 
 
-    $ chip-tool accesscontrol write acl '[{"fabricIndex": 1, "privilege": 5, "authMode": 2, "subjects": [112233], "targets": null}, {"fabricIndex": 1, "privilege": 3, "authMode": 2, "subjects": [<switch id>], "targets": [{"cluster": 6, "endpoint": 1, "deviceType": null}]}]' <lighting id> 0
+    $ chip-tool accesscontrol write acl '[{"fabricIndex": 1, "privilege": 5, "authMode": 2, "subjects": [112233], "targets": null}, {"fabricIndex": 1, "privilege": 3, "authMode": 2, "subjects": [<switch id>], "targets": [{"cluster": 6, "endpoint": 1, "deviceType": null}, {"cluster": 8, "endpoint": 1, "deviceType": null}]}]' <lighting id> 0
 
 
 Where:  
 __{"fabricIndex": 1, "privilege": 5, "authMode": 2, "subjects": [112233], "targets": null}__ is an ACL for communication with chip-tool 
 
-__{"fabricIndex": 1, "privilege": 3, "authMode": 2, "subjects": [__< switch id >__], "targets": [{"cluster": 6, "endpoint": 1, "deviceType": null}]}__ is an ACL for binding.
+__{"fabricIndex": 1, "privilege": 3, "authMode": 2, "subjects": [< switch id >], "targets": [{"cluster": 6, "endpoint": 1, "deviceType": null}, {"cluster": 8, "endpoint": 1, "deviceType": null}]}__ is an ACL for binding (cluster nr 6 is a _onoff_ cluster and nr 8 is a _LevelControl_ cluster).
  
 To check if ACL was added use command:
 
