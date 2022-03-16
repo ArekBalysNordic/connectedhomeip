@@ -36,7 +36,7 @@ public:
      * 
      * @return CHIP_ERROR 
      */
-    CHIP_ERROR Init();
+    void Init();
 
     /**
      * @brief Initiate Action for binded lighting-app device after Switch interaction
