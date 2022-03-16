@@ -500,20 +500,22 @@ directory:
 
 ## Testing the example
 
-### Binding Lighting-App device
+### Binding process
 
-A Lighting device should be connected to light-switch device via Matter network. A process of connecting lighting device to light-switch is called binding. 
+A light switch device is a simple embedded controller, which has ability to control lighting devices such as light-bulbs, LEDs etc. After commissioning into a Matter network a light-switch device does not know what can control. It means there is no information about another device connected into the same network and user must provide this information to the light-switch. A solution for this problem is a process called binding. 
 
-To bind two devices in matter network we can use [chip-tool for windows/linux](../../chip-tool/README.md).
+Binding describes a relationship between the device that contains binding cluster and endpoint device. An example of this relationship is Light-Switch as a simple switch and light bulb as a endpoint device. To allow endpoint device to receive commands form light-switch a proper ACL must be added. After binding process a light switch device contains information about connected device such as ipv6 address and a way how to reach endpoint in a Matter network. This allows to send command directly from light-switch to lighting device without previous sending it to border router.
 
-### Binding using chip-tool for windows/linux
+To perform binding process you need a controller which has ability to write binding table to light switch device and to write proper ACL to endpoint lighting device. For example the [chip-tool for Windows/Linux](../../chip-tool/README.md) can be used as a controller.
+
+### Binding using chip-tool for Windows/Linux
 To install latest chip-tool go to main __connectedhomeip__ directory and run command:
     
     $ gn gen out/chiptool --args='chip_mdns="platform"' && ninja -C out/chiptool chip-tool 
 
 If an error occurs learn [how to prepare building environment](../../../docs/guides/BUILDING.md#prerequisites) to install all dependencies for chip-tool. 
 
-To bind devices using [chip-tool for windows/linux](../../chip-tool/README.md) first commission them to thread network. To do it go to _out/chiptool_ directory and run following command: 
+To bind devices using [chip-tool for Windows/Linux](../../chip-tool/README.md) first commission them to thread network. To do it go to _out/chiptool_ directory and run following command: 
 
     $ chip-tool pairing ble-thread <node_id> hex:<operationalDataset> <device bluetooth pin code> <device bluetooth discriminator>
 
@@ -534,7 +536,7 @@ _In these steps following variables should be replace_:
  - < lighting id > &mdash; node_id of lighting-app used in commissioning
  - < switch id > &mdash; node_id of light_switch-app used in commissioning
  
-1) Add ACL (Access Control List) in Lighting-App:
+1) Add ACL (Access Control List) in Lighting-App device:
 
 Command: 
 
@@ -568,11 +570,9 @@ To use light switch without brightness dimmer apply only first binding command.
 
 After binding process a lighting device can be controlled by light-switch in two ways - by pressing [button 2](#device-ui) or using matter command-line interface. 
 
-To enable matter CLI a light_switch-app example should be compiled with additional option: __-DCONFIG_CHIP_LIB_SHELL=y__:
+To enable matter CLI a light_switch-app example should be compiled with additional option __-DCONFIG_CHIP_LIB_SHELL=y__. Run the following command with _build-target_ replaced with the build target name of the Nordic Semiconductor kit you are using (for example _nrf52840dk_nrf52840_):
 
-    $ west build -b nrf52840dk_nrf52840 -- -DCONFIG_CHIP_LIB_SHELL=y
-    or
-    $ west build -b nrf5340dk_nrf5340_cpuapp -- -DCONFIG_CHIP_LIB_SHELL=y
+    $ west build -b build-target -- -DCONFIG_CHIP_LIB_SHELL=y
 
 Use these commands to control lighting app via Matter CLI:
 
