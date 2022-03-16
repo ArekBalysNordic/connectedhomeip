@@ -45,7 +45,7 @@ private:
         DimmerTrigger,
         Dimmer
     };
-    enum class TimerFunction
+    enum class TimerFunction : uint8_t
     {
         NoneSelected = 0,
         SoftwareUpdate,
