@@ -54,11 +54,11 @@ using namespace ::chip::DeviceLayer;
 LOG_MODULE_DECLARE(app);
 namespace {
 constexpr EndpointId kLightSwitchEndpointId           = 1;
-constexpr uint32_t kFactoryResetTriggerTimeout = 3000;
-constexpr uint32_t kFactoryResetCancelWindow   = 3000;
-constexpr uint32_t kDimmerTriggeredTimeout     = 500;
-constexpr uint32_t kDimmerInterval             = 300;
-constexpr size_t kAppEventQueueSize            = 10;
+static constexpr uint32_t kFactoryResetTriggerTimeout = 3000;
+static constexpr uint32_t kFactoryResetCancelWindow   = 3000;
+static constexpr uint32_t kDimmerTriggeredTimeout     = 500;
+static constexpr uint32_t kDimmerInterval             = 300;
+static constexpr size_t kAppEventQueueSize            = 10;
 
 K_MSGQ_DEFINE(sAppEventQueue, sizeof(AppEvent), kAppEventQueueSize, alignof(AppEvent));
 
@@ -69,13 +69,13 @@ LEDWidget sDiscoveryLED;
 LEDWidget sBleLED;
 LEDWidget sUnusedLED;
 
-bool sIsThreadProvisioned    = false;
-bool sIsThreadEnabled        = false;
-bool sIsThreadBLEAdvertising = false;
-bool sIsSMPAdvertising       = false;
-bool sHaveBLEConnections     = false;
-bool sIsDiscoveryEnabled     = false;
-bool sWasDimmerTriggered     = false;
+static bool sIsThreadProvisioned    = false;
+static bool sIsThreadEnabled        = false;
+static bool sIsThreadBLEAdvertising = false;
+static bool sIsSMPAdvertising       = false;
+static bool sHaveBLEConnections     = false;
+static bool sIsDiscoveryEnabled     = false;
+static bool sWasDimmerTriggered     = false;
 
 k_timer sFunctionTimer;
 k_timer sDimmerPressKeyTimer;
@@ -206,7 +206,7 @@ CHIP_ERROR AppTask::StartApp()
 {
     ReturnErrorOnFailure(Init());
 
-    AppEvent aEvent{};
+    AppEvent aEvent = {};
 
     while (true)
     {
@@ -249,9 +249,6 @@ void AppTask::DispatchEvent(const AppEvent & aEvent)
         break;
     case AppEvent::SwitchOn:
         sLightSwitch.InitiateActionSwitch(LightSwitch::Action::On);
-        break;
-    case AppEvent::SwitchOff:
-        sLightSwitch.InitiateActionSwitch(LightSwitch::Action::Off);
         break;
     case AppEvent::FunctionTimer:
         FunctionTimerEventHandler();
