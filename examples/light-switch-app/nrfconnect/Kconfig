@@ -13,7 +13,7 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-mainmenu "Matter nRF Connect Lock Example Application"
+mainmenu "Matter nRF Connect Light Switch Example Application"
 
 config STATE_LEDS
 	bool "Use LEDs to indicate the device state"

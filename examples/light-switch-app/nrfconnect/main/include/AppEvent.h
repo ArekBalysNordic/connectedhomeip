@@ -38,7 +38,6 @@ struct AppEvent
         FunctionButtonRelease,
         DimmerButtonPress,
         DimmerButtonRelease,
-        DiscoverButtonPress,
         DimmerChangeBrightness,
         DimmerTimer,
         SwitchToggle,

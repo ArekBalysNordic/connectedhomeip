@@ -57,7 +57,6 @@ private:
     {
         Function,
         Dimmer,
-        Discovery
     };
 
     friend AppTask & GetAppTask();
