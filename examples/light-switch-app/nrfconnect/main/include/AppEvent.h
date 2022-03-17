@@ -32,7 +32,6 @@ struct AppEvent
     {
 #ifdef CONFIG_MCUMGR_SMP_BT
         StartSMPAdvertising,
-
 #endif
         StartBLEAdvertising,
         FunctionButtonPress,

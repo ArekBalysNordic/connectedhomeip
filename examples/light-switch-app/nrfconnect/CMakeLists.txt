@@ -81,7 +81,6 @@ target_sources(app PRIVATE
                main/AppTask.cpp
                main/main.cpp
                main/LightSwitch.cpp
-               main/ZclCallbacks.cpp
                main/ShellCommands.cpp
                main/BindingHandler.cpp
                ${GEN_DIR}/light-switch-app/zap-generated/callback-stub.cpp
