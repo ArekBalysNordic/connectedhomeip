@@ -194,7 +194,7 @@ following states are possible:
 -   _Solid On_ &mdash; The device is fully provisioned and has full Thread
     network and service connectivity.
 
-**LED 2** simulates the BLE DFU process. The followingstates are possible:
+**LED 2** simulates the BLE DFU process. The following states are possible:
 
 -   _Off_ &mdash; BLE is not advertising and DFU can not be performed.
 
@@ -522,8 +522,8 @@ To bind devices using [chip-tool for Windows/Linux](../../chip-tool/README.md) f
 Fill up given command with your settings:
 - __< node_id >__ is an unique device node id on thread network.
 - __< operationalDataset >__ is a operational data set of thread network to get it 
-- __< device bluetooth pin code >__ - is a pin code set in _exampledir/main/include/CHIPProjectConfig.h_ file and its default value is _20202021_
-- __< device bluetooth discriminator >__ is a unique ble discriminator set in _exampledir/main/include/CHIPProjectConfig.h_ and its default value is _3840_
+- __< device bluetooth pin code >__ - is a pin code set in _example_directory/main/include/CHIPProjectConfig.h_ file and its default value is _20202021_
+- __< device bluetooth discriminator >__ is a unique ble discriminator set in _example_directory/main/include/CHIPProjectConfig.h_ and its default value is _3840_
 
 Example of pairing command using default settings:
 
