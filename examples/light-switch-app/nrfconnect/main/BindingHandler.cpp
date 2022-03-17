@@ -77,6 +77,36 @@ void BindingHandler::OnOffProcessCommandUnicast(CommandId commandId, const Ember
     }
 }
 
+void BindingHandler::OnOffProcessCommandGroup(CommandId commandId, const EmberBindingTableEntry & binding, void * context)
+{
+    LOG_INF("Group OnOff Process Binding command...");
+    auto sourceNodeId = Server::GetInstance().GetFabricTable().FindFabricWithIndex(binding.fabricIndex)->GetNodeId();
+    Messaging::ExchangeManager & exchangeMgr = Server::GetInstance().GetExchangeManager();
+    CHIP_ERROR ret                           = CHIP_NO_ERROR;
+    switch (commandId)
+    {
+    case Clusters::OnOff::Commands::Toggle::Id:
+        Clusters::OnOff::Commands::Toggle::Type toggleCommand;
+        ret =
+            Controller::InvokeGroupCommandRequest(&exchangeMgr, binding.fabricIndex, binding.groupId, sourceNodeId, toggleCommand);
+        break;
+
+    case Clusters::OnOff::Commands::On::Id:
+        Clusters::OnOff::Commands::On::Type onCommand;
+        ret = Controller::InvokeGroupCommandRequest(&exchangeMgr, binding.fabricIndex, binding.groupId, sourceNodeId, onCommand);
+        break;
+
+    case Clusters::OnOff::Commands::Off::Id:
+        Clusters::OnOff::Commands::Off::Type offCommand;
+        ret = Controller::InvokeGroupCommandRequest(&exchangeMgr, binding.fabricIndex, binding.groupId, sourceNodeId, offCommand);
+        break;
+    }
+    if (CHIP_NO_ERROR != ret)
+    {
+        LOG_ERR("Invoke Group Command Request ERROR: %s", chip::ErrorStr(ret));
+    }
+}
+
 void BindingHandler::LevelControlProcessCommandUnicast(CommandId commandId, const EmberBindingTableEntry & binding,
                                                        DeviceProxy * device, void * context)
 {
@@ -110,12 +140,48 @@ void BindingHandler::LevelControlProcessCommandUnicast(CommandId commandId, cons
     }
 }
 
+void BindingHandler::LevelControlProcessCommandGroup(CommandId commandId, const EmberBindingTableEntry & binding, void * context)
+{
+    LOG_INF("Group Level Control Process Binding command...");
+    auto sourceNodeId = Server::GetInstance().GetFabricTable().FindFabricWithIndex(binding.fabricIndex)->GetNodeId();
+    Messaging::ExchangeManager & exchangeMgr = Server::GetInstance().GetExchangeManager();
+
+    switch (commandId)
+    {
+    case Clusters::LevelControl::Commands::MoveToLevel::Id: {
+        Clusters::LevelControl::Commands::MoveToLevel::Type moveToLevelCommand;
+        BindingData * data       = reinterpret_cast<BindingData *>(context);
+        moveToLevelCommand.level = data->value;
+        Controller::InvokeGroupCommandRequest(&exchangeMgr, binding.fabricIndex, binding.groupId, sourceNodeId, moveToLevelCommand);
+    }
+    break;
+    default:
+        ChipLogError(NotSpecified, "Invalid binding command data - commandId is not supported");
+        break;
+    }
+}
+
 void BindingHandler::LightSwitchChangedHandler(const EmberBindingTableEntry & binding, DeviceProxy * deviceProxy, void * context)
 {
     VerifyOrReturn(context != nullptr, LOG_ERR("Invalid context for Light switch handler"););
     BindingData * data = static_cast<BindingData *>(context);
 
-    if (binding.type == EMBER_UNICAST_BINDING)
+    if (binding.type == EMBER_MULTICAST_BINDING && data->isGroup)
+    {
+        switch (data->clusterId)
+        {
+        case Clusters::OnOff::Id:
+            OnOffProcessCommandGroup(data->commandId, binding, context);
+            break;
+        case Clusters::LevelControl::Id:
+            LevelControlProcessCommandGroup(data->commandId, binding, context);
+            break;
+        default:
+            ChipLogError(NotSpecified, "Invalid binding group command data");
+            break;
+        }
+    }
+    else if (binding.type == EMBER_UNICAST_BINDING && !data->isGroup)
     {
         switch (data->clusterId)
         {
@@ -126,7 +192,7 @@ void BindingHandler::LightSwitchChangedHandler(const EmberBindingTableEntry & bi
             LevelControlProcessCommandUnicast(data->commandId, binding, deviceProxy, context);
             break;
         default:
-            LOG_DBG("Invalid binding unicast command data");
+            ChipLogError(NotSpecified, "Invalid binding unicast command data");
             break;
         }
     }
@@ -151,7 +217,7 @@ void BindingHandler::PrintBindingTable()
 {
     BindingTable & bindingTable = BindingTable::GetInstance();
 
-    LOG_INF("Binding Table [%d]:", bindingTable.Size());
+    LOG_INF("Binding Table size: [%d]:", bindingTable.Size());
     uint8_t i = 0;
     for (auto & entry : bindingTable)
     {

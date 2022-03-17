@@ -35,6 +35,8 @@ using Shell::streamer_printf;
 
 Engine sShellSwitchSubCommands;
 Engine sShellSwitchOnOffSubCommands;
+Engine sShellSwitchGroupsSubCommands;
+Engine sShellSwitchGroupsOnOffSubCommands;
 
 static CHIP_ERROR SwitchHelpHandler(int argc, char ** argv)
 {
@@ -49,6 +51,12 @@ static CHIP_ERROR SwitchCommandHandler(int argc, char ** argv)
         return SwitchHelpHandler(argc, argv);
     }
     return sShellSwitchSubCommands.ExecCommand(argc, argv);
+}
+
+static CHIP_ERROR TableCommandHelper(int argc, char ** argv)
+{
+    BindingHandler::PrintBindingTable();
+    return CHIP_NO_ERROR;
 }
 
 namespace Unicast {
@@ -102,11 +110,85 @@ static CHIP_ERROR ToggleCommandHandler(int argc, char ** argv)
 }
 } // namespace Unicast
 
+namespace Group {
+
+CHIP_ERROR SwitchHelpHandler(int argc, char ** argv)
+{
+    sShellSwitchGroupsSubCommands.ForEachCommand(Shell::PrintCommandHelp, nullptr);
+    return CHIP_NO_ERROR;
+}
+
+CHIP_ERROR SwitchCommandHandler(int argc, char ** argv)
+{
+    if (argc == 0)
+    {
+        return SwitchHelpHandler(argc, argv);
+    }
+
+    return sShellSwitchGroupsSubCommands.ExecCommand(argc, argv);
+}
+
+static CHIP_ERROR OnOffHelpHandler(int argc, char ** argv)
+{
+    sShellSwitchGroupsOnOffSubCommands.ForEachCommand(Shell::PrintCommandHelp, nullptr);
+    return CHIP_NO_ERROR;
+}
+
+static CHIP_ERROR OnOffCommandHandler(int argc, char ** argv)
+{
+    if (argc == 0)
+    {
+        return OnOffHelpHandler(argc, argv);
+    }
+
+    return sShellSwitchGroupsOnOffSubCommands.ExecCommand(argc, argv);
+}
+
+CHIP_ERROR OnCommandHandler(int argc, char ** argv)
+{
+    BindingHandler::BindingData * data = Platform::New<BindingHandler::BindingData>();
+    data->endpointId                   = LightSwitch::GetInstance().GetLightSwitchEndpointId();
+    data->commandId                    = Clusters::OnOff::Commands::On::Id;
+    data->clusterId                    = Clusters::OnOff::Id;
+    data->isGroup                      = true;
+
+    DeviceLayer::PlatformMgr().ScheduleWork(BindingHandler::SwitchWorkerHandler, reinterpret_cast<intptr_t>(data));
+    return CHIP_NO_ERROR;
+}
+
+CHIP_ERROR OffCommandHandler(int argc, char ** argv)
+{
+    BindingHandler::BindingData * data = Platform::New<BindingHandler::BindingData>();
+    data->endpointId                   = LightSwitch::GetInstance().GetLightSwitchEndpointId();
+    data->commandId                    = Clusters::OnOff::Commands::Off::Id;
+    data->clusterId                    = Clusters::OnOff::Id;
+    data->isGroup                      = true;
+
+    DeviceLayer::PlatformMgr().ScheduleWork(BindingHandler::SwitchWorkerHandler, reinterpret_cast<intptr_t>(data));
+    return CHIP_NO_ERROR;
+}
+
+CHIP_ERROR ToggleCommandHandler(int argc, char ** argv)
+{
+    BindingHandler::BindingData * data = Platform::New<BindingHandler::BindingData>();
+    data->endpointId                   = LightSwitch::GetInstance().GetLightSwitchEndpointId();
+    data->commandId                    = Clusters::OnOff::Commands::Toggle::Id;
+    data->clusterId                    = Clusters::OnOff::Id;
+    data->isGroup                      = true;
+
+    DeviceLayer::PlatformMgr().ScheduleWork(BindingHandler::SwitchWorkerHandler, reinterpret_cast<intptr_t>(data));
+    return CHIP_NO_ERROR;
+}
+
+} // namespace Group
+
 void RegisterSwitchCommands()
 {
     static const shell_command_t sSwitchSubCommands[] = {
         { &SwitchHelpHandler, "help", "Switch commands" },
         { &Unicast::OnOffCommandHandler, "onoff", "Usage: switch onoff [on|off|toggle]" },
+        { &Group::SwitchCommandHandler, "groups", "Usage: switch groups onoff [on|off|toggle]" },
+        { &TableCommandHelper, "table", "Print a binding table" }
     };
 
     static const shell_command_t sSwitchOnOffSubCommands[] = {
@@ -116,10 +198,24 @@ void RegisterSwitchCommands()
         { &Unicast::ToggleCommandHandler, "toggle", "Sends toggle command to bound lighting app" }
     };
 
-    static const shell_command_t sSwitchCommand = { &SwitchCommandHandler, "switch",
-                                                    "Light-switch commands. Usage: switch [onoff]" };
+    static const shell_command_t sSwitchGroupsSubCommands[] = {
+        { &Group::SwitchHelpHandler, "help", "switch a group of bounded lightning apps" },
+        { &Group::OnOffCommandHandler, "onoff", "Usage: switch groups onoff [on|off|toggle]" }
+    };
 
+    static const shell_command_t sSwichGroupsOnOffSubCommands[] = {
+        { &Group::OnOffHelpHandler, "help", "Usage: switch groups onoff [on|off|toggle]" },
+        { &Group::OnCommandHandler, "on", "Sends on command to bound Group" },
+        { &Group::OffCommandHandler, "off", "Sends off command to bound Group" },
+        { &Group::ToggleCommandHandler, "toggle", "Sends toggle command to bound Group" }
+    };
+
+    static const shell_command_t sSwitchCommand = { &SwitchCommandHandler, "switch",
+                                                    "Light-switch commands. Usage: switch [onoff|groups]" };
+
+    sShellSwitchGroupsOnOffSubCommands.RegisterCommands(sSwichGroupsOnOffSubCommands, ArraySize(sSwichGroupsOnOffSubCommands));
     sShellSwitchOnOffSubCommands.RegisterCommands(sSwitchOnOffSubCommands, ArraySize(sSwitchOnOffSubCommands));
+    sShellSwitchGroupsSubCommands.RegisterCommands(sSwitchGroupsSubCommands, ArraySize(sSwitchGroupsSubCommands));
     sShellSwitchSubCommands.RegisterCommands(sSwitchSubCommands, ArraySize(sSwitchSubCommands));
 
     Engine::Root().RegisterCommands(&sSwitchCommand, 1);
