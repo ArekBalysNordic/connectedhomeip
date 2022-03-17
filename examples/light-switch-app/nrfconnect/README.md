@@ -267,6 +267,12 @@ Use these commands to control a device running lighting-app example via Matter C
     uart:~$ switch onoff off    : sends unicast Off command to bound device
     uart:~$ switch onoff toggle : sends unicast Toggle command to bound device
 
+Use these commands to control group of lighting devices via Matter CLI:
+
+    uart:~$ switch groups onoff on     : sends multicast On command to all bound devices in a group
+    uart:~$ switch groups onoff off    : sends multicast Off command to  all bound devices in a group
+    uart:~$ switch groups onoff toggle : sends multicast Toggle command to all bound devices in a group
+
 Check the [CLI tutorial](../../../docs/guides/nrfconnect_examples_cli.md) to
 learn how to use other command-line interface of the application.
 
@@ -545,7 +551,7 @@ To test this example, two devices - a device running [Lighting-App example](../.
 
 To perform the binding process you need a controller which can write binding table to light switch device and write proper ACL to an endpoint light bulb ([Lighting-App](../../lighting-app/nrfconnect/)). For example, the [chip-tool for Windows/Linux](../../chip-tool/README.md) can be used as a controller. An ACL should contain information about all clusters which can be called by light-switch. See [chip-tool-guide interacting with ZCL clusters section](../../../docs/guides/chip_tool_guide.md#interacting-with-zcl-clusters) for more information about ACLs.
 
-### Binding using chip-tool for Windows/Linux
+### Binding unicast device using chip-tool for Windows/Linux
 Binding process consists of some steps which must be completed before communication between devices.
 
 In this example all commands below are written for light switch device commissioned to a Matter network with nodeId = 2 and light bulb device commissioned to the same network with node = 1.
@@ -577,7 +583,43 @@ To perform binding process you need to complete following steps:
     __{"fabricIndex": 1, "node": <1>, "endpoint": 1, "cluster": 8}__ is a binding for __LevelControl__ cluster. 
 
 
-To test communication between Light Switch and bound device use [buttons](#buttons) or [CLI commands](#matter-cli-commands). Both of them are described in [Device UI section](#device-ui).
+### Binding multicast devices using chip-tool for Windows/Linux
+Binding multicast allows to add all lighting devices to one multicast group. After that Light Switch can send multicast request and all of devices listening bound multicast group can run received command. It can be used to control more than one lighting device via single light switch at the same time.
+
+In this example groupNo is set to 257 and groupName is set to "Example"
+
+To perform binding for group multicast you need to complete following steps:
+
+1. Navigate to the CHIP root directory:
+
+2. Build chip-tool using [chip-tool guide](../../../docs/guides/chip_tool_guide.md#building).
+
+3. Go to chip-tool build directory.
+
+4. Add ACL (Access Control List) in the lighting endpoint permissions to receive commands from Light Switch:
+
+        chip-tool accesscontrol write acl '[{"fabricIndex": 1, "privilege": 5, "authMode": 2, "subjects": [112233], "targets": null}, {"fabricIndex": 1, "privilege": 3, "authMode": 2, "subjects": [2], "targets": [{"cluster": 6, "endpoint": 1, "deviceType": null}, {"cluster": 8, "endpoint": 1, "deviceType": null}]}]' 1 0
+
+5. Add Light Switch device to multicast group:
+
+        chip-tool groups add-group 257 "Example" 2 1
+
+6. Add all lighting devices to the same multicast group by applying command below for each of them:
+
+        chip-tool groups add-group 257 "Example" <lighting node id> 1
+
+7. Add Binding commands for group multicast or add combination of multicast and unicast:
+    
+    a) Only multicast:
+
+        chip-tool binding write binding '[{"fabricIndex": 1, "group": 257}]' 2 1"
+
+    b) Both unicast & multicast:
+
+        chip-tool binding write binding '[{"fabricIndex": 1, "group": 257}, {"fabricIndex": 1, "node": 1, "endpoint": 1, "cluster": 6}, {"fabricIndex": 1, "node": 1, "endpoint": 1, "cluster": 8}]' 2 1"
+
+
+To test communication between Light Switch and bound devices use [buttons](#buttons) or [CLI commands](#matter-cli-commands). Both of them are described in [Device UI section](#device-ui).
 
 Notes:
 

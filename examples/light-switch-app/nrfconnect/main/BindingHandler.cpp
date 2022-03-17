@@ -126,7 +126,7 @@ void BindingHandler::LightSwitchChangedHandler(const EmberBindingTableEntry & aB
             LevelControlProcessCommandUnicast(data->CommandId, aBinding, aDeviceProxy, aContext);
             break;
         default:
-            LOG_DBG("Invalid binding unicast command data");
+            ChipLogError(NotSpecified, "Invalid binding unicast command data");
             break;
         }
     }
@@ -151,7 +151,7 @@ void BindingHandler::PrintBindingTable()
 {
     BindingTable & bindingTable = BindingTable::GetInstance();
 
-    LOG_INF("Binding Table [%d]:", bindingTable.Size());
+    LOG_INF("Binding Table size: [%d]:", bindingTable.Size());
     uint8_t i = 0;
     for (auto & entry : bindingTable)
     {
