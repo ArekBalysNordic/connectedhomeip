@@ -77,40 +77,9 @@ void BindingHandler::OnOffProcessCommandUnicast(CommandId commandId, const Ember
     }
 }
 
-void BindingHandler::OnOffProcessCommandGroup(CommandId commandId, const EmberBindingTableEntry & binding, void * context)
-{
-    LOG_INF("Group OnOff Process Binding command...");
-    auto sourceNodeId = Server::GetInstance().GetFabricTable().FindFabricWithIndex(binding.fabricIndex)->GetNodeId();
-    Messaging::ExchangeManager & exchangeMgr = Server::GetInstance().GetExchangeManager();
-    CHIP_ERROR ret                           = CHIP_NO_ERROR;
-    switch (commandId)
-    {
-    case Clusters::OnOff::Commands::Toggle::Id:
-        Clusters::OnOff::Commands::Toggle::Type toggleCommand;
-        ret =
-            Controller::InvokeGroupCommandRequest(&exchangeMgr, binding.fabricIndex, binding.groupId, sourceNodeId, toggleCommand);
-        break;
-
-    case Clusters::OnOff::Commands::On::Id:
-        Clusters::OnOff::Commands::On::Type onCommand;
-        ret = Controller::InvokeGroupCommandRequest(&exchangeMgr, binding.fabricIndex, binding.groupId, sourceNodeId, onCommand);
-        break;
-
-    case Clusters::OnOff::Commands::Off::Id:
-        Clusters::OnOff::Commands::Off::Type offCommand;
-        ret = Controller::InvokeGroupCommandRequest(&exchangeMgr, binding.fabricIndex, binding.groupId, sourceNodeId, offCommand);
-        break;
-    }
-    if (CHIP_NO_ERROR != ret)
-    {
-        LOG_INF("Invoke Group Command Request ERROR: %s", ErrorStr(ret));
-    }
-}
-
 void BindingHandler::LevelControlProcessCommandUnicast(CommandId commandId, const EmberBindingTableEntry & binding,
                                                        DeviceProxy * device, void * context)
 {
-    LOG_DBG("Unicast Level Control Process Binding command {0x%x}-> {%d}...", binding.remote, (uint16_t) commandId);
     auto onSuccess = [](const ConcreteCommandPath & commandPath, const StatusIB & status, const auto & dataResponse) {
         LOG_DBG("Binding command applied successfully!");
     };
@@ -141,54 +110,12 @@ void BindingHandler::LevelControlProcessCommandUnicast(CommandId commandId, cons
     }
 }
 
-void BindingHandler::LevelControlProcessCommandGroup(CommandId commandId, const EmberBindingTableEntry & binding, void * context)
-{
-    LOG_INF("Group Level Control Process Binding command...");
-    auto sourceNodeId = Server::GetInstance().GetFabricTable().FindFabricWithIndex(binding.fabricIndex)->GetNodeId();
-    Messaging::ExchangeManager & exchangeMgr = Server::GetInstance().GetExchangeManager();
-    CHIP_ERROR ret                           = CHIP_NO_ERROR;
-
-    switch (commandId)
-    {
-    case Clusters::LevelControl::Commands::MoveToLevel::Id: {
-        Clusters::LevelControl::Commands::MoveToLevel::Type moveToLevelCommand;
-        BindingData * data       = reinterpret_cast<BindingData *>(context);
-        moveToLevelCommand.level = data->value;
-        ret = Controller::InvokeGroupCommandRequest(&exchangeMgr, binding.fabricIndex, binding.groupId, sourceNodeId,
-                                                    moveToLevelCommand);
-    }
-    break;
-    default:
-        LOG_DBG("Invalid binding command data - commandId is not supported");
-        break;
-    }
-    if (CHIP_NO_ERROR != ret)
-    {
-        LOG_INF("Invoke Group Command Request ERROR: %s", ErrorStr(ret));
-    }
-}
-
 void BindingHandler::LightSwitchChangedHandler(const EmberBindingTableEntry & binding, DeviceProxy * deviceProxy, void * context)
 {
     VerifyOrReturn(context != nullptr, LOG_ERR("Invalid context for Light switch handler"););
     BindingData * data = static_cast<BindingData *>(context);
 
-    if (binding.type == EMBER_MULTICAST_BINDING && data->isGroup)
-    {
-        switch (data->clusterId)
-        {
-        case Clusters::OnOff::Id:
-            OnOffProcessCommandGroup(data->commandId, binding, context);
-            break;
-        case Clusters::LevelControl::Id:
-            LevelControlProcessCommandGroup(data->commandId, binding, context);
-            break;
-        default:
-            LOG_DBG("Invalid binding group command data");
-            break;
-        }
-    }
-    else if (binding.type == EMBER_UNICAST_BINDING && !data->isGroup)
+    if (binding.type == EMBER_UNICAST_BINDING)
     {
         switch (data->clusterId)
         {
