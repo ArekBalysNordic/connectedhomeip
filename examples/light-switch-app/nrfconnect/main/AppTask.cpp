@@ -64,16 +64,15 @@ constexpr size_t kAppEventQueueSize            = 10;
 K_MSGQ_DEFINE(sAppEventQueue, sizeof(AppEvent), kAppEventQueueSize, alignof(AppEvent));
 
 LEDWidget sStatusLED;
-LEDWidget sDiscoveryLED;
 LEDWidget sBleLED;
 LEDWidget sUnusedLED;
+LEDWidget sUnusedLED2;
 
 bool sIsThreadProvisioned    = false;
 bool sIsThreadEnabled        = false;
 bool sIsThreadBLEAdvertising = false;
 bool sIsSMPAdvertising       = false;
 bool sHaveBLEConnections     = false;
-bool sIsDiscoveryEnabled     = false;
 bool sWasDimmerTriggered     = false;
 
 k_timer sFunctionTimer;
@@ -138,7 +137,7 @@ CHIP_ERROR AppTask::Init()
     LEDWidget::SetStateUpdateCallback(LEDStateUpdateHandler);
     sStatusLED.Init(DK_LED1);
     sBleLED.Init(DK_LED2);
-    sDiscoveryLED.Init(DK_LED3);
+    sUnusedLED2.Init(DK_LED3);
     sUnusedLED.Init(DK_LED4);
     UpdateStatusLED();
 
@@ -171,7 +170,7 @@ CHIP_ERROR AppTask::Init()
     ConfigurationMgr().LogDeviceConfig();
     PrintOnboardingCodes(RendezvousInformationFlags(RendezvousInformationFlag::kBLE));
 
-    // Add CHIP aEvent handler and start CHIP thread.
+    // Add CHIP event handler and start CHIP thread.
     // Note that all the initialization code should happen prior to this point
     // to avoid data races between the main and the CHIP threads.
     PlatformMgr().AddEventHandler(ChipEventHandler, 0);
@@ -237,9 +236,6 @@ void AppTask::DispatchEvent(const AppEvent & aEvent)
     case AppEvent::DimmerButtonRelease:
         ButtonReleaseHandler(Button::Dimmer);
         break;
-    case AppEvent::DiscoverButtonPress:
-        ButtonPressHandler(Button::Discovery);
-        break;
     case AppEvent::SwitchToggle:
         LightSwitch::GetInstance().InitiateActionSwitch(LightSwitch::Action::Toggle);
         break;
@@ -283,9 +279,6 @@ void AppTask::ButtonPressHandler(Button aButton)
     case Button::Dimmer:
         LOG_INF("Press this button for at least 500 ms to change light sensitivity of binded lighting devices.");
         sAppTask.StartTimer(Timer::DimmerTrigger, kDimmerTriggeredTimeout);
-        break;
-    case Button::Discovery:
-        UpdateStatusLED();
         break;
     default:
         break;
@@ -341,16 +334,18 @@ void AppTask::FunctionTimerEventHandler()
         sAppTask.StartTimer(Timer::Function, kFactoryResetCancelWindow);
         sAppTask.mFunction = TimerFunction::FactoryReset;
 
+#ifdef CONFIG_STATE_LEDS
         // reset all LEDs to synchronize factory reset blinking
         sStatusLED.Set(false);
-        sDiscoveryLED.Set(false);
+        sUnusedLED2.Set(false);
         sBleLED.Set(false);
         sUnusedLED.Set(false);
 
         sStatusLED.Blink(500);
-        sDiscoveryLED.Blink(500);
+        sUnusedLED2.Blink(500);
         sBleLED.Blink(500);
         sUnusedLED.Blink(500);
+#endif
     }
     else if (sAppTask.mFunction == TimerFunction::FactoryReset)
     {
@@ -374,7 +369,6 @@ void AppTask::StartBLEAdvertisingHandler()
     /// Don't allow on starting Matter service BLE advertising after Thread provisioning.
     if (Server::GetInstance().GetFabricTable().FabricCount() != 0)
     {
-        LOG_INF("NFC Tag emulation and Matter service BLE advertising not started - device is commissioned to a Thread network.");
         LOG_INF("Matter service BLE advertising not started - device is already commissioned");
         return;
     }
@@ -438,7 +432,9 @@ void AppTask::ChipEventHandler(const ChipDeviceEvent * aEvent, intptr_t /* arg *
 
 void AppTask::UpdateStatusLED()
 {
+#ifdef CONFIG_STATE_LEDS
     sUnusedLED.Set(false);
+    sUnusedLED2.Set(false);
 
     // Status LED indicates:
     // - blinking 1 s - advertising, ready to commission
@@ -471,18 +467,7 @@ void AppTask::UpdateStatusLED()
     {
         sBleLED.Set(false);
     }
-
-    // Binded LED indicates connection with light-bulb:
-    // - constant lighting means at least one light bulb is connected
-    // - blinking means looking for light bulb publishing
-    if (sIsDiscoveryEnabled)
-    {
-        sDiscoveryLED.Blink(30, 170);
-    }
-    else
-    {
-        sDiscoveryLED.Set(false);
-    }
+#endif
 }
 
 void AppTask::ButtonEventHandler(uint32_t aButtonState, uint32_t aHasChanged)
@@ -503,11 +488,6 @@ void AppTask::ButtonEventHandler(uint32_t aButtonState, uint32_t aHasChanged)
     else if (DK_BTN2_MSK & aHasChanged)
     {
         GetAppTask().PostEvent(AppEvent{ AppEvent::DimmerButtonRelease });
-    }
-
-    if (DK_BTN3_MSK & aButtonState & aHasChanged)
-    {
-        GetAppTask().PostEvent(AppEvent(AppEvent::DiscoverButtonPress));
     }
 
     if (DK_BTN4_MSK & aHasChanged & aButtonState)

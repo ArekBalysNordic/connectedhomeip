@@ -37,14 +37,11 @@ public:
         chip::CommandId commandId;
         chip::ClusterId clusterId;
         uint8_t value;
-        bool isGroup = false;
     };
 
 private:
     static void OnOffProcessCommandUnicast(chip::CommandId, const EmberBindingTableEntry &, chip::DeviceProxy *, void *);
-    static void OnOffProcessCommandGroup(chip::CommandId, const EmberBindingTableEntry &, void *);
     static void LevelControlProcessCommandUnicast(chip::CommandId, const EmberBindingTableEntry &, chip::DeviceProxy *, void *);
-    static void LevelControlProcessCommandGroup(chip::CommandId, const EmberBindingTableEntry &, void *);
     static void LightSwitchChangedHandler(const EmberBindingTableEntry &, chip::DeviceProxy *, void *);
     static void BindingAddeddHandler(const EmberBindingTableEntry & binding);
     static void InitInternal(intptr_t);
