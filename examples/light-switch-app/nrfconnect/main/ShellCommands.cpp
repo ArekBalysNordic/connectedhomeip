@@ -17,6 +17,7 @@
  */
 
 #include "ShellCommands.h"
+#include "LightSwitch.h"
 #include <platform/CHIPDeviceLayer.h>
 
 #include "BindingHandler.h"
@@ -72,6 +73,7 @@ static CHIP_ERROR OnOffCommandHandler(int argc, char ** argv)
 static CHIP_ERROR OnCommandHandler(int argc, char ** argv)
 {
     BindingHandler::BindingData * data = Platform::New<BindingHandler::BindingData>();
+    data->endpointId                   = LightSwitch::GetInstance().GetLightSwitchEndpointId();
     data->commandId                    = Clusters::OnOff::Commands::On::Id;
     data->clusterId                    = Clusters::OnOff::Id;
 
@@ -82,6 +84,7 @@ static CHIP_ERROR OnCommandHandler(int argc, char ** argv)
 static CHIP_ERROR OffCommandHandler(int argc, char ** argv)
 {
     BindingHandler::BindingData * data = Platform::New<BindingHandler::BindingData>();
+    data->endpointId                   = LightSwitch::GetInstance().GetLightSwitchEndpointId();
     data->commandId                    = Clusters::OnOff::Commands::Off::Id;
     data->clusterId                    = Clusters::OnOff::Id;
 
@@ -92,6 +95,7 @@ static CHIP_ERROR OffCommandHandler(int argc, char ** argv)
 static CHIP_ERROR ToggleCommandHandler(int argc, char ** argv)
 {
     BindingHandler::BindingData * data = Platform::New<BindingHandler::BindingData>();
+    data->endpointId                   = LightSwitch::GetInstance().GetLightSwitchEndpointId();
     data->commandId                    = Clusters::OnOff::Commands::Toggle::Id;
     data->clusterId                    = Clusters::OnOff::Id;
 
@@ -137,6 +141,7 @@ static CHIP_ERROR OnOffCommandHandler(int argc, char ** argv)
 CHIP_ERROR OnCommandHandler(int argc, char ** argv)
 {
     BindingHandler::BindingData * data = Platform::New<BindingHandler::BindingData>();
+    data->endpointId                   = LightSwitch::GetInstance().GetLightSwitchEndpointId();
     data->commandId                    = Clusters::OnOff::Commands::On::Id;
     data->clusterId                    = Clusters::OnOff::Id;
     data->isGroup                      = true;
@@ -148,6 +153,7 @@ CHIP_ERROR OnCommandHandler(int argc, char ** argv)
 CHIP_ERROR OffCommandHandler(int argc, char ** argv)
 {
     BindingHandler::BindingData * data = Platform::New<BindingHandler::BindingData>();
+    data->endpointId                   = LightSwitch::GetInstance().GetLightSwitchEndpointId();
     data->commandId                    = Clusters::OnOff::Commands::Off::Id;
     data->clusterId                    = Clusters::OnOff::Id;
     data->isGroup                      = true;
@@ -159,6 +165,7 @@ CHIP_ERROR OffCommandHandler(int argc, char ** argv)
 CHIP_ERROR ToggleCommandHandler(int argc, char ** argv)
 {
     BindingHandler::BindingData * data = Platform::New<BindingHandler::BindingData>();
+    data->endpointId                   = LightSwitch::GetInstance().GetLightSwitchEndpointId();
     data->commandId                    = Clusters::OnOff::Commands::Toggle::Id;
     data->clusterId                    = Clusters::OnOff::Id;
     data->isGroup                      = true;

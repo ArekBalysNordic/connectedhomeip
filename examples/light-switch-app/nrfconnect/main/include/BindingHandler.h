@@ -33,7 +33,7 @@ public:
 
     struct BindingData
     {
-        chip::EndpointId endpointId = 1;
+        chip::EndpointId endpointId;
         chip::CommandId commandId;
         chip::ClusterId clusterId;
         uint8_t value;

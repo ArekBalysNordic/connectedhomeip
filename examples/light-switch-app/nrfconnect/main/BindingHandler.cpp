@@ -32,7 +32,7 @@ void BindingHandler::Init()
 #ifdef CONFIG_CHIP_LIB_SHELL
     SwitchCommands::RegisterSwitchCommands();
 #endif
-    chip::DeviceLayer::PlatformMgr().ScheduleWork(InitInternal);
+    DeviceLayer::PlatformMgr().ScheduleWork(InitInternal);
 }
 
 void BindingHandler::OnOffProcessCommandUnicast(CommandId commandId, const EmberBindingTableEntry & binding, DeviceProxy * device,
@@ -41,11 +41,11 @@ void BindingHandler::OnOffProcessCommandUnicast(CommandId commandId, const Ember
     CHIP_ERROR ret = CHIP_NO_ERROR;
 
     auto onSuccess = [](const ConcreteCommandPath & commandPath, const StatusIB & status, const auto & dataResponse) {
-        ChipLogProgress(NotSpecified, "Binding command applied successfully!");
+        LOG_DBG("Binding command applied successfully!");
     };
 
     auto onFailure = [](CHIP_ERROR error) {
-        ChipLogError(NotSpecified, "Binding command was not applied! Reason: %" CHIP_ERROR_FORMAT, error.Format());
+        LOG_INF("Binding command was not applied! Reason: %" CHIP_ERROR_FORMAT, error.Format());
     };
 
     switch (commandId)
@@ -68,12 +68,12 @@ void BindingHandler::OnOffProcessCommandUnicast(CommandId commandId, const Ember
                                                offCommand, onSuccess, onFailure);
         break;
     default:
-        ChipLogError(NotSpecified, "Invalid binding command data - commandId is not supported");
+        LOG_DBG("Invalid binding command data - commandId is not supported");
         break;
     }
     if (CHIP_NO_ERROR != ret)
     {
-        LOG_ERR("Invoke Unicast Command Request ERROR: %s", chip::ErrorStr(ret));
+        LOG_INF("Invoke Unicast Command Request ERROR: %s", ErrorStr(ret));
     }
 }
 
@@ -103,21 +103,23 @@ void BindingHandler::OnOffProcessCommandGroup(CommandId commandId, const EmberBi
     }
     if (CHIP_NO_ERROR != ret)
     {
-        LOG_ERR("Invoke Group Command Request ERROR: %s", chip::ErrorStr(ret));
+        LOG_INF("Invoke Group Command Request ERROR: %s", ErrorStr(ret));
     }
 }
 
 void BindingHandler::LevelControlProcessCommandUnicast(CommandId commandId, const EmberBindingTableEntry & binding,
                                                        DeviceProxy * device, void * context)
 {
-    LOG_INF("Unicast Level Control Process Binding command {0x%x}-> {%d}...", binding.remote, (uint16_t) commandId);
+    LOG_DBG("Unicast Level Control Process Binding command {0x%x}-> {%d}...", binding.remote, (uint16_t) commandId);
     auto onSuccess = [](const ConcreteCommandPath & commandPath, const StatusIB & status, const auto & dataResponse) {
-        ChipLogProgress(NotSpecified, "Binding command applied successfully!");
+        LOG_DBG("Binding command applied successfully!");
     };
 
     auto onFailure = [](CHIP_ERROR error) {
-        ChipLogError(NotSpecified, "Binding command was not applied! Reason: %" CHIP_ERROR_FORMAT, error.Format());
+        LOG_INF("Binding command was not applied! Reason: %" CHIP_ERROR_FORMAT, error.Format());
     };
+
+    CHIP_ERROR ret = CHIP_NO_ERROR;
 
     switch (commandId)
     {
@@ -125,13 +127,17 @@ void BindingHandler::LevelControlProcessCommandUnicast(CommandId commandId, cons
         Clusters::LevelControl::Commands::MoveToLevel::Type moveToLevelCommand;
         BindingData * data       = reinterpret_cast<BindingData *>(context);
         moveToLevelCommand.level = data->value;
-        Controller::InvokeCommandRequest(device->GetExchangeManager(), device->GetSecureSession().Value(), binding.remote,
-                                         moveToLevelCommand, onSuccess, onFailure);
+        ret = Controller::InvokeCommandRequest(device->GetExchangeManager(), device->GetSecureSession().Value(), binding.remote,
+                                               moveToLevelCommand, onSuccess, onFailure);
     }
     break;
     default:
-        ChipLogError(NotSpecified, "Invalid binding command data - commandId is not supported");
+        LOG_DBG("Invalid binding command data - commandId is not supported");
         break;
+    }
+    if (CHIP_NO_ERROR != ret)
+    {
+        LOG_INF("Invoke Group Command Request ERROR: %s", ErrorStr(ret));
     }
 }
 
@@ -140,6 +146,7 @@ void BindingHandler::LevelControlProcessCommandGroup(CommandId commandId, const 
     LOG_INF("Group Level Control Process Binding command...");
     auto sourceNodeId = Server::GetInstance().GetFabricTable().FindFabricWithIndex(binding.fabricIndex)->GetNodeId();
     Messaging::ExchangeManager & exchangeMgr = Server::GetInstance().GetExchangeManager();
+    CHIP_ERROR ret                           = CHIP_NO_ERROR;
 
     switch (commandId)
     {
@@ -147,18 +154,23 @@ void BindingHandler::LevelControlProcessCommandGroup(CommandId commandId, const 
         Clusters::LevelControl::Commands::MoveToLevel::Type moveToLevelCommand;
         BindingData * data       = reinterpret_cast<BindingData *>(context);
         moveToLevelCommand.level = data->value;
-        Controller::InvokeGroupCommandRequest(&exchangeMgr, binding.fabricIndex, binding.groupId, sourceNodeId, moveToLevelCommand);
+        ret = Controller::InvokeGroupCommandRequest(&exchangeMgr, binding.fabricIndex, binding.groupId, sourceNodeId,
+                                                    moveToLevelCommand);
     }
     break;
     default:
-        ChipLogError(NotSpecified, "Invalid binding command data - commandId is not supported");
+        LOG_DBG("Invalid binding command data - commandId is not supported");
         break;
+    }
+    if (CHIP_NO_ERROR != ret)
+    {
+        LOG_INF("Invoke Group Command Request ERROR: %s", ErrorStr(ret));
     }
 }
 
 void BindingHandler::LightSwitchChangedHandler(const EmberBindingTableEntry & binding, DeviceProxy * deviceProxy, void * context)
 {
-    VerifyOrReturn(context != nullptr, ChipLogError(NotSpecified, "Invalid context for Light switch handler"););
+    VerifyOrReturn(context != nullptr, LOG_ERR("Invalid context for Light switch handler"););
     BindingData * data = static_cast<BindingData *>(context);
 
     if (binding.type == EMBER_MULTICAST_BINDING && data->isGroup)
@@ -172,7 +184,7 @@ void BindingHandler::LightSwitchChangedHandler(const EmberBindingTableEntry & bi
             LevelControlProcessCommandGroup(data->commandId, binding, context);
             break;
         default:
-            ChipLogError(NotSpecified, "Invalid binding group command data");
+            LOG_DBG("Invalid binding group command data");
             break;
         }
     }
@@ -187,7 +199,7 @@ void BindingHandler::LightSwitchChangedHandler(const EmberBindingTableEntry & bi
             LevelControlProcessCommandUnicast(data->commandId, binding, deviceProxy, context);
             break;
         default:
-            ChipLogError(NotSpecified, "Invalid binding unicast command data");
+            LOG_DBG("Invalid binding unicast command data");
             break;
         }
     }
@@ -224,16 +236,16 @@ void BindingHandler::BindingAddeddHandler(const EmberBindingTableEntry & binding
 void BindingHandler::InitInternal(intptr_t arg)
 {
     LOG_INF("Initialize binding Handler");
-    auto & server = chip::Server::GetInstance();
+    auto & server = Server::GetInstance();
     if (CHIP_NO_ERROR !=
-        chip::BindingManager::GetInstance().Init(
+        BindingManager::GetInstance().Init(
             { &server.GetFabricTable(), server.GetCASESessionManager(), &server.GetPersistentStorage() }))
     {
         LOG_ERR("BindingHandler::InitInternal failed");
     }
 
-    chip::BindingManager::GetInstance().RegisterBoundDeviceChangedHandler(LightSwitchChangedHandler);
-    if (CHIP_NO_ERROR != chip::BindingManager::GetInstance().RegisterBindingAddedHandler(BindingAddeddHandler))
+    BindingManager::GetInstance().RegisterBoundDeviceChangedHandler(LightSwitchChangedHandler);
+    if (CHIP_NO_ERROR != BindingManager::GetInstance().RegisterBindingAddedHandler(BindingAddeddHandler))
     {
         LOG_ERR("BindingHandler::RegisterBindingAddedHandler failed");
     }
@@ -242,7 +254,7 @@ void BindingHandler::InitInternal(intptr_t arg)
 
 void BindingHandler::PrintBindingTable()
 {
-    chip::BindingTable & bindingTable = chip::BindingTable::GetInstance();
+    BindingTable & bindingTable = BindingTable::GetInstance();
 
     LOG_INF("Binding Table [%d]:", bindingTable.Size());
     uint8_t i = 0;
@@ -282,7 +294,7 @@ void BindingHandler::PrintBindingTable()
 
 void BindingHandler::SwitchWorkerHandler(intptr_t context)
 {
-    VerifyOrReturn(context != 0, ChipLogError(NotSpecified, "Invalid Swich data"));
+    VerifyOrReturn(context != 0, LOG_ERR("Invalid Swich data"));
 
     BindingData * data = reinterpret_cast<BindingData *>(context);
     LOG_INF("Notify Bounded Cluster | endpoint: %d cluster: %d", data->endpointId, data->clusterId);
