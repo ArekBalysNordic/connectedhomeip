@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <app/util/basic-types.h>
 #include <lib/core/CHIPError.h>
 
 class LightSwitch
@@ -26,30 +27,19 @@ public:
     enum class Action : uint8_t
     {
         Toggle, /// Switch state on lighting-app device
-        On, /// Turn on light on lighting-app device
-        Off /// Turn off light on lighting-app device 
+        On,     /// Turn on light on lighting-app device
+        Off     /// Turn off light on lighting-app device
     };
 
-    /**
-     * @brief Initialize Light switch manager
-     * This method should Initialize binding handlers
-     * 
-     * @return CHIP_ERROR 
-     */
-    void Init();
-
-    /**
-     * @brief Initiate Action for binded lighting-app device after Switch interaction
-     * Possible actions are: toggle, on, off 
-     * 
-     * 
-     * @param mAction one of possible action: toggle, on, off
-     */
+    void Init(chip::EndpointId aLightSwitchEndpoint);
     void InitiateActionSwitch(Action mAction);
-
-    /**
-     * @brief Change brightness of binded lightning-app device
-     * 
-     */
     void DimmerChangeBrightness();
+    chip::EndpointId GetLightSwitchEndpointId() { return mLightSwitchEndpoint; }
+
+    static LightSwitch & GetInstance() { return sLightSwitch; }
+
+private:
+    static LightSwitch sLightSwitch;
+
+    chip::EndpointId mLightSwitchEndpoint;
 };

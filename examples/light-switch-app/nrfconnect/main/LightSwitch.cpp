@@ -27,25 +27,29 @@
 using namespace chip;
 using namespace chip::app;
 
-void LightSwitch::Init()
+LightSwitch LightSwitch::sLightSwitch;
+
+void LightSwitch::Init(chip::EndpointId aLightSwitchEndpoint)
 {
     BindingHandler::Init();
+    mLightSwitchEndpoint = aLightSwitchEndpoint;
 }
 
 void LightSwitch::InitiateActionSwitch(Action mAction)
 {
     BindingHandler::BindingData * data = Platform::New<BindingHandler::BindingData>();
-    data->clusterId                    = chip::app::Clusters::OnOff::Id;
+    data->endpointId                   = mLightSwitchEndpoint;
+    data->clusterId                    = Clusters::OnOff::Id;
     switch (mAction)
     {
     case Action::Toggle:
-        data->commandId = chip::app::Clusters::OnOff::Commands::Toggle::Id;
+        data->commandId = Clusters::OnOff::Commands::Toggle::Id;
         break;
     case Action::On:
-        data->commandId = chip::app::Clusters::OnOff::Commands::On::Id;
+        data->commandId = Clusters::OnOff::Commands::On::Id;
         break;
     case Action::Off:
-        data->commandId = chip::app::Clusters::OnOff::Commands::Off::Id;
+        data->commandId = Clusters::OnOff::Commands::Off::Id;
         break;
     default:
         Platform::Delete(data);
@@ -58,10 +62,11 @@ void LightSwitch::DimmerChangeBrightness()
 {
     static uint8_t brightness;
     BindingHandler::BindingData * data = Platform::New<BindingHandler::BindingData>();
-    data->commandId                    = chip::app::Clusters::LevelControl::Commands::MoveToLevel::Id;
-    data->clusterId                    = chip::app::Clusters::LevelControl::Id;
+    data->endpointId                   = mLightSwitchEndpoint;
+    data->commandId                    = Clusters::LevelControl::Commands::MoveToLevel::Id;
+    data->clusterId                    = Clusters::LevelControl::Id;
     data->value                        = brightness++;
-    if (brightness == 255)
+    if (brightness == 254)
     {
         brightness = 0;
     }

@@ -17,6 +17,7 @@
  */
 
 #include "AppTask.h"
+#include "BindingHandler.h"
 #include "LEDWidget.h"
 #include "LightSwitch.h"
 #include "ThreadUtil.h"
@@ -62,8 +63,6 @@ constexpr size_t kAppEventQueueSize            = 10;
 
 K_MSGQ_DEFINE(sAppEventQueue, sizeof(AppEvent), kAppEventQueueSize, alignof(AppEvent));
 
-LightSwitch sLightSwitch;
-
 LEDWidget sStatusLED;
 LEDWidget sDiscoveryLED;
 LEDWidget sBleLED;
@@ -85,8 +84,8 @@ k_timer sDimmerTimer;
 DefaultOTARequestorStorage sRequestorStorage;
 GenericOTARequestorDriver sOTARequestorDriver;
 OTAImageProcessorImpl sOTAImageProcessor;
-chip::BDXDownloader sBDXDownloader;
-chip::OTARequestor sOTARequestor;
+BDXDownloader sBDXDownloader;
+OTARequestor sOTARequestor;
 #endif
 
 } /* namespace */
@@ -98,7 +97,7 @@ CHIP_ERROR AppTask::Init()
     // Initialize CHIP
     LOG_INF("Init CHIP stack");
 
-    CHIP_ERROR err = chip::Platform::MemoryInit();
+    CHIP_ERROR err = Platform::MemoryInit();
     if (err != CHIP_NO_ERROR)
     {
         LOG_ERR("Platform::MemoryInit() failed");
@@ -115,7 +114,7 @@ CHIP_ERROR AppTask::Init()
     err = ThreadStackMgr().InitThreadStack();
     if (err != CHIP_NO_ERROR)
     {
-        LOG_ERR("ThreadStackMgr().InitThreadStack() failed: %s", chip::ErrorStr(err));
+        LOG_ERR("ThreadStackMgr().InitThreadStack() failed: %s", ErrorStr(err));
         return err;
     }
 
@@ -128,11 +127,11 @@ CHIP_ERROR AppTask::Init()
 #endif
     if (err != CHIP_NO_ERROR)
     {
-        LOG_ERR("ConnectivityMgr().SetThreadDeviceType() failed: %s", chip::ErrorStr(err));
+        LOG_ERR("ConnectivityMgr().SetThreadDeviceType() failed: %s", ErrorStr(err));
         return err;
     }
 
-    sLightSwitch.Init();
+    LightSwitch::GetInstance().Init(kLightSwitchEndpointId);
 
     // Initialize UI components
     LEDWidget::InitGpio();
@@ -148,7 +147,7 @@ CHIP_ERROR AppTask::Init()
     if (ret)
     {
         LOG_ERR("dk_buttons_init() failed");
-        return chip::System::MapErrorZephyr(ret);
+        return System::MapErrorZephyr(ret);
     }
 
     // Initialize Timers
@@ -168,9 +167,9 @@ CHIP_ERROR AppTask::Init()
     // Print initial configs
     SetDeviceAttestationCredentialsProvider(Examples::GetExampleDACProvider());
     InitOTARequestor();
-    ReturnErrorOnFailure(chip::Server::GetInstance().Init());
+    ReturnErrorOnFailure(Server::GetInstance().Init());
     ConfigurationMgr().LogDeviceConfig();
-    PrintOnboardingCodes(chip::RendezvousInformationFlags(chip::RendezvousInformationFlag::kBLE));
+    PrintOnboardingCodes(RendezvousInformationFlags(RendezvousInformationFlag::kBLE));
 
     // Add CHIP aEvent handler and start CHIP thread.
     // Note that all the initialization code should happen prior to this point
@@ -195,7 +194,7 @@ void AppTask::InitOTARequestor()
     sOTARequestorDriver.Init(&sOTARequestor, &sOTAImageProcessor);
     sRequestorStorage.Init(Server::GetInstance().GetPersistentStorage());
     sOTARequestor.Init(Server::GetInstance(), sRequestorStorage, sOTARequestorDriver, sBDXDownloader);
-    chip::SetRequestorInstance(&sOTARequestor);
+    SetRequestorInstance(&sOTARequestor);
 #endif
 }
 
@@ -218,7 +217,7 @@ void AppTask::PostEvent(const AppEvent & aEvent)
 {
     if (k_msgq_put(&sAppEventQueue, &aEvent, K_NO_WAIT))
     {
-        LOG_INF("Failed to post aEvent to app task aEvent queue");
+        LOG_DBG("Failed to post aEvent to app task aEvent queue");
     }
 }
 
@@ -242,10 +241,10 @@ void AppTask::DispatchEvent(const AppEvent & aEvent)
         ButtonPressHandler(Button::Discovery);
         break;
     case AppEvent::SwitchToggle:
-        sLightSwitch.InitiateActionSwitch(LightSwitch::Action::Toggle);
+        LightSwitch::GetInstance().InitiateActionSwitch(LightSwitch::Action::Toggle);
         break;
     case AppEvent::SwitchOn:
-        sLightSwitch.InitiateActionSwitch(LightSwitch::Action::On);
+        LightSwitch::GetInstance().InitiateActionSwitch(LightSwitch::Action::On);
         break;
     case AppEvent::FunctionTimer:
         FunctionTimerEventHandler();
@@ -260,7 +259,7 @@ void AppTask::DispatchEvent(const AppEvent & aEvent)
         aEvent.UpdateLedStateEvent.LedWidget->UpdateState();
         break;
     case AppEvent::DimmerChangeBrightness:
-        sLightSwitch.DimmerChangeBrightness();
+        LightSwitch::GetInstance().DimmerChangeBrightness();
         break;
 #ifdef CONFIG_MCUMGR_SMP_BT
     case AppEvent::StartSMPAdvertising:
@@ -387,7 +386,7 @@ void AppTask::StartBLEAdvertisingHandler()
     }
 
     LOG_INF("Enabling BLE advertising...");
-    if (chip::Server::GetInstance().GetCommissioningWindowManager().OpenBasicCommissioningWindow() != CHIP_NO_ERROR)
+    if (Server::GetInstance().GetCommissioningWindowManager().OpenBasicCommissioningWindow() != CHIP_NO_ERROR)
     {
         LOG_ERR("OpenBasicCommissioningWindow() failed");
     }
@@ -409,7 +408,7 @@ void AppTask::ChipEventHandler(const ChipDeviceEvent * aEvent, intptr_t /* arg *
             }
             else
             {
-                ShareQRCodeOverNFC(chip::RendezvousInformationFlags(chip::RendezvousInformationFlag::kBLE));
+                ShareQRCodeOverNFC(RendezvousInformationFlags(RendezvousInformationFlag::kBLE));
             }
         }
         else if (aEvent->CHIPoBLEAdvertisingChange.Result == kActivity_Stopped)
