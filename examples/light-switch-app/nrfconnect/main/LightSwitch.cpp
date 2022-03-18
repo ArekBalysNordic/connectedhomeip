@@ -65,7 +65,9 @@ void LightSwitch::DimmerChangeBrightness()
     data->endpointId                   = mLightSwitchEndpoint;
     data->commandId                    = Clusters::LevelControl::Commands::MoveToLevel::Id;
     data->clusterId                    = Clusters::LevelControl::Id;
-    data->value                        = brightness++;
+    // add to brightness 3 to approximate 1% step of brightness after each call dimmer change.
+    brightness += 3;
+    data->value                        = brightness;
     if (brightness == 254)
     {
         brightness = 0;

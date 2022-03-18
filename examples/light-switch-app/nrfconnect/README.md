@@ -27,6 +27,9 @@ into an existing Matter network and can be controlled by this network.
 -   [Requirements](#requirements)
     -   [Supported devices](#supported_devices)
 -   [Device UI](#device-ui)
+    - [LEDs](#leds)
+    - [Buttons](#buttons)
+    - [Matter CLI](#matter-cli-commands)
 -   [Setting up the environment](#setting-up-the-environment)
     -   [Using Docker container for setup](#using-docker-container-for-setup)
     -   [Using native shell for setup](#using-native-shell-for-setup)
@@ -53,6 +56,8 @@ Semiconductor's
 and [Zephyr RTOS](https://zephyrproject.org/). Visit Matter's
 [nRF Connect platform overview](../../../docs/guides/nrfconnect_platform_overview.md)
 to read more about the platform structure and dependencies.
+
+A light switch device is a simple embedded controller, which has the ability to control lighting devices such as light-bulbs, LEDs, etc. After commissioning into a Matter network a light-switch device does not know what can control. It means there is no information about another device connected to the same network and the user must provide this information to a light switch. A solution for this problem is a process called binding. 
 
 The Matter device that runs the light switch application is controlled by the Matter controller device over the Thread protocol. By default, the Matter device has Thread disabled, and it should be paired with Matter controller and get
 configuration from it. Some actions required before establishing full
@@ -178,6 +183,9 @@ The example supports building and running on the following devices:
 This section lists the User Interface elements that you can use to control and
 monitor the state of the device. These correspond to PCB components on the
 platform image.
+### LEDs
+
+This section describes all behaviors of LEDs located on platform image.
 
 **LED 1** shows the overall state of the device and its connectivity. The
 following states are possible:
@@ -203,6 +211,10 @@ following states are possible:
 
 -   _Rapid Even Flashing (30 ms off / 170 ms on)_ &mdash; BLE is advertising, DFU process can be started.
 
+### Buttons
+
+This section describes a reaction to pressing or holding buttons located on the platform image.
+
 **Button 1** can be used for the following purposes:
 
 -   _Pressed for 6 s_ &mdash; Initiates the factory reset of the device.
@@ -221,9 +233,7 @@ following states are possible:
 -   _Pressing the button once_ &mdash; changes the light state to the opposite one on a bound lighting-app device.
 
 -   _Pressed for more than 2 s_ &mdash; changes the light's brightness on a bound lighting-app device (dimmer functionality).
-    Brightness is changing from 0 % to 100 % with 1% increments every X seconds as long as **Button 4** is pressed.
-
-**Button 3** &mdash; Pressing the button once starts the bound lighting-app discovery. If at least one lighting-app device is bound, a LED should be blinking on them with 1 s interval. Second pressing means stop discovering.
+    Brightness is changing from 0 % to 100 % with 1% increments every 300 milliseconds as long as **Button 2** is pressed.
 
 **Button 4** &mdash; Pressing the button once starts the NFC tag emulation and
 enables Bluetooth LE advertising for the predefined period of time (15 minutes
@@ -237,6 +247,23 @@ communicate with it using the
 [rendezvous](#bluetooth-le-rendezvous) by providing the commissioning
 information from the Matter device in a data payload that can be shared using
 NFC.
+
+### Matter CLI commands
+
+Matter CLI allows to run commands via serial interface after USB cable connection to the Nordic Semiconductor kit.
+
+To enable matter CLI a light_switch-app example should be compiled with additional option __-DCONFIG_CHIP_LIB_SHELL=y__. Run the following command with _build-target_ replaced with the build target name of the Nordic Semiconductor kit you are using (for example _nrf52840dk_nrf52840_):
+
+    west build -b build-target -- -DCONFIG_CHIP_LIB_SHELL=y
+
+Use these commands to control lighting app via Matter CLI:
+
+    uart:~$ switch onoff on     : sends unicast On command to bound device
+    uart:~$ switch onoff off    : sends unicast Off command to bound device
+    uart:~$ switch onoff toggle : sends unicast Toggle command to bound device
+
+Check the [CLI tutorial](../../../docs/guides/nrfconnect_examples_cli.md) to
+learn how to use other command-line interface of the application.
 
 <hr>
 
@@ -506,92 +533,51 @@ directory:
 
 ## Testing the example
 
+To test this example, two devices - a lighting device (eg. [Lighting-App example](../../lighting-app/nrfconnect/)) and a light switch device must be commissioned to the same Matter Network. Check [chip-tool guide](../../../docs/guides/chip_tool_guide.md) to learn how to do it using chip-tool.
+
 ### Binding process
 
-A light switch device is a simple embedded controller, which has ability to control lighting devices such as light-bulbs, LEDs etc. After commissioning into a Matter network a light-switch device does not know what can control. It means there is no information about another device connected into the same network and user must provide this information to the light-switch. A solution for this problem is a process called binding. 
-
-Binding describes a relationship between the device that contains binding cluster and endpoint device. An example of this relationship is Light-Switch as a simple switch and light bulb as a endpoint device. To allow endpoint device to receive commands form light-switch a proper ACL must be added. After binding process a light switch device contains information about connected device such as ipv6 address and a way how to reach endpoint in a Matter network. This allows to send command directly from light-switch to lighting device without previous sending it to border router.
-
-To perform binding process you need a controller which has ability to write binding table to light switch device and to write proper ACL to endpoint lighting device. For example the [chip-tool for Windows/Linux](../../chip-tool/README.md) can be used as a controller.
+To perform the binding process you need a controller which can write binding table to light switch device and write proper ACL to an endpoint lighting device. For example, the [chip-tool for Windows/Linux](../../chip-tool/README.md) can be used as a controller. An ACL should contain information about all clusters which can be called by light-switch. See [chip-tool-guide interacting with ZCL clusters section](../../../docs/guides/chip_tool_guide.md#interacting-with-zcl-clusters) for more information about ACLs.
 
 ### Binding using chip-tool for Windows/Linux
-To install latest chip-tool go to main __connectedhomeip__ directory and run command:
+Binding process consists of some steps which must be completed before communication between devices.
+
+In this example all commands below are written for light switch device commissioned to a Matter network with nodeId = 2 and light bulb device commissioned to the same network with node = 1.
+
+To perform binding process you need to complete following steps:
+
+1. Navigate to the CHIP root directory:
+
+2. Build chip-tool using [chip-tool guide](../../../docs/guides/chip_tool_guide.md#building).
+
+3. Go to chip-tool build directory.
+
+4. Add ACL (Access Control List) in the lighting endpoint permissions to receive commands from Light Switch:
+
+        chip-tool accesscontrol write acl '[{"fabricIndex": 1, "privilege": 5, "authMode": 2, "subjects": [112233], "targets": null}, {"fabricIndex": 1, "privilege": 3, "authMode": 2, "subjects": [2], "targets": [{"cluster": 6, "endpoint": 1, "deviceType": null}, {"cluster": 8, "endpoint": 1, "deviceType": null}]}]' 1 0
+
+    Where:  
+    __{"fabricIndex": 1, "privilege": 5, "authMode": 2, "subjects": [112233], "targets": null}__ is an ACL for communication with chip-tool.
+
+    __{"fabricIndex": 1, "privilege": 3, "authMode": 2, "subjects": [2], "targets": [{"cluster": 6, "endpoint": 1, "deviceType": null}, {"cluster": 8, "endpoint": 1, "deviceType": null}]}__ is an ACL for binding (cluster nr 6 is a _onoff_ and cluster nr 8 is a _LevelControl_).
+
+5. Add binding table to Light Switch binding cluster: 
+        
+        chip-tool binding write binding '[{"fabricIndex": 1, "node": 1, "endpoint": 1, "cluster": 6}, {"fabricIndex": 1, "node": 1, "endpoint": 1, "cluster": 8}]' 2 1
     
-    $ gn gen out/chiptool --args='chip_mdns="platform"' && ninja -C out/chiptool chip-tool 
+    Where:  
+    __{"fabricIndex": 1, "node": <1>, "endpoint": 1, "cluster": 6}__ is a binding for __onoff__ cluster 
 
-If an error occurs learn [how to prepare building environment](../../../docs/guides/BUILDING.md#prerequisites) to install all dependencies for chip-tool. 
-
-To bind devices using [chip-tool for Windows/Linux](../../chip-tool/README.md) first commission them to thread network. To do it go to _out/chiptool_ directory and run following command: 
-
-    $ chip-tool pairing ble-thread <node_id> hex:<operationalDataset> <device bluetooth pin code> <device bluetooth discriminator>
-
-Fill up given command with your settings:
-- __< node_id >__ is an unique device node id on thread network.
-- __< operationalDataset >__ is a operational data set of thread network to get it 
-- __< device bluetooth pin code >__ - is a pin code set in _example_directory/main/include/CHIPProjectConfig.h_ file and its default value is _20202021_
-- __< device bluetooth discriminator >__ is a unique ble discriminator set in _example_directory/main/include/CHIPProjectConfig.h_ and its default value is _3840_
-
-Example of pairing command using default settings:
-
-    $ chip-tool pairing ble-thread 1 hex:<operationalDataset> 20202021 3840
-
-After commissioning of lighting app and light switch use following steps to bind devices:
-
-_In these steps following variables should be replace_:
- 
- - < lighting id > &mdash; node_id of lighting-app used in commissioning
- - < switch id > &mdash; node_id of light_switch-app used in commissioning
-
- 
-1) Add ACL (Access Control List) in Lighting-App device:
-
-To give the lighting endpoint permissions to receive commands from light switch an ACL should be written. An ACL should contain information about all clusters which can be called by light-switch.
-
-Command: 
-
-    $ chip-tool accesscontrol write acl '[{"fabricIndex": 1, "privilege": 5, "authMode": 2, "subjects": [112233], "targets": null}, {"fabricIndex": 1, "privilege": 3, "authMode": 2, "subjects": [<switch id>], "targets": [{"cluster": 6, "endpoint": 1, "deviceType": null}, {"cluster": 8, "endpoint": 1, "deviceType": null}]}]' <lighting id> 0
+    __{"fabricIndex": 1, "node": <1>, "endpoint": 1, "cluster": 8}__ is a binding for __LevelControl__ cluster. 
 
 
-Where:  
-__{"fabricIndex": 1, "privilege": 5, "authMode": 2, "subjects": [112233], "targets": null}__ is an ACL for communication with chip-tool 
+To test communication between Light Switch and bound device use [buttons](#buttons) or [CLI commands](#matter-cli-commands). Both of them are described in [Device UI section](#device-ui).
 
-__{"fabricIndex": 1, "privilege": 3, "authMode": 2, "subjects": [< switch id >], "targets": [{"cluster": 6, "endpoint": 1, "deviceType": null}, {"cluster": 8, "endpoint": 1, "deviceType": null}]}__ is an ACL for binding (cluster nr 6 is a _onoff_ cluster and nr 8 is a _LevelControl_ cluster).
- 
-To check if ACL was added use command:
+Notes:
 
-    $ chip-tool accesscontrol read acl <lightning id>  0 
+To use a light switch without brightness dimmer, apply only the first binding command with cluster nr 6.
 
- 2) Add binding table:
-    
-Command for unicast binding:
-
-    $ chip-tool binding write binding '[{"fabricIndex": 1, "node": <lighting id>, "endpoint": 1, "cluster": 6}, {"fabricIndex": 1, "node": <lighting id>, "endpoint": 1, "cluster": 8}]' <light switch id> 1
-
-Where:  
-__{"fabricIndex": 1, "node": <lighting id>, "endpoint": 1, "cluster": 6}__ is a binding for __onoff__ cluster 
-
-__{"fabricIndex": 1, "node": <lighting id>, "endpoint": 1, "cluster": 8}__ is a binding for __LevelControl__ cluster. 
-
-To use light switch without brightness dimmer apply only first binding command.
-
- If Light switch device is rebooting a binding table is restoring from flash memory and device tries to bind known lighting-app device.
-
-
-After binding process a lighting device can be controlled by light-switch in two ways - by pressing [button 2](#device-ui) or using matter command-line interface. 
-
-To enable matter CLI a light_switch-app example should be compiled with additional option __-DCONFIG_CHIP_LIB_SHELL=y__. Run the following command with _build-target_ replaced with the build target name of the Nordic Semiconductor kit you are using (for example _nrf52840dk_nrf52840_):
-
-    $ west build -b build-target -- -DCONFIG_CHIP_LIB_SHELL=y
-
-Use these commands to control lighting app via Matter CLI:
-
-    uart:~$ switch onoff on     : sends unicast On command to bound device
-    uart:~$ switch onoff off    : sends unicast Off command to bound device
-    uart:~$ switch onoff toggle : sends unicast Toggle command to bound device
-
-Check the [CLI tutorial](../../../docs/guides/nrfconnect_examples_cli.md) to
-learn how to use other command-line interface of the application.
-
+If a light switch device is rebooting binding table is restored from flash memory, the device tries to bind a known lighting-app device.
 ### Testing Device Firmware Upgrade
 
 Read the
