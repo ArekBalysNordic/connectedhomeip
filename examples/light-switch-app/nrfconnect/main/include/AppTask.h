@@ -22,6 +22,7 @@
 #include "LEDWidget.h"
 
 #include <core/CHIPError.h>
+#include <platform/CHIPDeviceLayer.h>
 
 #ifdef CONFIG_MCUMGR_SMP_BT
 #include "DFUOverSMP.h"
@@ -30,13 +31,16 @@
 #include <cstdint>
 
 struct k_timer;
+struct Identify;
 
 class AppTask
 {
 public:
     CHIP_ERROR StartApp();
-    void PostEvent(const AppEvent & event);
+    void PostEvent(AppEvent *);
     void UpdateClusterState();
+    static void IdentifyStartHandler(Identify *);
+    static void IdentifyStopHandler(Identify *);
 
 private:
     enum class Timer : uint8_t
@@ -64,14 +68,14 @@ private:
 
     CHIP_ERROR Init();
 
-    void DispatchEvent(const AppEvent & event);
+    void DispatchEvent(AppEvent *);
     void InitOTARequestor();
 
-    static void ButtonPressHandler(Button);
-    static void ButtonReleaseHandler(Button);
-    static void FunctionTimerEventHandler();
-    static void DimmerTimerEventHandler();
-    static void StartBLEAdvertisingHandler();
+    static void ButtonPushHandler(AppEvent *);
+    static void ButtonReleaseHandler(AppEvent *);
+    static void TimerEventHandler(AppEvent *);
+    static void StartBLEAdvertisingHandler(AppEvent *);
+    static void UpdateLedStateEventHandler(AppEvent *);
 
     static void ChipEventHandler(const chip::DeviceLayer::ChipDeviceEvent *, intptr_t);
     static void UpdateStatusLED();

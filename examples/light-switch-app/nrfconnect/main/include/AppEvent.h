@@ -17,47 +17,51 @@
  */
 
 #pragma once
-
-#include <inet/IPAddress.h>
-
 #include <cstdint>
 
 #include "LEDWidget.h"
 
+struct AppEvent;
+typedef void (*EventHandler)(AppEvent *);
+
 struct AppEvent
 {
-    using IPAddress = chip::Inet::IPAddress;
 
-    enum SimpleEventType : uint8_t
+    constexpr static uint8_t kButtonPushEvent    = 1;
+    constexpr static uint8_t kButtonReleaseEvent = 0;
+
+    enum AppEventTypes : uint8_t
     {
+        kEventType_StartBLEAdvertising,
+        kEventType_Button,
+        kEventType_Timer,
+        kEventType_UpdateLedState,
+        kEventType_IdentifyStart,
+        kEventType_IdentifyStop,
 #ifdef CONFIG_MCUMGR_SMP_BT
-        StartSMPAdvertising,
+        kEventType_StartSMPAdvertising,
 #endif
-        StartBLEAdvertising,
-        FunctionButtonPress,
-        FunctionButtonRelease,
-        DimmerButtonPress,
-        DimmerButtonRelease,
-        DimmerChangeBrightness,
-        DimmerTimer,
-        SwitchToggle,
-        SwitchOn,
-        FunctionTimer
     };
-
-    enum UpdateLedStateEventType : uint8_t
-    {
-        UpdateLedState = FunctionTimer + 1
-    };
-
-    AppEvent() = default;
-    explicit AppEvent(SimpleEventType type) : Type(type) {}
-    AppEvent(UpdateLedStateEventType type, LEDWidget * ledWidget) : Type(type), UpdateLedStateEvent{ ledWidget } {}
 
     uint8_t Type;
 
-    struct
+    union
     {
-        LEDWidget * LedWidget;
-    } UpdateLedStateEvent;
+        struct
+        {
+            uint8_t PinNo;
+            uint8_t Action;
+        } ButtonEvent;
+        struct
+        {
+            uint8_t TimerType;
+            void * Context;
+        } TimerEvent;
+        struct
+        {
+            LEDWidget * LedWidget;
+        } UpdateLedStateEvent;
+    };
+
+    EventHandler Handler;
 };
