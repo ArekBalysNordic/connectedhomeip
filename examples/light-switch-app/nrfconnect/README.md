@@ -211,6 +211,11 @@ following states are possible:
 
 -   _Rapid Even Flashing (30 ms off / 170 ms on)_ &mdash; BLE is advertising, DFU process can be started.
 
+**LED 3** can be used to identify the device. The LED starts blinking evenly
+(500 ms on/500 ms off) when the Identify command of the Identify cluster is
+received. The command's argument can be used to specify the duration of the
+effect.
+
 ### Buttons
 
 This section describes a reaction to pressing or holding buttons located on the platform image.
