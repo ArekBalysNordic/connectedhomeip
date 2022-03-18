@@ -1,6 +1,9 @@
 # Matter nRF Connect Light Switch Example Application
 
-The nRF Connect Light Switch Example demonstrates how to remotely control a lighting device such as light bulbs, LEDs. Application should be used with a tandem with a [lighting app example](../../lighting-app/nrfconnect/README.md). It uses buttons to test changing the lighting-app led state and works as a brightness dimmer. You can use this example as a reference for creating your own application.
+The nRF Connect Light Switch Example demonstrates how to remotely control a lighting device such as light bulbs or LEDs. 
+The application should be used together with the [lighting app example](../../lighting-app/nrfconnect/README.md).
+The light switch uses buttons to test changing the lighting application example LED state and works as a brightness dimmer.
+You can use this example as a reference for creating your own application.
 
 <p align="center">
   <img src="../../platform/nrfconnect/doc/images/Logo_RGB_H-small.png" alt="Nordic Semiconductor logo"/>
