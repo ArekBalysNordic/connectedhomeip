@@ -532,6 +532,7 @@ directory:
 <hr>
 
 ## Testing the example
+This section contains information about how to prepare devices, perform the binding process and add proper ACLs.
 
 To test this example, two devices - a lighting device (eg. [Lighting-App example](../../lighting-app/nrfconnect/)) and a light switch device must be commissioned to the same Matter Network. Check [chip-tool guide](../../../docs/guides/chip_tool_guide.md) to learn how to do it using chip-tool.
 
