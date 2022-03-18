@@ -217,8 +217,11 @@ following states are possible:
     instruction.
 
 **Button 2** can be used for the following purposes:
+
 -   _Pressing the button once_ &mdash; changes the light state to the opposite one on a bound lighting-app device.
--   _Pressed for more than 2 s_ &mdash; changes the light's brightness (dimmer functionality) on a bound lighting-app device. Brightness is changing from 0 % to 100 % with 1% step continuously as long as **Button 4** is pressed.
+
+-   _Pressed for more than 2 s_ &mdash; changes the light's brightness on a bound lighting-app device (dimmer functionality).
+    Brightness is changing from 0 % to 100 % with 1% increments every X seconds as long as **Button 4** is pressed.
 
 **Button 3** &mdash; Pressing the button once starts the bound lighting-app discovery. If at least one lighting-app device is bound, a LED should be blinking on them with 1 s interval. Second pressing means stop discovering.
 
