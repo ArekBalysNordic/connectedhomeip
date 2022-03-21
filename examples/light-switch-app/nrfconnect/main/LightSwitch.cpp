@@ -66,8 +66,8 @@ void LightSwitch::DimmerChangeBrightness()
     data->commandId                    = Clusters::LevelControl::Commands::MoveToLevel::Id;
     data->clusterId                    = Clusters::LevelControl::Id;
     // add to brightness 3 to approximate 1% step of brightness after each call dimmer change.
-    brightness += 3;
-    if (brightness > 254)
+    brightness += OnePercentBrightnessApproximation;
+    if (brightness > MaximumBrightness)
     {
         brightness = 0;
     }

@@ -43,7 +43,6 @@ private:
     static void OnOffProcessCommandUnicast(chip::CommandId, const EmberBindingTableEntry &, chip::DeviceProxy *, void *);
     static void LevelControlProcessCommandUnicast(chip::CommandId, const EmberBindingTableEntry &, chip::DeviceProxy *, void *);
     static void LightSwitchChangedHandler(const EmberBindingTableEntry &, chip::DeviceProxy *, void *);
-    static void BindingAddeddHandler(const EmberBindingTableEntry & binding);
     static void InitInternal(intptr_t);
     static void PrintBindingTable();
 };

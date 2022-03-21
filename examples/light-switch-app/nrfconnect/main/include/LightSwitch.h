@@ -39,6 +39,9 @@ public:
     static LightSwitch & GetInstance() { return sLightSwitch; }
 
 private:
+    constexpr static auto OnePercentBrightnessApproximation = 3;
+    constexpr static auto MaximumBrightness                 = 254;
+
     static LightSwitch sLightSwitch;
 
     chip::EndpointId mLightSwitchEndpoint;
