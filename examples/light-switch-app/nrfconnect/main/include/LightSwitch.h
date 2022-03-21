@@ -39,8 +39,8 @@ public:
     static LightSwitch & GetInstance() { return sLightSwitch; }
 
 private:
-    constexpr static auto OnePercentBrightnessApproximation = 3;
-    constexpr static auto MaximumBrightness                 = 254;
+    constexpr static auto kOnePercentBrightnessApproximation = 3;
+    constexpr static auto kMaximumBrightness                 = 254;
 
     static LightSwitch sLightSwitch;
 
