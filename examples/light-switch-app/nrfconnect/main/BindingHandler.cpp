@@ -73,7 +73,7 @@ void BindingHandler::OnOffProcessCommandUnicast(CommandId commandId, const Ember
     }
     if (CHIP_NO_ERROR != ret)
     {
-        LOG_INF("Invoke Unicast Command Request ERROR: %s", ErrorStr(ret));
+        LOG_ERR("Invoke Unicast Command Request ERROR: %s", ErrorStr(ret));
     }
 }
 
@@ -106,7 +106,7 @@ void BindingHandler::LevelControlProcessCommandUnicast(CommandId commandId, cons
     }
     if (CHIP_NO_ERROR != ret)
     {
-        LOG_INF("Invoke Group Command Request ERROR: %s", ErrorStr(ret));
+        LOG_ERR("Invoke Group Command Request ERROR: %s", ErrorStr(ret));
     }
 }
 
@@ -132,34 +132,6 @@ void BindingHandler::LightSwitchChangedHandler(const EmberBindingTableEntry & bi
     }
 }
 
-void BindingHandler::BindingAddeddHandler(const EmberBindingTableEntry & binding)
-{
-    switch (binding.type)
-    {
-    case EMBER_UNICAST_BINDING:
-        LOG_INF("Bound new unicast entry:\n \
-                FabricId: % d\n \
-                LocalEndpointId: % d\n \
-                ClusterId: % d\n \
-                RemoteEndpointId: % d\n \
-                NodeId: %d ",
-                (int) binding.fabricIndex, (int) binding.local, (int) binding.clusterId.Value(), (int) binding.remote,
-                (int) binding.nodeId);
-        break;
-    case EMBER_MULTICAST_BINDING:
-
-        LOG_INF("Bound new multicast entry\n \
-                FabricId: % d\n \
-                LocalEndpointId: %d \n \
-                RemoteEndpointId: % d\n \
-                GroupId: %d ",
-                (int) binding.fabricIndex, (int) binding.local, (int) binding.remote, (int) binding.groupId);
-        break;
-    default:
-        break;
-    }
-}
-
 void BindingHandler::InitInternal(intptr_t arg)
 {
     LOG_INF("Initialize binding Handler");
@@ -172,10 +144,6 @@ void BindingHandler::InitInternal(intptr_t arg)
     }
 
     BindingManager::GetInstance().RegisterBoundDeviceChangedHandler(LightSwitchChangedHandler);
-    if (CHIP_NO_ERROR != BindingManager::GetInstance().RegisterBindingAddedHandler(BindingAddeddHandler))
-    {
-        LOG_ERR("BindingHandler::RegisterBindingAddedHandler failed");
-    }
     PrintBindingTable();
 }
 
