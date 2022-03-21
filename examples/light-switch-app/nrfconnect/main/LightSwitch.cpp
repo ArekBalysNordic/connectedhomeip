@@ -38,39 +38,45 @@ void LightSwitch::Init(chip::EndpointId aLightSwitchEndpoint)
 void LightSwitch::InitiateActionSwitch(Action mAction)
 {
     BindingHandler::BindingData * data = Platform::New<BindingHandler::BindingData>();
-    data->endpointId                   = mLightSwitchEndpoint;
-    data->clusterId                    = Clusters::OnOff::Id;
-    switch (mAction)
+    if (data)
     {
-    case Action::Toggle:
-        data->commandId = Clusters::OnOff::Commands::Toggle::Id;
-        break;
-    case Action::On:
-        data->commandId = Clusters::OnOff::Commands::On::Id;
-        break;
-    case Action::Off:
-        data->commandId = Clusters::OnOff::Commands::Off::Id;
-        break;
-    default:
-        Platform::Delete(data);
-        return;
+        data->endpointId = mLightSwitchEndpoint;
+        data->clusterId  = Clusters::OnOff::Id;
+        switch (mAction)
+        {
+        case Action::Toggle:
+            data->commandId = Clusters::OnOff::Commands::Toggle::Id;
+            break;
+        case Action::On:
+            data->commandId = Clusters::OnOff::Commands::On::Id;
+            break;
+        case Action::Off:
+            data->commandId = Clusters::OnOff::Commands::Off::Id;
+            break;
+        default:
+            Platform::Delete(data);
+            return;
+        }
+        DeviceLayer::PlatformMgr().ScheduleWork(BindingHandler::SwitchWorkerHandler, reinterpret_cast<intptr_t>(data));
     }
-    DeviceLayer::PlatformMgr().ScheduleWork(BindingHandler::SwitchWorkerHandler, reinterpret_cast<intptr_t>(data));
 }
 
 void LightSwitch::DimmerChangeBrightness()
 {
     static uint16_t brightness;
     BindingHandler::BindingData * data = Platform::New<BindingHandler::BindingData>();
-    data->endpointId                   = mLightSwitchEndpoint;
-    data->commandId                    = Clusters::LevelControl::Commands::MoveToLevel::Id;
-    data->clusterId                    = Clusters::LevelControl::Id;
-    // add to brightness 3 to approximate 1% step of brightness after each call dimmer change.
-    brightness += OnePercentBrightnessApproximation;
-    if (brightness > MaximumBrightness)
+    if (data)
     {
-        brightness = 0;
+        data->endpointId = mLightSwitchEndpoint;
+        data->commandId  = Clusters::LevelControl::Commands::MoveToLevel::Id;
+        data->clusterId  = Clusters::LevelControl::Id;
+        // add to brightness 3 to approximate 1% step of brightness after each call dimmer change.
+        brightness += OnePercentBrightnessApproximation;
+        if (brightness > MaximumBrightness)
+        {
+            brightness = 0;
+        }
+        data->value = (uint8_t) brightness;
+        DeviceLayer::PlatformMgr().ScheduleWork(BindingHandler::SwitchWorkerHandler, reinterpret_cast<intptr_t>(data));
     }
-    data->value = (uint8_t) brightness;
-    DeviceLayer::PlatformMgr().ScheduleWork(BindingHandler::SwitchWorkerHandler, reinterpret_cast<intptr_t>(data));
 }
