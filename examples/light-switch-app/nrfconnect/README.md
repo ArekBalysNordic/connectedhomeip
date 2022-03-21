@@ -240,7 +240,7 @@ This section describes a reaction to pressing or holding buttons located on the 
 -   _Pressed for more than 2 s_ &mdash; changes the light's brightness (dimmer functionality) on a bound lighting bulb device ([lighting-app](../../lighting-app/nrfconnect/) example).
     Brightness is changing from 0 % to 100 % with 1% increments every 300 milliseconds as long as **Button 2** is pressed.
 
-**Button 3** can be used for the changing the light state to the opposite one on all bound devices advertised to same multicast group.
+**Button 3** can be used for changing the light state to the opposite one on all bound devices advertised to the same multicast group.
 
 **Button 4** &mdash; Pressing the button once starts the NFC tag emulation and
 enables Bluetooth LE advertising for the predefined period of time (15 minutes
