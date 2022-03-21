@@ -55,11 +55,10 @@ void LightSwitch::InitiateActionSwitch(Action mAction)
             Platform::Delete(data);
             return;
         }
+        data->IsGroup = BindingHandler::IsGroupBound();
         DeviceLayer::PlatformMgr().ScheduleWork(BindingHandler::SwitchWorkerHandler, reinterpret_cast<intptr_t>(data));
         Platform::Delete(data);
     }
-    data->isGroup = BindingHandler::IsGroupBound();
-    DeviceLayer::PlatformMgr().ScheduleWork(BindingHandler::SwitchWorkerHandler, reinterpret_cast<intptr_t>(data));
 }
 
 void LightSwitch::DimmerChangeBrightness()
@@ -77,11 +76,9 @@ void LightSwitch::DimmerChangeBrightness()
         {
             brightness = 0;
         }
-        data->Value = (uint8_t) brightness;
+        data->Value   = (uint8_t) brightness;
+        data->IsGroup = BindingHandler::IsGroupBound();
         DeviceLayer::PlatformMgr().ScheduleWork(BindingHandler::SwitchWorkerHandler, reinterpret_cast<intptr_t>(data));
         Platform::Delete(data);
     }
-    data->value   = (uint8_t) brightness;
-    data->isGroup = BindingHandler::IsGroupBound();
-    DeviceLayer::PlatformMgr().ScheduleWork(BindingHandler::SwitchWorkerHandler, reinterpret_cast<intptr_t>(data));
 }

@@ -43,10 +43,8 @@ public:
     };
 
 private:
-    static void OnOffProcessCommandUnicast(chip::CommandId, const EmberBindingTableEntry &, chip::DeviceProxy *, void *);
-    static void OnOffProcessCommandGroup(chip::CommandId, const EmberBindingTableEntry &, void *);
-    static void LevelControlProcessCommandUnicast(chip::CommandId, const EmberBindingTableEntry &, chip::DeviceProxy *, void *);
-    static void LevelControlProcessCommandGroup(chip::CommandId, const EmberBindingTableEntry &, void *);
+    static void OnOffProcessCommand(chip::CommandId, const EmberBindingTableEntry &, chip::DeviceProxy *, void *);
+    static void LevelControlProcessCommand(chip::CommandId, const EmberBindingTableEntry &, chip::DeviceProxy *, void *);
     static void LightSwitchChangedHandler(const EmberBindingTableEntry &, chip::DeviceProxy *, void *);
     static void InitInternal(intptr_t);
 };

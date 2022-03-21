@@ -35,8 +35,8 @@ void BindingHandler::Init()
     DeviceLayer::PlatformMgr().ScheduleWork(InitInternal);
 }
 
-void BindingHandler::OnOffProcessCommandUnicast(CommandId aCommandId, const EmberBindingTableEntry & binding, DeviceProxy * aDevice,
-                                                void * aContext)
+void BindingHandler::OnOffProcessCommand(CommandId aCommandId, const EmberBindingTableEntry & aBinding, DeviceProxy * aDevice,
+                                         void * aContext)
 {
     CHIP_ERROR ret = CHIP_NO_ERROR;
 
@@ -52,20 +52,51 @@ void BindingHandler::OnOffProcessCommandUnicast(CommandId aCommandId, const Embe
     {
     case Clusters::OnOff::Commands::Toggle::Id:
         Clusters::OnOff::Commands::Toggle::Type toggleCommand;
-        ret = Controller::InvokeCommandRequest(aDevice->GetExchangeManager(), aDevice->GetSecureSession().Value(), binding.remote,
-                                               toggleCommand, onSuccess, onFailure);
+        if (aDevice)
+        {
+            ret = Controller::InvokeCommandRequest(aDevice->GetExchangeManager(), aDevice->GetSecureSession().Value(),
+                                                   aBinding.remote, toggleCommand, onSuccess, onFailure);
+        }
+        else
+        {
+
+            NodeId sourceNodeId = Server::GetInstance().GetFabricTable().FindFabricWithIndex(aBinding.fabricIndex)->GetNodeId();
+            Messaging::ExchangeManager & exchangeMgr = Server::GetInstance().GetExchangeManager();
+            ret = Controller::InvokeGroupCommandRequest(&exchangeMgr, aBinding.fabricIndex, aBinding.groupId, sourceNodeId,
+                                                        toggleCommand);
+        }
         break;
 
     case Clusters::OnOff::Commands::On::Id:
         Clusters::OnOff::Commands::On::Type onCommand;
-        ret = Controller::InvokeCommandRequest(aDevice->GetExchangeManager(), aDevice->GetSecureSession().Value(), binding.remote,
-                                               onCommand, onSuccess, onFailure);
+        if (aDevice)
+        {
+            ret = Controller::InvokeCommandRequest(aDevice->GetExchangeManager(), aDevice->GetSecureSession().Value(),
+                                                   aBinding.remote, onCommand, onSuccess, onFailure);
+        }
+        else
+        {
+            NodeId sourceNodeId = Server::GetInstance().GetFabricTable().FindFabricWithIndex(aBinding.fabricIndex)->GetNodeId();
+            Messaging::ExchangeManager & exchangeMgr = Server::GetInstance().GetExchangeManager();
+            ret = Controller::InvokeGroupCommandRequest(&exchangeMgr, aBinding.fabricIndex, aBinding.groupId, sourceNodeId,
+                                                        onCommand);
+        }
         break;
 
     case Clusters::OnOff::Commands::Off::Id:
         Clusters::OnOff::Commands::Off::Type offCommand;
-        ret = Controller::InvokeCommandRequest(aDevice->GetExchangeManager(), aDevice->GetSecureSession().Value(), binding.remote,
-                                               offCommand, onSuccess, onFailure);
+        if (aDevice)
+        {
+            ret = Controller::InvokeCommandRequest(aDevice->GetExchangeManager(), aDevice->GetSecureSession().Value(),
+                                                   aBinding.remote, offCommand, onSuccess, onFailure);
+        }
+        else
+        {
+            NodeId sourceNodeId = Server::GetInstance().GetFabricTable().FindFabricWithIndex(aBinding.fabricIndex)->GetNodeId();
+            Messaging::ExchangeManager & exchangeMgr = Server::GetInstance().GetExchangeManager();
+            ret = Controller::InvokeGroupCommandRequest(&exchangeMgr, aBinding.fabricIndex, aBinding.groupId, sourceNodeId,
+                                                        onCommand);
+        }
         break;
     default:
         LOG_DBG("Invalid binding command data - commandId is not supported");
@@ -77,8 +108,8 @@ void BindingHandler::OnOffProcessCommandUnicast(CommandId aCommandId, const Embe
     }
 }
 
-void BindingHandler::LevelControlProcessCommandUnicast(CommandId aCommandId, const EmberBindingTableEntry & aBinding,
-                                                       DeviceProxy * aDevice, void * aContext)
+void BindingHandler::LevelControlProcessCommand(CommandId aCommandId, const EmberBindingTableEntry & aBinding,
+                                                DeviceProxy * aDevice, void * aContext)
 {
     auto onSuccess = [](const ConcreteCommandPath & commandPath, const StatusIB & status, const auto & dataResponse) {
         LOG_DBG("Binding command applied successfully!");
@@ -96,8 +127,18 @@ void BindingHandler::LevelControlProcessCommandUnicast(CommandId aCommandId, con
         Clusters::LevelControl::Commands::MoveToLevel::Type moveToLevelCommand;
         BindingData * data       = reinterpret_cast<BindingData *>(aContext);
         moveToLevelCommand.level = data->Value;
-        ret = Controller::InvokeCommandRequest(aDevice->GetExchangeManager(), aDevice->GetSecureSession().Value(), aBinding.remote,
-                                               moveToLevelCommand, onSuccess, onFailure);
+        if (aDevice)
+        {
+            ret = Controller::InvokeCommandRequest(aDevice->GetExchangeManager(), aDevice->GetSecureSession().Value(),
+                                                   aBinding.remote, moveToLevelCommand, onSuccess, onFailure);
+        }
+        else
+        {
+            NodeId sourceNodeId = Server::GetInstance().GetFabricTable().FindFabricWithIndex(aBinding.fabricIndex)->GetNodeId();
+            Messaging::ExchangeManager & exchangeMgr = Server::GetInstance().GetExchangeManager();
+            ret = Controller::InvokeGroupCommandRequest(&exchangeMgr, aBinding.fabricIndex, aBinding.groupId, sourceNodeId,
+                                                        moveToLevelCommand);
+        }
     }
     break;
     default:
@@ -110,20 +151,35 @@ void BindingHandler::LevelControlProcessCommandUnicast(CommandId aCommandId, con
     }
 }
 
-void BindingHandler::LightSwitchChangedHandler(const EmberBindingTableEntry & aBinding, DeviceProxy * aDeviceProxy, void * aContext)
+void BindingHandler::LightSwitchChangedHandler(const EmberBindingTableEntry & binding, DeviceProxy * deviceProxy, void * context)
 {
-    VerifyOrReturn(aContext != nullptr, LOG_ERR("Invalid context for Light switch handler"););
-    BindingData * data = static_cast<BindingData *>(aContext);
+    VerifyOrReturn(context != nullptr, LOG_ERR("Invalid context for Light switch handler"););
+    BindingData * data = static_cast<BindingData *>(context);
 
-    if (aBinding.type == EMBER_UNICAST_BINDING)
+    if (binding.type == EMBER_MULTICAST_BINDING && data->IsGroup)
     {
         switch (data->ClusterId)
         {
         case Clusters::OnOff::Id:
-            OnOffProcessCommandUnicast(data->CommandId, aBinding, aDeviceProxy, aContext);
+            OnOffProcessCommand(data->CommandId, binding, nullptr, context);
             break;
         case Clusters::LevelControl::Id:
-            LevelControlProcessCommandUnicast(data->CommandId, aBinding, aDeviceProxy, aContext);
+            LevelControlProcessCommand(data->CommandId, binding, nullptr, context);
+            break;
+        default:
+            ChipLogError(NotSpecified, "Invalid binding group command data");
+            break;
+        }
+    }
+    else if (binding.type == EMBER_UNICAST_BINDING && !data->IsGroup)
+    {
+        switch (data->ClusterId)
+        {
+        case Clusters::OnOff::Id:
+            OnOffProcessCommand(data->CommandId, binding, deviceProxy, context);
+            break;
+        case Clusters::LevelControl::Id:
+            LevelControlProcessCommand(data->CommandId, binding, deviceProxy, context);
             break;
         default:
             ChipLogError(NotSpecified, "Invalid binding unicast command data");
