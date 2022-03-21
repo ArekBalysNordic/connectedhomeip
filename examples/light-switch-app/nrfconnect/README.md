@@ -586,9 +586,7 @@ To perform binding process you need to complete following steps:
 ### Binding multicast devices using chip-tool for Windows/Linux
 Binding multicast allows to add all lighting devices to one multicast group. After that Light Switch can send multicast request and all of devices listening bound multicast group can run received command. It can be used to control more than one lighting device via single light switch at the same time.
 
-In this example groupNo is set to 257 and groupName is set to "Example"
-
-To perform binding for group multicast you need to complete following steps:
+ITo perform binding for group multicast you need to complete following steps:
 
 1. Navigate to the CHIP root directory:
 
@@ -602,11 +600,11 @@ To perform binding for group multicast you need to complete following steps:
 
 5. Add Light Switch device to multicast group:
 
-        chip-tool groups add-group 257 "Example" 2 1
+        chip-tool tests TestGroupDemoConfig --nodeId 1
 
 6. Add all lighting devices to the same multicast group by applying command below for each of them:
 
-        chip-tool groups add-group 257 "Example" <lighting node id> 1
+        chip-tool tests TestGroupDemoConfig --nodeId <lighting node id>
 
 7. Add Binding commands for group multicast:
 
