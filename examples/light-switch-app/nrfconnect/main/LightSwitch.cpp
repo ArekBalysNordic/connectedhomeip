@@ -40,18 +40,18 @@ void LightSwitch::InitiateActionSwitch(Action mAction)
     BindingHandler::BindingData * data = Platform::New<BindingHandler::BindingData>();
     if (data)
     {
-        data->endpointId = mLightSwitchEndpoint;
-        data->clusterId  = Clusters::OnOff::Id;
+        data->EndpointId = mLightSwitchEndpoint;
+        data->ClusterId  = Clusters::OnOff::Id;
         switch (mAction)
         {
         case Action::Toggle:
-            data->commandId = Clusters::OnOff::Commands::Toggle::Id;
+            data->CommandId = Clusters::OnOff::Commands::Toggle::Id;
             break;
         case Action::On:
-            data->commandId = Clusters::OnOff::Commands::On::Id;
+            data->CommandId = Clusters::OnOff::Commands::On::Id;
             break;
         case Action::Off:
-            data->commandId = Clusters::OnOff::Commands::Off::Id;
+            data->CommandId = Clusters::OnOff::Commands::Off::Id;
             break;
         default:
             Platform::Delete(data);
@@ -67,16 +67,16 @@ void LightSwitch::DimmerChangeBrightness()
     BindingHandler::BindingData * data = Platform::New<BindingHandler::BindingData>();
     if (data)
     {
-        data->endpointId = mLightSwitchEndpoint;
-        data->commandId  = Clusters::LevelControl::Commands::MoveToLevel::Id;
-        data->clusterId  = Clusters::LevelControl::Id;
+        data->EndpointId = mLightSwitchEndpoint;
+        data->CommandId  = Clusters::LevelControl::Commands::MoveToLevel::Id;
+        data->ClusterId  = Clusters::LevelControl::Id;
         // add to brightness 3 to approximate 1% step of brightness after each call dimmer change.
-        brightness += OnePercentBrightnessApproximation;
-        if (brightness > MaximumBrightness)
+        brightness += kOnePercentBrightnessApproximation;
+        if (brightness > kMaximumBrightness)
         {
             brightness = 0;
         }
-        data->value = (uint8_t) brightness;
+        data->Value = (uint8_t) brightness;
         DeviceLayer::PlatformMgr().ScheduleWork(BindingHandler::SwitchWorkerHandler, reinterpret_cast<intptr_t>(data));
     }
 }

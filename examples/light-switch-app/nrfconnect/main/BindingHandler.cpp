@@ -35,8 +35,8 @@ void BindingHandler::Init()
     DeviceLayer::PlatformMgr().ScheduleWork(InitInternal);
 }
 
-void BindingHandler::OnOffProcessCommandUnicast(CommandId commandId, const EmberBindingTableEntry & binding, DeviceProxy * device,
-                                                void * context)
+void BindingHandler::OnOffProcessCommandUnicast(CommandId aCommandId, const EmberBindingTableEntry & binding, DeviceProxy * aDevice,
+                                                void * aContext)
 {
     CHIP_ERROR ret = CHIP_NO_ERROR;
 
@@ -48,23 +48,23 @@ void BindingHandler::OnOffProcessCommandUnicast(CommandId commandId, const Ember
         LOG_INF("Binding command was not applied! Reason: %" CHIP_ERROR_FORMAT, error.Format());
     };
 
-    switch (commandId)
+    switch (aCommandId)
     {
     case Clusters::OnOff::Commands::Toggle::Id:
         Clusters::OnOff::Commands::Toggle::Type toggleCommand;
-        ret = Controller::InvokeCommandRequest(device->GetExchangeManager(), device->GetSecureSession().Value(), binding.remote,
+        ret = Controller::InvokeCommandRequest(aDevice->GetExchangeManager(), aDevice->GetSecureSession().Value(), binding.remote,
                                                toggleCommand, onSuccess, onFailure);
         break;
 
     case Clusters::OnOff::Commands::On::Id:
         Clusters::OnOff::Commands::On::Type onCommand;
-        ret = Controller::InvokeCommandRequest(device->GetExchangeManager(), device->GetSecureSession().Value(), binding.remote,
+        ret = Controller::InvokeCommandRequest(aDevice->GetExchangeManager(), aDevice->GetSecureSession().Value(), binding.remote,
                                                onCommand, onSuccess, onFailure);
         break;
 
     case Clusters::OnOff::Commands::Off::Id:
         Clusters::OnOff::Commands::Off::Type offCommand;
-        ret = Controller::InvokeCommandRequest(device->GetExchangeManager(), device->GetSecureSession().Value(), binding.remote,
+        ret = Controller::InvokeCommandRequest(aDevice->GetExchangeManager(), aDevice->GetSecureSession().Value(), binding.remote,
                                                offCommand, onSuccess, onFailure);
         break;
     default:
@@ -77,8 +77,8 @@ void BindingHandler::OnOffProcessCommandUnicast(CommandId commandId, const Ember
     }
 }
 
-void BindingHandler::LevelControlProcessCommandUnicast(CommandId commandId, const EmberBindingTableEntry & binding,
-                                                       DeviceProxy * device, void * context)
+void BindingHandler::LevelControlProcessCommandUnicast(CommandId aCommandId, const EmberBindingTableEntry & aBinding,
+                                                       DeviceProxy * aDevice, void * aContext)
 {
     auto onSuccess = [](const ConcreteCommandPath & commandPath, const StatusIB & status, const auto & dataResponse) {
         LOG_DBG("Binding command applied successfully!");
@@ -90,13 +90,13 @@ void BindingHandler::LevelControlProcessCommandUnicast(CommandId commandId, cons
 
     CHIP_ERROR ret = CHIP_NO_ERROR;
 
-    switch (commandId)
+    switch (aCommandId)
     {
     case Clusters::LevelControl::Commands::MoveToLevel::Id: {
         Clusters::LevelControl::Commands::MoveToLevel::Type moveToLevelCommand;
-        BindingData * data       = reinterpret_cast<BindingData *>(context);
-        moveToLevelCommand.level = data->value;
-        ret = Controller::InvokeCommandRequest(device->GetExchangeManager(), device->GetSecureSession().Value(), binding.remote,
+        BindingData * data       = reinterpret_cast<BindingData *>(aContext);
+        moveToLevelCommand.level = data->Value;
+        ret = Controller::InvokeCommandRequest(aDevice->GetExchangeManager(), aDevice->GetSecureSession().Value(), aBinding.remote,
                                                moveToLevelCommand, onSuccess, onFailure);
     }
     break;
@@ -110,20 +110,20 @@ void BindingHandler::LevelControlProcessCommandUnicast(CommandId commandId, cons
     }
 }
 
-void BindingHandler::LightSwitchChangedHandler(const EmberBindingTableEntry & binding, DeviceProxy * deviceProxy, void * context)
+void BindingHandler::LightSwitchChangedHandler(const EmberBindingTableEntry & aBinding, DeviceProxy * aDeviceProxy, void * aContext)
 {
-    VerifyOrReturn(context != nullptr, LOG_ERR("Invalid context for Light switch handler"););
-    BindingData * data = static_cast<BindingData *>(context);
+    VerifyOrReturn(aContext != nullptr, LOG_ERR("Invalid context for Light switch handler"););
+    BindingData * data = static_cast<BindingData *>(aContext);
 
-    if (binding.type == EMBER_UNICAST_BINDING)
+    if (aBinding.type == EMBER_UNICAST_BINDING)
     {
-        switch (data->clusterId)
+        switch (data->ClusterId)
         {
         case Clusters::OnOff::Id:
-            OnOffProcessCommandUnicast(data->commandId, binding, deviceProxy, context);
+            OnOffProcessCommandUnicast(data->CommandId, aBinding, aDeviceProxy, aContext);
             break;
         case Clusters::LevelControl::Id:
-            LevelControlProcessCommandUnicast(data->commandId, binding, deviceProxy, context);
+            LevelControlProcessCommandUnicast(data->CommandId, aBinding, aDeviceProxy, aContext);
             break;
         default:
             LOG_DBG("Invalid binding unicast command data");
@@ -192,8 +192,8 @@ void BindingHandler::SwitchWorkerHandler(intptr_t context)
     VerifyOrReturn(context != 0, LOG_ERR("Invalid Swich data"));
 
     BindingData * data = reinterpret_cast<BindingData *>(context);
-    LOG_INF("Notify Bounded Cluster | endpoint: %d cluster: %d", data->endpointId, data->clusterId);
-    BindingManager::GetInstance().NotifyBoundClusterChanged(data->endpointId, data->clusterId, static_cast<void *>(data));
+    LOG_INF("Notify Bounded Cluster | endpoint: %d cluster: %d", data->EndpointId, data->ClusterId);
+    BindingManager::GetInstance().NotifyBoundClusterChanged(data->EndpointId, data->ClusterId, static_cast<void *>(data));
 
     Platform::Delete(data);
 }

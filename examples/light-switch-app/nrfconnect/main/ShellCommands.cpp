@@ -71,9 +71,9 @@ static CHIP_ERROR OnOffCommandHandler(int argc, char ** argv)
 static CHIP_ERROR OnCommandHandler(int argc, char ** argv)
 {
     BindingHandler::BindingData * data = Platform::New<BindingHandler::BindingData>();
-    data->endpointId                   = LightSwitch::GetInstance().GetLightSwitchEndpointId();
-    data->commandId                    = Clusters::OnOff::Commands::On::Id;
-    data->clusterId                    = Clusters::OnOff::Id;
+    data->EndpointId                   = LightSwitch::GetInstance().GetLightSwitchEndpointId();
+    data->CommandId                    = Clusters::OnOff::Commands::On::Id;
+    data->ClusterId                    = Clusters::OnOff::Id;
 
     DeviceLayer::PlatformMgr().ScheduleWork(BindingHandler::SwitchWorkerHandler, reinterpret_cast<intptr_t>(data));
     return CHIP_NO_ERROR;
@@ -82,9 +82,9 @@ static CHIP_ERROR OnCommandHandler(int argc, char ** argv)
 static CHIP_ERROR OffCommandHandler(int argc, char ** argv)
 {
     BindingHandler::BindingData * data = Platform::New<BindingHandler::BindingData>();
-    data->endpointId                   = LightSwitch::GetInstance().GetLightSwitchEndpointId();
-    data->commandId                    = Clusters::OnOff::Commands::Off::Id;
-    data->clusterId                    = Clusters::OnOff::Id;
+    data->EndpointId                   = LightSwitch::GetInstance().GetLightSwitchEndpointId();
+    data->CommandId                    = Clusters::OnOff::Commands::Off::Id;
+    data->ClusterId                    = Clusters::OnOff::Id;
 
     DeviceLayer::PlatformMgr().ScheduleWork(BindingHandler::SwitchWorkerHandler, reinterpret_cast<intptr_t>(data));
     return CHIP_NO_ERROR;
@@ -93,9 +93,9 @@ static CHIP_ERROR OffCommandHandler(int argc, char ** argv)
 static CHIP_ERROR ToggleCommandHandler(int argc, char ** argv)
 {
     BindingHandler::BindingData * data = Platform::New<BindingHandler::BindingData>();
-    data->endpointId                   = LightSwitch::GetInstance().GetLightSwitchEndpointId();
-    data->commandId                    = Clusters::OnOff::Commands::Toggle::Id;
-    data->clusterId                    = Clusters::OnOff::Id;
+    data->EndpointId                   = LightSwitch::GetInstance().GetLightSwitchEndpointId();
+    data->CommandId                    = Clusters::OnOff::Commands::Toggle::Id;
+    data->ClusterId                    = Clusters::OnOff::Id;
 
     DeviceLayer::PlatformMgr().ScheduleWork(BindingHandler::SwitchWorkerHandler, reinterpret_cast<intptr_t>(data));
     return CHIP_NO_ERROR;
