@@ -31,8 +31,14 @@ public:
         Off     /// Turn off light on lighting-app device
     };
 
+    enum class ActionType : uint8_t
+    {
+        Unicast,
+        Group,
+    };
+
     void Init(chip::EndpointId aLightSwitchEndpoint);
-    void InitiateActionSwitch(Action mAction);
+    void InitiateActionSwitch(Action, ActionType);
     void DimmerChangeBrightness();
     chip::EndpointId GetLightSwitchEndpointId() { return mLightSwitchEndpoint; }
 

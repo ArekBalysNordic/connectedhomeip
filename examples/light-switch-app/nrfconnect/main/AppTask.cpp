@@ -269,11 +269,14 @@ void AppTask::ButtonReleaseHandler(AppEvent * aEvent)
         case UNICAST_SWITCH_BUTTON:
             if (!sWasDimmerTriggered)
             {
-                LightSwitch::GetInstance().InitiateActionSwitch(LightSwitch::Action::Toggle);
+                LightSwitch::GetInstance().InitiateActionSwitch(LightSwitch::Action::Toggle, LightSwitch::ActionType::Unicast);
             }
             sAppTask.CancelTimer(Timer::Dimmer);
             sAppTask.CancelTimer(Timer::DimmerTrigger);
             sWasDimmerTriggered = false;
+            break;
+        case GROUP_SWITCH_BUTTON:
+            LightSwitch::GetInstance().InitiateActionSwitch(LightSwitch::Action::Toggle, LightSwitch::ActionType::Group);
             break;
         default:
             break;
@@ -317,7 +320,7 @@ void AppTask::TimerEventHandler(AppEvent * aEvent)
         case Timer::DimmerTrigger:
             LOG_INF("Dimming started...");
             sWasDimmerTriggered = true;
-            LightSwitch::GetInstance().InitiateActionSwitch(LightSwitch::Action::On);
+            LightSwitch::GetInstance().InitiateActionSwitch(LightSwitch::Action::On, LightSwitch::ActionType::Unicast);
             sAppTask.StartTimer(Timer::Dimmer, kDimmerInterval);
             sAppTask.CancelTimer(Timer::DimmerTrigger);
             break;
@@ -483,6 +486,14 @@ void AppTask::ButtonEventHandler(uint32_t aButtonState, uint32_t aHasChanged)
     {
         buttonEvent.ButtonEvent.PinNo  = UNICAST_SWITCH_BUTTON;
         buttonEvent.ButtonEvent.Action = AppEvent::kButtonReleaseEvent;
+        buttonEvent.Handler            = ButtonReleaseHandler;
+        sAppTask.PostEvent(&buttonEvent);
+    }
+
+    if (GROUP_SWITCH_BUTTON_MASK & aHasChanged & aButtonState)
+    {
+        buttonEvent.ButtonEvent.PinNo  = GROUP_SWITCH_BUTTON;
+        buttonEvent.ButtonEvent.Action = AppEvent::kButtonPushEvent;
         buttonEvent.Handler            = ButtonReleaseHandler;
         sAppTask.PostEvent(&buttonEvent);
     }

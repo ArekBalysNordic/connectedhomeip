@@ -33,7 +33,7 @@ void LightSwitch::Init(chip::EndpointId aLightSwitchEndpoint)
     mLightSwitchEndpoint = aLightSwitchEndpoint;
 }
 
-void LightSwitch::InitiateActionSwitch(Action mAction)
+void LightSwitch::InitiateActionSwitch(Action mAction, ActionType mActionType)
 {
     BindingHandler::BindingData * data = Platform::New<BindingHandler::BindingData>();
     if (data)
