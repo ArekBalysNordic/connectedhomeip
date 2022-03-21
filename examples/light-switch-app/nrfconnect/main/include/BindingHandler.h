@@ -31,6 +31,7 @@ public:
     static void Init();
     static void SwitchWorkerHandler(intptr_t);
     static void PrintBindingTable();
+    static bool IsGroupBound();
 
     struct BindingData
     {

@@ -33,7 +33,7 @@ void LightSwitch::Init(chip::EndpointId aLightSwitchEndpoint)
     mLightSwitchEndpoint = aLightSwitchEndpoint;
 }
 
-void LightSwitch::InitiateActionSwitch(Action mAction, ActionType mActionType)
+void LightSwitch::InitiateActionSwitch(Action mAction)
 {
     BindingHandler::BindingData * data = Platform::New<BindingHandler::BindingData>();
     if (data)
@@ -58,6 +58,8 @@ void LightSwitch::InitiateActionSwitch(Action mAction, ActionType mActionType)
         DeviceLayer::PlatformMgr().ScheduleWork(BindingHandler::SwitchWorkerHandler, reinterpret_cast<intptr_t>(data));
         Platform::Delete(data);
     }
+    data->isGroup = BindingHandler::IsGroupBound();
+    DeviceLayer::PlatformMgr().ScheduleWork(BindingHandler::SwitchWorkerHandler, reinterpret_cast<intptr_t>(data));
 }
 
 void LightSwitch::DimmerChangeBrightness()
@@ -79,4 +81,7 @@ void LightSwitch::DimmerChangeBrightness()
         DeviceLayer::PlatformMgr().ScheduleWork(BindingHandler::SwitchWorkerHandler, reinterpret_cast<intptr_t>(data));
         Platform::Delete(data);
     }
+    data->value   = (uint8_t) brightness;
+    data->isGroup = BindingHandler::IsGroupBound();
+    DeviceLayer::PlatformMgr().ScheduleWork(BindingHandler::SwitchWorkerHandler, reinterpret_cast<intptr_t>(data));
 }

@@ -240,8 +240,6 @@ This section describes a reaction to pressing or holding buttons located on the 
 -   _Pressed for more than 2 s_ &mdash; changes the light's brightness (dimmer functionality) on a bound lighting bulb device ([lighting-app](../../lighting-app/nrfconnect/) example).
     Brightness is changing from 0 % to 100 % with 1% increments every 300 milliseconds as long as **Button 2** is pressed.
 
-**Button 3** can be used for changing the light state to the opposite one on all bound devices advertised to the same multicast group.
-
 **Button 4** &mdash; Pressing the button once starts the NFC tag emulation and
 enables Bluetooth LE advertising for the predefined period of time (15 minutes
 by default).
@@ -610,15 +608,9 @@ To perform binding for group multicast you need to complete following steps:
 
         chip-tool groups add-group 257 "Example" <lighting node id> 1
 
-7. Add Binding commands for group multicast or add combination of multicast and unicast:
-    
-    a) Only multicast:
+7. Add Binding commands for group multicast:
 
-        chip-tool binding write binding '[{"fabricIndex": 1, "group": 257}]' 2 1"
-
-    b) Both unicast & multicast:
-
-        chip-tool binding write binding '[{"fabricIndex": 1, "group": 257}, {"fabricIndex": 1, "node": 1, "endpoint": 1, "cluster": 6}, {"fabricIndex": 1, "node": 1, "endpoint": 1, "cluster": 8}]' 2 1"
+        chip-tool binding write binding '[{"fabricIndex": 1, "group": 257}]' 2 1
 
 
 To test communication between Light Switch and bound devices use [buttons](#buttons) or [CLI commands](#matter-cli-commands). Both of them are described in [Device UI section](#device-ui).

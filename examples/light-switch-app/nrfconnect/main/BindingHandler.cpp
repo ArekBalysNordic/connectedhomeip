@@ -147,6 +147,20 @@ void BindingHandler::InitInternal(intptr_t arg)
     PrintBindingTable();
 }
 
+bool BindingHandler::IsGroupBound()
+{
+    BindingTable & bindingTable = BindingTable::GetInstance();
+
+    for (auto & entry : bindingTable)
+    {
+        if (EMBER_MULTICAST_BINDING == entry.type)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 void BindingHandler::PrintBindingTable()
 {
     BindingTable & bindingTable = BindingTable::GetInstance();
