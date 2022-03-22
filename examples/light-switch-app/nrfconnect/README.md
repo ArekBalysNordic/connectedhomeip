@@ -1,6 +1,6 @@
 # Matter nRF Connect Light Switch Example Application
 
-The nRF Connect Light Switch Example demonstrates how to remotely control a lighting device such as light bulbs or LEDs. 
+The nRF Connect Light Switch Example demonstrates how to remotely control a lighting devices such as light bulbs or LEDs. 
 The application should be used together with the [lighting app example](../../lighting-app/nrfconnect/README.md).
 The light switch uses buttons to test changing the lighting application example LED state and works as a brightness dimmer.
 You can use this example as a reference for creating your own application.
@@ -235,9 +235,9 @@ This section describes a reaction to pressing or holding buttons located on the 
 
 **Button 2** can be used for the following purposes:
 
--   _Pressing the button once_ &mdash; changes the light state to the opposite one on a bound lighting-app device.
+-   _Pressing the button once_ &mdash; changes the light state to the opposite one on a bound lighting bulb device ([lighting-app](../../lighting-app/nrfconnect/) example).
 
--   _Pressed for more than 2 s_ &mdash; changes the light's brightness on a bound lighting-app device (dimmer functionality).
+-   _Pressed for more than 2 s_ &mdash; changes the light's brightness (dimmer functionality) on a bound lighting bulb device ([lighting-app](../../lighting-app/nrfconnect/) example).
     Brightness is changing from 0 % to 100 % with 1% increments every 300 milliseconds as long as **Button 2** is pressed.
 
 **Button 4** &mdash; Pressing the button once starts the NFC tag emulation and
@@ -261,7 +261,7 @@ To enable matter CLI a light_switch-app example should be compiled with addition
 
     west build -b build-target -- -DCONFIG_CHIP_LIB_SHELL=y
 
-Use these commands to control lighting app via Matter CLI:
+Use these commands to control a device running lighting-app example via Matter CLI:
 
     uart:~$ switch onoff on     : sends unicast On command to bound device
     uart:~$ switch onoff off    : sends unicast Off command to bound device
@@ -539,11 +539,11 @@ directory:
 ## Testing the example
 This section contains information about how to prepare devices, perform the binding process and add proper ACLs.
 
-To test this example, two devices - a lighting device (eg. [Lighting-App example](../../lighting-app/nrfconnect/)) and a light switch device must be commissioned to the same Matter Network. Check [chip-tool guide](../../../docs/guides/chip_tool_guide.md) to learn how to do it using chip-tool.
+To test this example, two devices - a device running [Lighting-App example](../../lighting-app/nrfconnect/) and a light switch device must be commissioned to the same Matter Network. Check [chip-tool guide](../../../docs/guides/chip_tool_guide.md) to learn how to do it using chip-tool.
 
 ### Binding process
 
-To perform the binding process you need a controller which can write binding table to light switch device and write proper ACL to an endpoint lighting device. For example, the [chip-tool for Windows/Linux](../../chip-tool/README.md) can be used as a controller. An ACL should contain information about all clusters which can be called by light-switch. See [chip-tool-guide interacting with ZCL clusters section](../../../docs/guides/chip_tool_guide.md#interacting-with-zcl-clusters) for more information about ACLs.
+To perform the binding process you need a controller which can write binding table to light switch device and write proper ACL to an endpoint light bulb ([Lighting-App](../../lighting-app/nrfconnect/)). For example, the [chip-tool for Windows/Linux](../../chip-tool/README.md) can be used as a controller. An ACL should contain information about all clusters which can be called by light-switch. See [chip-tool-guide interacting with ZCL clusters section](../../../docs/guides/chip_tool_guide.md#interacting-with-zcl-clusters) for more information about ACLs.
 
 ### Binding using chip-tool for Windows/Linux
 Binding process consists of some steps which must be completed before communication between devices.
@@ -558,7 +558,7 @@ To perform binding process you need to complete following steps:
 
 3. Go to chip-tool build directory.
 
-4. Add ACL (Access Control List) in the lighting endpoint permissions to receive commands from Light Switch:
+4. Add ACL (Access Control List) in the device running [Lighting-App example](../../lighting-app/nrfconnect/) permissions to receive commands from Light Switch:
 
         chip-tool accesscontrol write acl '[{"fabricIndex": 1, "privilege": 5, "authMode": 2, "subjects": [112233], "targets": null}, {"fabricIndex": 1, "privilege": 3, "authMode": 2, "subjects": [2], "targets": [{"cluster": 6, "endpoint": 1, "deviceType": null}, {"cluster": 8, "endpoint": 1, "deviceType": null}]}]' 1 0
 
@@ -583,7 +583,7 @@ Notes:
 
 To use a light switch without brightness dimmer, apply only the first binding command with cluster nr 6.
 
-If a light switch device is rebooting binding table is restored from flash memory, the device tries to bind a known lighting-app device.
+If a light switch device is rebooting binding table is restored from flash memory, the device tries to bind a known device running [Lighting-App example](../../lighting-app/nrfconnect/).
 ### Testing Device Firmware Upgrade
 
 Read the
