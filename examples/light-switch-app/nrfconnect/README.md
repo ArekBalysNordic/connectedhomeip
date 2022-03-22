@@ -267,7 +267,7 @@ Use these commands to control a device running lighting-app example via Matter C
     uart:~$ switch onoff off    : sends unicast Off command to bound device
     uart:~$ switch onoff toggle : sends unicast Toggle command to bound device
 
-Use these commands to control group of lighting devices via Matter CLI:
+Use these commands to control group of devices running lighting-app example via Matter CLI:
 
     uart:~$ switch groups onoff on     : sends multicast On command to all bound devices in a group
     uart:~$ switch groups onoff off    : sends multicast Off command to  all bound devices in a group
@@ -551,7 +551,7 @@ To test this example, two devices - a device running [Lighting-App example](../.
 
 To perform the binding process you need a controller which can write binding table to light switch device and write proper ACL to an endpoint light bulb ([Lighting-App](../../lighting-app/nrfconnect/)). For example, the [chip-tool for Windows/Linux](../../chip-tool/README.md) can be used as a controller. An ACL should contain information about all clusters which can be called by light-switch. See [chip-tool-guide interacting with ZCL clusters section](../../../docs/guides/chip_tool_guide.md#interacting-with-zcl-clusters) for more information about ACLs.
 
-### Binding unicast device using chip-tool for Windows/Linux
+### Unicast binding to the remote endpoint using chip-tool for Windows/Linux
 Binding process consists of some steps which must be completed before communication between devices.
 
 In this example all commands below are written for light switch device commissioned to a Matter network with nodeId = 2 and light bulb device commissioned to the same network with node = 1.
@@ -583,10 +583,10 @@ To perform binding process you need to complete following steps:
     __{"fabricIndex": 1, "node": <1>, "endpoint": 1, "cluster": 8}__ is a binding for __LevelControl__ cluster. 
 
 
-### Binding multicast devices using chip-tool for Windows/Linux
-Binding multicast allows to add all lighting devices to one multicast group. After that Light Switch can send multicast request and all of devices listening bound multicast group can run received command. It can be used to control more than one lighting device via single light switch at the same time.
+### Groupcast binding to the group of remote endpoints using chip-tool for Windows/Linux
+A groupcast binding allows light switch controls all devices running [Lighting-App example](../../lighting-app/nrfconnect/) and added to one multicast group. After that, Light Switch can send multicast requests, and all of the devices listening bound groups can run the received command. It allows controlling more than one lighting device via a single light switch simultaneously.
 
-ITo perform binding for group multicast you need to complete following steps:
+To run this example with binding for groupcast you need to complete following steps:
 
 1. Navigate to the CHIP root directory:
 
