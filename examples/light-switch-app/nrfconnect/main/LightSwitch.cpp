@@ -27,8 +27,6 @@
 using namespace chip;
 using namespace chip::app;
 
-LightSwitch LightSwitch::sLightSwitch;
-
 void LightSwitch::Init(chip::EndpointId aLightSwitchEndpoint)
 {
     BindingHandler::Init();
@@ -58,6 +56,7 @@ void LightSwitch::InitiateActionSwitch(Action mAction)
             return;
         }
         DeviceLayer::PlatformMgr().ScheduleWork(BindingHandler::SwitchWorkerHandler, reinterpret_cast<intptr_t>(data));
+        Platform::Delete(data);
     }
 }
 
@@ -78,5 +77,6 @@ void LightSwitch::DimmerChangeBrightness()
         }
         data->Value = (uint8_t) brightness;
         DeviceLayer::PlatformMgr().ScheduleWork(BindingHandler::SwitchWorkerHandler, reinterpret_cast<intptr_t>(data));
+        Platform::Delete(data);
     }
 }

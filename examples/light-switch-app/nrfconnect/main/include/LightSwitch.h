@@ -36,13 +36,15 @@ public:
     void DimmerChangeBrightness();
     chip::EndpointId GetLightSwitchEndpointId() { return mLightSwitchEndpoint; }
 
-    static LightSwitch & GetInstance() { return sLightSwitch; }
+    static LightSwitch & GetInstance()
+    {
+        static LightSwitch sLightSwitch;
+        return sLightSwitch;
+    }
 
 private:
     constexpr static auto kOnePercentBrightnessApproximation = 3;
     constexpr static auto kMaximumBrightness                 = 254;
-
-    static LightSwitch sLightSwitch;
 
     chip::EndpointId mLightSwitchEndpoint;
 };
