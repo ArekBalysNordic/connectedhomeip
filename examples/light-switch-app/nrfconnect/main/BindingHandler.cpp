@@ -151,35 +151,35 @@ void BindingHandler::LevelControlProcessCommand(CommandId aCommandId, const Embe
     }
 }
 
-void BindingHandler::LightSwitchChangedHandler(const EmberBindingTableEntry & binding, DeviceProxy * deviceProxy, void * context)
+void BindingHandler::LightSwitchChangedHandler(const EmberBindingTableEntry & aBinding, DeviceProxy * aDeviceProxy, void * aContext)
 {
-    VerifyOrReturn(context != nullptr, LOG_ERR("Invalid context for Light switch handler"););
-    BindingData * data = static_cast<BindingData *>(context);
+    VerifyOrReturn(aContext != nullptr, LOG_ERR("Invalid context for Light switch handler"););
+    BindingData * data = static_cast<BindingData *>(aContext);
 
-    if (binding.type == EMBER_MULTICAST_BINDING && data->IsGroup)
+    if (aBinding.type == EMBER_MULTICAST_BINDING && data->IsGroup)
     {
         switch (data->ClusterId)
         {
         case Clusters::OnOff::Id:
-            OnOffProcessCommand(data->CommandId, binding, nullptr, context);
+            OnOffProcessCommand(data->CommandId, aBinding, nullptr, aContext);
             break;
         case Clusters::LevelControl::Id:
-            LevelControlProcessCommand(data->CommandId, binding, nullptr, context);
+            LevelControlProcessCommand(data->CommandId, aBinding, nullptr, aContext);
             break;
         default:
             ChipLogError(NotSpecified, "Invalid binding group command data");
             break;
         }
     }
-    else if (binding.type == EMBER_UNICAST_BINDING && !data->IsGroup)
+    else if (aBinding.type == EMBER_UNICAST_BINDING && !data->IsGroup)
     {
         switch (data->ClusterId)
         {
         case Clusters::OnOff::Id:
-            OnOffProcessCommand(data->CommandId, binding, deviceProxy, context);
+            OnOffProcessCommand(data->CommandId, aBinding, aDeviceProxy, aContext);
             break;
         case Clusters::LevelControl::Id:
-            LevelControlProcessCommand(data->CommandId, binding, deviceProxy, context);
+            LevelControlProcessCommand(data->CommandId, aBinding, aDeviceProxy, aContext);
             break;
         default:
             ChipLogError(NotSpecified, "Invalid binding unicast command data");
@@ -188,7 +188,7 @@ void BindingHandler::LightSwitchChangedHandler(const EmberBindingTableEntry & bi
     }
 }
 
-void BindingHandler::InitInternal(intptr_t arg)
+void BindingHandler::InitInternal(intptr_t aArg)
 {
     LOG_INF("Initialize binding Handler");
     auto & server = Server::GetInstance();
@@ -257,11 +257,11 @@ void BindingHandler::PrintBindingTable()
     }
 }
 
-void BindingHandler::SwitchWorkerHandler(intptr_t context)
+void BindingHandler::SwitchWorkerHandler(intptr_t aContext)
 {
-    VerifyOrReturn(context != 0, LOG_ERR("Invalid Swich data"));
+    VerifyOrReturn(aContext != 0, LOG_ERR("Invalid Swich data"));
 
-    BindingData * data = reinterpret_cast<BindingData *>(context);
+    BindingData * data = reinterpret_cast<BindingData *>(aContext);
     LOG_INF("Notify Bounded Cluster | endpoint: %d cluster: %d", data->EndpointId, data->ClusterId);
     BindingManager::GetInstance().NotifyBoundClusterChanged(data->EndpointId, data->ClusterId, static_cast<void *>(data));
 

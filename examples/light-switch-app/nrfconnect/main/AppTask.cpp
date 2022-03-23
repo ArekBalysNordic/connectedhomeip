@@ -227,7 +227,7 @@ void AppTask::ButtonPushHandler(AppEvent * aEvent)
             sAppTask.mFunction = TimerFunction::SoftwareUpdate;
             break;
         case SWITCH_BUTTON:
-            LOG_INF("Press this button for at least 500 ms to change light sensitivity of binded lighting devices.");
+            LOG_INF("Button has been pressed, keep in this state for at least 500 ms to change light sensitivity of binded lighting devices.");
             sAppTask.StartTimer(Timer::DimmerTrigger, kDimmerTriggeredTimeout);
             break;
         default:

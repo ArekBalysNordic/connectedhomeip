@@ -63,7 +63,7 @@ void LightSwitch::InitiateActionSwitch(Action mAction)
 
 void LightSwitch::DimmerChangeBrightness()
 {
-    static uint16_t brightness;
+    static uint16_t sBrightness;
     BindingHandler::BindingData * data = Platform::New<BindingHandler::BindingData>();
     if (data)
     {
@@ -71,12 +71,12 @@ void LightSwitch::DimmerChangeBrightness()
         data->CommandId  = Clusters::LevelControl::Commands::MoveToLevel::Id;
         data->ClusterId  = Clusters::LevelControl::Id;
         // add to brightness 3 to approximate 1% step of brightness after each call dimmer change.
-        brightness += kOnePercentBrightnessApproximation;
-        if (brightness > kMaximumBrightness)
+        sBrightness += kOnePercentBrightnessApproximation;
+        if (sBrightness > kMaximumBrightness)
         {
-            brightness = 0;
+            sBrightness = 0;
         }
-        data->Value   = (uint8_t) brightness;
+        data->Value   = static_cast<uint8_t>(sBrightness);
         data->IsGroup = BindingHandler::IsGroupBound();
         DeviceLayer::PlatformMgr().ScheduleWork(BindingHandler::SwitchWorkerHandler, reinterpret_cast<intptr_t>(data));
         Platform::Delete(data);
