@@ -34,6 +34,13 @@ public:
 
     void SetOTADownloader(OTADownloader * downloader) { mDownloader = downloader; };
 
+    struct OTAImage
+    {
+        OTAImageContentHeader::FileInfo * mFileInfo;
+        uint8_t mIndex;
+        uint64_t mCurrentOffset;
+    };
+
     CHIP_ERROR PrepareDownload() override;
     CHIP_ERROR Finalize() override;
     CHIP_ERROR Abort() override;
@@ -51,7 +58,7 @@ private:
     OTAImageContentHeaderParser mContentHeaderParser;
     uint8_t mBuffer[kBufferSize];
     OTAImageContentHeader mContentHeader;
-    uint8_t mCurrentImage{ 0 };
+    OTAImage mCurrentImage;
 };
 
 class ExtFlashHandler
