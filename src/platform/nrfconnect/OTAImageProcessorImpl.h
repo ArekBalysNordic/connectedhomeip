@@ -50,6 +50,8 @@ private:
     OTAImageHeaderParser mHeaderParser;
     OTAImageContentHeaderParser mContentHeaderParser;
     uint8_t mBuffer[kBufferSize];
+    OTAImageContentHeader mContentHeader;
+    uint8_t mCurrentImage{ 0 };
 };
 
 class ExtFlashHandler

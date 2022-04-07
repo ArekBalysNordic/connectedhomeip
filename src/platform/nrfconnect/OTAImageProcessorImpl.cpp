@@ -25,6 +25,7 @@
 #include <dfu/dfu_target.h>
 #include <dfu/dfu_target_mcuboot.h>
 #include <dfu/mcuboot.h>
+#include <logging/log.h>
 #include <pm/device.h>
 #include <sys/reboot.h>
 
@@ -45,23 +46,12 @@ CHIP_ERROR OTAImageProcessorImpl::PrepareDownloadImpl()
     ReturnErrorOnFailure(System::MapErrorZephyr(dfu_target_mcuboot_set_buf(mBuffer, sizeof(mBuffer))));
     ReturnErrorOnFailure(System::MapErrorZephyr(dfu_target_reset()));
 
-    return System::MapErrorZephyr(dfu_target_init(DFU_TARGET_IMAGE_TYPE_MCUBOOT, /* size */ 0, nullptr));
+    // Initialize dfu target to receive first image
+    return System::MapErrorZephyr(dfu_target_init(DFU_TARGET_IMAGE_TYPE_MCUBOOT, mCurrentImage, /* size */ 0, nullptr));
 }
 
 CHIP_ERROR OTAImageProcessorImpl::Finalize()
 {
-    return CHIP_NO_ERROR;
-}
-
-CHIP_ERROR OTAImageProcessorImpl::Abort()
-{
-    return System::MapErrorZephyr(dfu_target_reset());
-}
-
-CHIP_ERROR OTAImageProcessorImpl::Apply()
-{
-    ReturnErrorOnFailure(System::MapErrorZephyr(dfu_target_done(true)));
-
 #ifdef CONFIG_CHIP_OTA_REQUESTOR_REBOOT_ON_APPLY
     return SystemLayer().StartTimer(
         System::Clock::Milliseconds32(CHIP_DEVICE_CONFIG_OTA_REQUESTOR_REBOOT_DELAY_MS),
@@ -76,23 +66,59 @@ CHIP_ERROR OTAImageProcessorImpl::Apply()
 #endif
 }
 
+CHIP_ERROR OTAImageProcessorImpl::Abort()
+{
+    return System::MapErrorZephyr(dfu_target_reset());
+}
+
+CHIP_ERROR OTAImageProcessorImpl::Apply()
+{
+    int err = dfu_target_done(true);
+    if (err == 0)
+    {
+        err = dfu_target_schedule_update(-1);
+    }
+    return System::MapErrorZephyr(err);
+}
+
 CHIP_ERROR OTAImageProcessorImpl::ProcessBlock(ByteSpan & block)
 {
     VerifyOrReturnError(mDownloader != nullptr, CHIP_ERROR_INCORRECT_STATE);
 
     CHIP_ERROR error = ProcessHeader(block);
-
     if (error == CHIP_NO_ERROR)
     {
-        // DFU target library buffers data internally, so do not clone the block data.
-        error = System::MapErrorZephyr(dfu_target_write(block.data(), block.size()));
+        mParams.downloadedBytes += block.size();
+        if (mParams.downloadedBytes >= mContentHeader.mFiles[mCurrentImage].mFileSize)
+        {
+            // calculate how many data should be moved to the next image
+            uint64_t remainedDataSize = mParams.downloadedBytes - (uint64_t) mContentHeader.mFiles[mCurrentImage].mFileSize;
+            // write last data of previous image
+            error = System::MapErrorZephyr(dfu_target_write(block.data(), block.size() - remainedDataSize));
+            // switch to next image
+            mCurrentImage++;
+            if (mContentHeader.mFiles[mCurrentImage].mFileSize > 0)
+            {
+                dfu_target_init(DFU_TARGET_IMAGE_TYPE_MCUBOOT, mCurrentImage, /* size */ 0, nullptr);
+                // write remaining data to new image
+                error =
+                    System::MapErrorZephyr(dfu_target_write(block.data() + (block.size() - remainedDataSize), remainedDataSize));
+                mParams.downloadedBytes = remainedDataSize;
+            }
+        }
+        else
+        {
+            // DFU target library buffers data internally, so do not clone the block data.
+            error = System::MapErrorZephyr(dfu_target_write(block.data(), block.size()));
+        }
+        ChipLogDetail(SoftwareUpdate, "Written %llu/%u Bytes", mParams.downloadedBytes,
+                      mContentHeader.mFiles[mCurrentImage].mFileSize);
     }
 
     // Report the result back to the downloader asynchronously.
     return DeviceLayer::SystemLayer().ScheduleLambda([this, error, block] {
         if (error == CHIP_NO_ERROR)
         {
-            mParams.downloadedBytes += block.size();
             mDownloader->FetchNextData();
         }
         else
@@ -129,8 +155,15 @@ CHIP_ERROR OTAImageProcessorImpl::ProcessHeader(ByteSpan & block)
 
     if (mContentHeaderParser.IsInitialized() && !block.empty())
     {
-        OTAImageContentHeader header = {};
-        CHIP_ERROR error             = mContentHeaderParser.AccumulateAndDecode(block, header);
+        CHIP_ERROR error = mContentHeaderParser.AccumulateAndDecode(block, mContentHeader);
+        ChipLogDetail(SoftwareUpdate, "Found following DFU Images:");
+        for (uint8_t i = 0; i < mContentHeader.kMaxFiles; i++)
+        {
+            ChipLogDetail(SoftwareUpdate, "[%d]: \n \
+                                           Image ID: %d \n \
+                                           Image size: %d",
+                          i, (uint32_t) mContentHeader.mFiles[i].mFileId, (uint32_t) mContentHeader.mFiles[i].mFileSize);
+        }
 
         // Needs more data to decode the header
         ReturnErrorCodeIf(error == CHIP_ERROR_BUFFER_TOO_SMALL, CHIP_NO_ERROR);
