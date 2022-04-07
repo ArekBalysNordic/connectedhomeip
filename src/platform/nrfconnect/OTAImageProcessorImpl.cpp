@@ -64,24 +64,28 @@ CHIP_ERROR OTAImageProcessorImpl::Apply()
     int err = dfu_target_done(true);
     if (err == 0)
     {
+        // schedule update of all possible targets by caling this function with argument -1
         err = dfu_target_schedule_update(-1);
+    }
+
+#ifdef CONFIG_CHIP_OTA_REQUESTOR_REBOOT_ON_APPLY
+    if (err == 0)
+    {
+        return SystemLayer().StartTimer(
+            System::Clock::Milliseconds32(CHIP_DEVICE_CONFIG_OTA_REQUESTOR_REBOOT_DELAY_MS),
+            [](System::Layer *, void * /* context */) {
+                PlatformMgr().HandleServerShuttingDown();
+                k_msleep(CHIP_DEVICE_CONFIG_SERVER_SHUTDOWN_ACTIONS_SLEEP_MS);
+                sys_reboot(SYS_REBOOT_WARM);
+            },
+            nullptr /* context */);
     }
     else
     {
         return System::MapErrorZephyr(err);
     }
-
-#ifdef CONFIG_CHIP_OTA_REQUESTOR_REBOOT_ON_APPLY
-    return SystemLayer().StartTimer(
-        System::Clock::Milliseconds32(CHIP_DEVICE_CONFIG_OTA_REQUESTOR_REBOOT_DELAY_MS),
-        [](System::Layer *, void * /* context */) {
-            PlatformMgr().HandleServerShuttingDown();
-            k_msleep(CHIP_DEVICE_CONFIG_SERVER_SHUTDOWN_ACTIONS_SLEEP_MS);
-            sys_reboot(SYS_REBOOT_WARM);
-        },
-        nullptr /* context */);
 #else
-    return CHIP_NO_ERROR;
+    return System::MapErrorZephyr(err);
 #endif
 }
 
@@ -102,19 +106,21 @@ CHIP_ERROR OTAImageProcessorImpl::ProcessBlock(ByteSpan & block)
             // switch to net image
             mCurrentImage.mIndex++;
             mCurrentImage.mFileInfo = &mContentHeader.mFiles[mCurrentImage.mIndex];
+
             if (OTAImageContentHeader::FileId::kNetMcuboot == mCurrentImage.mFileInfo->mFileId &&
-                mCurrentImage.mFileInfo->mFileSize > 0 &&  CHIP_NO_ERROR == error)
+                mCurrentImage.mFileInfo->mFileSize > 0 && CHIP_NO_ERROR == error)
             {
-                ChipLogDetail(SoftwareUpdate, "Remaining bytes from last block containing Net core data: %" PRIu64, remainingDataSize);
+                ChipLogDetail(SoftwareUpdate, "Remaining bytes from last block containing Net core data: %" PRIu64,
+                              remainingDataSize);
                 dfu_target_init(DFU_TARGET_IMAGE_TYPE_MCUBOOT, mCurrentImage.mIndex, /* size */ 0, nullptr);
                 // write remaining data to new image
                 error =
                     System::MapErrorZephyr(dfu_target_write(block.data() + (block.size() - remainingDataSize), remainingDataSize));
                 mCurrentImage.mCurrentOffset = remainingDataSize;
             }
-            else 
+            else
             {
-                // set an error to end download process if the second image is not a Net core image.
+                // Finish process with error to ensure that only two images are available.
                 error = CHIP_ERROR_INVALID_DATA_LIST;
             }
         }
@@ -169,6 +175,7 @@ CHIP_ERROR OTAImageProcessorImpl::ProcessHeader(ByteSpan & block)
     if (mContentHeaderParser.IsInitialized() && !block.empty())
     {
         CHIP_ERROR error = mContentHeaderParser.AccumulateAndDecode(block, mContentHeader);
+
         // Needs more data to decode the header
         ReturnErrorCodeIf(error == CHIP_ERROR_BUFFER_TOO_SMALL, CHIP_NO_ERROR);
         ReturnErrorOnFailure(error);
