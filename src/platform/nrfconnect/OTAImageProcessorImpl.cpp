@@ -110,8 +110,10 @@ CHIP_ERROR OTAImageProcessorImpl::ProcessBlock(ByteSpan & block)
             if (OTAImageContentHeader::FileId::kNetMcuboot == mCurrentImage.mFileInfo->mFileId &&
                 mCurrentImage.mFileInfo->mFileSize > 0 && CHIP_NO_ERROR == error)
             {
-                ChipLogDetail(SoftwareUpdate, "Remaining bytes from last block containing Net core data: %" PRIu64,
-                              remainingDataSize);
+                // finish previous image and reset target
+                dfu_target_done(true);
+                dfu_target_reset();
+                // initialize next dfu target to store net-core image.
                 dfu_target_init(DFU_TARGET_IMAGE_TYPE_MCUBOOT, mCurrentImage.mIndex, /* size */ 0, nullptr);
                 // write remaining data to new image
                 error =
@@ -129,7 +131,7 @@ CHIP_ERROR OTAImageProcessorImpl::ProcessBlock(ByteSpan & block)
             // DFU target library buffers data internally, so do not clone the block data.
             error = System::MapErrorZephyr(dfu_target_write(block.data(), block.size()));
         }
-        ChipLogDetail(SoftwareUpdate, "Processed %" PRIu64 "/%" PRIu32 " Bytes of image no. %" PRIu8, mCurrentImage.mCurrentOffset,
+        ChipLogDetail(SoftwareUpdate, "Processed %llu/%u Bytes of image no. %u", mCurrentImage.mCurrentOffset,
                       mCurrentImage.mFileInfo->mFileSize, mCurrentImage.mIndex);
     }
 
