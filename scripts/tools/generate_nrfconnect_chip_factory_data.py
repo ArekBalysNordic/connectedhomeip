@@ -66,6 +66,7 @@ def check_tools_exists():
     TOOLS['spake2p'] = shutil.which('spake2p')
     if TOOLS['spake2p'] is None:
         log.error('spake2p not found, please build and add spake2p path to PATH environment variable')
+        log.error('You can find spake2p in connectedhomeip/src/tools/spake2p directory')
         sys.exit(1)
 
 
