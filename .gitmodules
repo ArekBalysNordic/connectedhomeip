@@ -250,3 +250,6 @@
 	url = https://github.com/bouffalolab/bl_iot_sdk_matter.git
 	branch = bl602_release
 	platforms = bl602
+[submodule "scripts/tools/temporary/cbor_example/tiny_cbor/tinycbor"]
+	path = scripts/tools/temporary/cbor_example/tiny_cbor/tinycbor
+	url = https://github.com/intel/tinycbor.git
