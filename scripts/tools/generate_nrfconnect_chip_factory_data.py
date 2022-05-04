@@ -26,31 +26,28 @@ import logging as log
 from math import log as logarithm
 from tkinter.font import names
 from typing import Type
+from attr import validate
 from intelhex import IntelHex
 from dataclasses import dataclass
+
+from requests import JSONDecodeError
 try:
     import cbor2 as cbor
 except ImportError:
     import pip
     pip.main(['install', 'cbor2'])
     import cbor2 as cbor
+try:
+    from ordered_set import OrderedSet
+except ImportError:
+    import pip
+    pip.main(['install', 'ordered-set'])
+    import cbor2 as cbor
+    from ordered_set import OrderedSet
+
 
 OUT_DIR = os.path.dirname(os.path.realpath(__file__))
 TOOLS = {}
-MANDATORY_DATA = ["serial_number",
-                  "manufacturing_date",
-                  "passcode",
-                  "discriminator",
-                  "hardware_version",
-                  "hardware_version_string",
-                  "dac_cert",
-                  "dac_key",
-                  "pai_cert",
-                  "cert_declaration",
-                  "rotating_device_unique_id",
-                  "spake2_iterations_counter",
-                  "spake2_salt",
-                  "spake2_verifier", ]
 
 
 def make_dict(input_list: list):
@@ -104,6 +101,14 @@ def convert_to_bytes(value: any):
         return value
 
 
+class ValidatorError(Exception):
+    def __init__(self, message="str"):
+        self.message = message
+
+    def __str__(self):
+        return self.message
+
+
 class PartitionCreator:
     def __init__(self, offset: int, length: int) -> None:
         self.__ih = IntelHex()
@@ -136,123 +141,110 @@ class PartitionCreator:
 
 
 class FactoryDataGenerator:
-    def __init__(self, json_file_path: str, spake: bool) -> None:
-        self.__json_file_path = json_file_path
-        self.__rotating_device_unique_id = None
-        self.__json_data = None
-        self.__pincode = 0
+    def __init__(self, arguments) -> None:
+        self.__args = arguments
         self.__factory_data = list()
-        self.__generate_spake = spake
+        self.__json_data = None
 
-        self.__is_valid = self.__validate_json()
-        if self.__is_valid:
-            self.__process_json()
-        else:
-            sys.exit(1)
+        try:
+            self.__validate_args()
+        except ValidatorError as e:
+            log.error(e)
+            sys.exit(-1)
+
+    def __validate_args(self):
+        # validate mandatory
+        if self.__args.output.find(".") != -1:
+            raise ValidatorError("Wrong output, please use path to output directory!")
+        if len(self.__args.date) != len("MM.DD.YYYY_GG:MM"):
+            raise ValidatorError("Wrong date format, please use: MM.DD.YYYY_GG:MM")
+        if not self.__args.hw_ver and not self.__args.hw_ver_str:
+            raise ValidatorError(
+                "Please provide at least one type of hardware version, use --hw_ver [int] or --hw_ver_str [string]")
+        if self.__args.dac_cert.find(".der") == -1:
+            raise ValidatorError("Please provide path to .der file format containing a DAC certificate")
+        if self.__args.dac_key.find(".der") == -1:
+            raise ValidatorError("Please provide path to .der file format containing a DAC Keys")
+        if self.__args.pai_cert.find(".der") == -1:
+            raise ValidatorError("Please provide path to .der file format containing a PAI certificate")
+        if self.__args.cd.find(".der") == -1:
+            raise ValidatorError("Please provide path to .der file format containing a Certificate Declaration")
+        # validate optional
+        if self.__args.user:
+            try:
+                json.loads(self.__args.user)
+            except json.decoder.JSONDecodeError as e:
+                raise ValidatorError("Provided wrong user data, this is not a Json format! {}".format(e))
+        if self.__args.spake2_gen and (not self.__args.spake2_salt or not self.__args.spake2_it):
+            raise ValidatorError("To generate spake2 verifier please enter spake2 salt and spake 2 interaction counter")
+        if (self.__args.spake2_salt or self.__args.spake2_it) and not (self.__args.spake2_gen or self.__args.spake2_verifier):
+            raise ValidatorError("Spake2 Interaction counter and salt was provided but not Verifier or generate found")
+        if self.__args.spake2_gen and self.__args.spake2_verifier:
+            raise ValidatorError(
+                "Provided spake2 verifier and spake2 generate at the same time, please choose only one of them. (--spake2_gen or --spake2_verifier)")
+        if self.__args.rd_uid and self.__args.rd_uid_gen:
+            raise ValidatorError(
+                "Can not both provide and generate a rotating device unique ID, please choose only one of them. (--rd_uid or --rd_uid_gen)")
+        if (not self.__args.spake2_salt and self.__args.spake2_it) or (self.__args.spake2_salt and not self.__args.spake2_it):
+            raise ValidatorError("Provided only on of spake2 input parameters (salt or interaction counter)")
+        elif self.__args.spake2_verifier and self.__args.spake2_gen:
+            raise ValidatorError("Can not both use verifier and generate it")
+        if self.__args.spake2_gen and not self.__args.passcode:
+            raise ValidatorError("Can not generate spake2 without passcode, please add passcode using --passcode [int value]")
+        if self.__args.generate and (not self.__args.offset or not self.__args.size):
+            raise ValidatorError("Enter partition offset (--offset) and partition size (--size) to generate a hex file")
 
     def generate_cbor(self):
-        cbor_data = cbor.dumps(make_dict(self.__factory_data))
-        with open(OUT_DIR + "/output.cbor", "w+b") as cbor_output:
-            cbor.dump(cbor.CBORTag(55799, cbor.loads(cbor_data)), cbor_output)
-        return cbor_data
+        if self.__json_data:
+            cbor_data = cbor.dumps(self.__json_data)
+            with open(self.__args.output + "/output.cbor", "w+b") as cbor_output:
+                cbor.dump(cbor.CBORTag(55799, cbor.loads(cbor_data)), cbor_output)
+            return cbor_data
 
-    @staticmethod
-    def generate_json(cbor_file_path: str):
-        if cbor_file_path:
-            try:
-                with open(cbor_file_path, 'rb') as fp:
-                    with open(OUT_DIR + "/output.json", "w+") as json_from_cbor:
-                        cbor_data = cbor.load(fp)
-                        data_list = PartitionCreator.decrypt(cbor_data)
-                        entries_names = list()
-                        entries_values = list()
-                        for entry in data_list:
-                            entries_names.append(entry)
-                            if entry == "dac_cert" or entry == "dac_key" or entry == "pai_cert" or entry == "cert_declaration":
-                                with open(OUT_DIR + "/" + entry + ".der", "w+b") as new_der:
-                                    new_der.write(data_list[entry])
-                                    new_der.close()
-                                entries_values.append(OUT_DIR + "/" + entry + ".der")
-                            else:
-                                entries_values.append(str(data_list[entry]))
-                        json_data = json.dumps(dict(zip(entries_names, entries_values)))
-                        json_from_cbor.write(json_data)
-
-            except IOError:
-                log.error("Wrong CBOR file: {}".format(cbor_file_path))
-
-    def __validate_json(self):
+    def generate_json(self):
         try:
-            with open(self.__json_file_path, "r") as json_file:
-                self.__json_data = json.loads(json_file.read())
-                valid = True
-                for entry in MANDATORY_DATA:
-                    entry_found = False
-                    log.debug("checking mandatory entry: {}".format(entry))
-                    for json_entry in self.__json_data.keys():
-                        if entry == json_entry:
-                            entry_found = True
-                            log.debug("OK")
-                            break
-                    if not entry_found:
-                        if entry.find("spake2") != -1 and not self.__generate_spake:
-                            log.error("Could not find spake2 entry: {}".format(entry))
-                            log.error("Please run this script with argument --spake to generate spake2 parameters")
-                            json_file.close()
-                            return False
-                        elif entry.find("spake2") != -1 and self.__generate_spake:
-                            log.debug("Will be auto-created")
-                        elif entry == "rotating_device_unique_id":
-                            log.warning("Could not find {}, generating new 128-bit octet string...".format(entry))
-                            log.warning("A new rotating device unique ID will be created")
-                        else:
-                            log.warning("Could not find entry: {}".format(entry))
-                            json_file.close()
-                            return False
+            with open(self.__args.output + "/output.json", "w+") as json_file:
+                # serialize mandatory data
+                self.__add_entry("sn", self.__args.sn)
+                self.__add_entry("date", self.__args.date)
+                hw_version = self.__args.hw_ver
+                if self.__args.hw_ver_str:
+                    hw_version = self.__args.hw_ver_str
+                self.__add_entry("hw_ver", hw_version)
+                self.__add_entry("dac_cert", self.__process_der(self.__args.dac_cert))
+                self.__add_entry("dac_key", self.__process_der(self.__args.dac_key))
+                self.__add_entry("pai_cert", self.__process_der(self.__args.pai_cert))
+                self.__add_entry("cd", self.__process_der(self.__args.cd))
+                # try to add optional data
+                rd_uid = self.__args.rd_uid
+                if self.__args.rd_uid_gen:
+                    rd_uid = self.__generate_rotating_device_uid()
+                spake_2_verifier = self.__args.spake2_verifier
+                if self.__args.spake2_gen:
+                    spake_2_verifier = self.__generate_spake2_verifier(
+                        self.__args.passcode, self.__args.spake2_it, self.__args.spake2_salt)
+
+                self.__add_entry("rd_uid", rd_uid)
+                self.__add_entry("cd", self.__args.pincode)
+                self.__add_entry("passcode", self.__args.passcode)
+                self.__add_entry("spake2_it", self.__args.spake2_it)
+                self.__add_entry("spake2_salt", self.__args.spake2_it)
+                self.__add_entry("spake2_verifier", spake_2_verifier)
+                self.__add_entry("pincode", self.__args.pincode)
+                self.__add_entry("discriminator", self.__args.discriminator)
+
+                factory_data_dict = self.__generate_dict()
+                self.__json_data = json.dumps(factory_data_dict)
+                json_file.write(self.__json_data)
+
         except IOError as e:
-            log.error("Could not process json file: {}".format(self.__json_file_path))
-            log.error(e)
-            return False
-        else:
-            json_file.close()
-            return True
-
-    def __process_json(self):
-        try:
-            with open(self.__json_file_path, "r") as json_file:
-                self.__json_data = json.loads(json_file.read())
-                for json_entry in self.__json_data.keys():
-                    log.debug("Processing {}...".format(json_entry))
-                    value = self.__json_data[json_entry]
-
-                    # save pincode to generate Spake2 data
-                    if json_entry == "passcode":
-                        self.__pincode = value
-
-                    # recognize .der files and process them
-                    if(type(self.__json_data[json_entry]) == str):
-                        if self.__json_data[json_entry].find(".der") != -1:
-                            value = self.__process_der(self.__json_data[json_entry])
-                    self.__add_entry(json_entry, value)
-
-                if self.__rotating_device_unique_id:
-                    self.__add_entry("rotating_device_unique_id", self.__generate_rotating_device_uid)
-
-                if self.__generate_spake:
-                    self.__generate_spake2()
-
-                json_file.close()
-        except json.decoder.JSONDecodeError as e:
-            log.error("Can not decode json file: {}".format(self.__json_file_path))
-            log.error(e)
-            json_file.close()
-            sys.exit()
-        else:
+            log.error("Error with processing file: {}".format(self.__args.output))
             json_file.close()
 
     def __add_entry(self, name: str, value: any):
-        value = convert_to_bytes(value)
-        self.__factory_data.append([name, value])
+        if value:
+            log.info("{} {}".format(name, type(value)))
+            self.__factory_data.append((name, value))
 
     def __generate_spake2(self):
         check_tools_exists()
@@ -261,6 +253,14 @@ class FactoryDataGenerator:
         self.__add_entry("spake2_salt", spake2_params["Salt"])
         self.__add_entry("spake2_verifier", spake2_params["Verifier"])
         return True
+
+    def __generate_dict(self):
+        factory_data_names = list()
+        factory_data_values = OrderedSet()
+        for entry in self.__factory_data:
+            factory_data_names.append(entry[0])
+            factory_data_values.add(entry[1])
+        return dict(zip(factory_data_names, factory_data_values))
 
     def __generate_rotating_device_uid(self):
         rdu = bytes()
@@ -272,8 +272,11 @@ class FactoryDataGenerator:
         log.debug("Processing der file...")
         try:
             with open(path, 'rb') as f:
-                return f.read()
+                data = f.read()
+                f.close()
+                return str(data)
         except IOError as e:
+            log.error(e)
             raise e
 
 
@@ -294,13 +297,47 @@ def main():
 
     def allow_any_int(i): return int(i, 0)
 
-    parser.add_argument("-j", "--json", type=str,
-                        help="Path to Json file containing all mandatory and optional factory data")
-    parser.add_argument("-c", "--cbor", type=str, help="Path to CBOR file to generate JSON")
-    parser.add_argument("-p", "--partition", type=allow_any_int, help="partition offset to store factory data")
-    parser.add_argument("-s", "--size", type=allow_any_int, help="factory data partition size")
-    parser.add_argument("-v", "--verbose", action="store_true", help="Run script with debug logs")
-    parser.add_argument("--spake", action="store_true", help="Auto generate SPAKE2 fields")
+    mandatory_arguments = parser.add_argument_group("Mandatory arguments", "These arguments must be provided to generate Json file")
+    optional_arguments = parser.add_argument_group(
+        "Optional arguments", "These arguments are optional and they depend on the user-purpose")
+
+    parser.add_argument("-o", "--output", type=str, help="Output path to store .json file", required=True)
+    parser.add_argument("-g", "--generate", action="store_true",
+                        help="Genrate CBOR output file, Hex file and raw Bin data")
+    parser.add_argument("--offset", type=allow_any_int, help="Provide partition offset")
+    parser.add_argument("--size", type=allow_any_int, help="Provide maximum partition size")
+    parser.add_argument("-v", "--verbose", action="store_true", help="Run this script with DEBUG logging level")
+    # Json known-keys values
+    # mandatory keys
+    mandatory_arguments.add_argument("--sn", type=str, help="Provide serial number", required=True)
+    mandatory_arguments.add_argument(
+        "--date", type=str, help="Provide manufacturing date in format MM.DD.YYYY_GG:MM", required=True)
+    mandatory_arguments.add_argument(
+        "--hw_ver", type=allow_any_int, help="Provide hardware version in int format. Alternatively you can use --hw_ver_str to store string format of hardware version")
+    mandatory_arguments.add_argument(
+        "--hw_ver_str", type=str, help="Provide hardware version in string format. Alternatively you can use --hw_ver to store int format of hardware version")
+    mandatory_arguments.add_argument(
+        "--dac_cert", type=str, help="Provide the path to .der file containing DAC certificate", required=True)
+    mandatory_arguments.add_argument("--dac_key", type=str, help="Provide the path to .der file containing DAC keys", required=True)
+    mandatory_arguments.add_argument(
+        "--pai_cert", type=str, help="Provide the path to .der file containing PAI certificate", required=True)
+    parser.add_argument("--cd", type=str, help="Provide the path to .der file containing Certificate Declaration", required=True)
+    # optional keys
+    optional_arguments.add_argument("--pincode", type=allow_any_int, help="Provide BLE Pairing Pincode")
+    optional_arguments.add_argument("--discriminator", type=hex, help="Provide BLE pairing discriminator")
+    optional_arguments.add_argument("--rd_uid", type=str,
+                                    help="Provide the rotating device unique ID. To generate the new rotate device unique ID use --rd_uid_gen")
+    optional_arguments.add_argument("--rd_uid_gen", action="store_true", help="Generate and save the new Rotating Device Unique ID")
+    optional_arguments.add_argument("--passcode", type=allow_any_int, help="Passcode to generate Spake2 verifier")
+    optional_arguments.add_argument("--spake2_it", type=allow_any_int,
+                                    help="Provide Spake2 Interaction Counter. This is mandatory to generate Spake2 Verifier")
+    optional_arguments.add_argument("--spake2_salt", type=str,
+                                    help="Provide Spake2 Salt. This is mandatory to generate Spake2 Verifier")
+    optional_arguments.add_argument("--spake2_verifier", type=str, help="Provide Spake2 Verifier without generating")
+    optional_arguments.add_argument("--spake2_gen", action="store_true",
+                                    help="Generate and save new Spake2 Verifier according to given Iteraction Counter and Salt")
+    optional_arguments.add_argument(
+        "--user", type=str, help="Provide additional user-specific keys in Json format: {'name_1': 'value_1', 'name_2': 'value_2', ... 'name_n', 'value_n'}")
     args = parser.parse_args()
 
     if args.verbose:
@@ -308,15 +345,13 @@ def main():
     else:
         log.basicConfig(format='[%(asctime)s] %(message)s', level=log.INFO)
 
-    partition_creator = PartitionCreator(args.partition, args.size)
-
-    if args.json:
-        generator = FactoryDataGenerator(args.json, args.spake)
+    generator = FactoryDataGenerator(args)
+    generator.generate_json()
+    if args.generate:
+        partition_creator = PartitionCreator(args.offset, args.size)
         cbor_data = generator.generate_cbor()
         if partition_creator.create_hex(cbor_data) and partition_creator.create_bin():
             print_flashing_help()
-    elif args.cbor:
-        FactoryDataGenerator.generate_json(args.cbor)
 
 
 if __name__ == "__main__":

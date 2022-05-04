@@ -15,33 +15,35 @@
  *    limitations under the License.
  */
 
-extern "C" {
-#include "cbor.h"
-}
+#include "cbor_decode.h"
 #include <cinttypes>
 #include <cstdio>
 #include <fstream>
 #include <iostream>
+#include <map>
 
 using namespace std;
 
-static uint8_t sReadCborRawData[4096];
-
-static uint8_t pValidMapEncoded[] = {
-    0xa3, 0x6d, 0x66, 0x69, 0x72, 0x73, 0x74, 0x20, 0x69, 0x6e, 0x74, 0x65, 0x67, 0x65, 0x72, 0x18, 0x2a, 0x77, 0x61,
-    0x6e, 0x20, 0x61, 0x72, 0x72, 0x61, 0x79, 0x20, 0x6f, 0x66, 0x20, 0x74, 0x77, 0x6f, 0x20, 0x73, 0x74, 0x72, 0x69,
-    0x6e, 0x67, 0x73, 0x82, 0x67, 0x73, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x31, 0x67, 0x73, 0x74, 0x72, 0x69, 0x6e, 0x67,
-    0x32, 0x6c, 0x6d, 0x61, 0x70, 0x20, 0x69, 0x6e, 0x20, 0x61, 0x20, 0x6d, 0x61, 0x70, 0xa4, 0x67, 0x62, 0x79, 0x74,
-    0x65, 0x73, 0x20, 0x31, 0x44, 0x78, 0x78, 0x78, 0x78, 0x67, 0x62, 0x79, 0x74, 0x65, 0x73, 0x20, 0x32, 0x44, 0x79,
-    0x79, 0x79, 0x79, 0x6b, 0x61, 0x6e, 0x6f, 0x74, 0x68, 0x65, 0x72, 0x20, 0x69, 0x6e, 0x74, 0x18, 0x62, 0x66, 0x74,
-    0x65, 0x78, 0x74, 0x20, 0x32, 0x78, 0x1e, 0x6c, 0x69, 0x65, 0x73, 0x2c, 0x20, 0x64, 0x61, 0x6d, 0x6e, 0x20, 0x6c,
-    0x69, 0x65, 0x73, 0x20, 0x61, 0x6e, 0x64, 0x20, 0x73, 0x74, 0x61, 0x74, 0x69, 0x73, 0x74, 0x69, 0x63, 0x73
-};
+static const char * known_keys[] = { "serial_number",
+                                     "manufacturing_date",
+                                     "passcode",
+                                     "discriminator",
+                                     "hardware_version",
+                                     "hardware_version_string",
+                                     "dac_cert",
+                                     "dac_key",
+                                     "pai_cert",
+                                     "cert_declaration",
+                                     "rotating_device_unique_id",
+                                     "spake2_iterations_counter",
+                                     "spake2_salt",
+                                     "spake2_verifier" };
 
 int main(int argc, char * argv[])
 {
 
     ifstream cborFile(argv[1], ios::binary | ios::out);
+    bool res;
 
     if (!cborFile)
     {
@@ -56,31 +58,9 @@ int main(int argc, char * argv[])
     cborFile.read(reinterpret_cast<char *>(cborBuffer), cborFilelength);
 
     cout << "CBOR encoding..." << endl;
-    CborParser parser;
-    CborValue it;
-    CborError err = cbor_parser_init(cborBuffer, cborFilelength, 0, &parser, &it);
-    if (err != CborNoError)
-    {
-        cout << "CBOR error!" << err;
-    }
-
-    cout << "value type:" << int(it.type) << endl;
-    CborTag result;
-    cbor_value_get_tag(&it, &result);
-    cout << "TAG:" << result << endl;
-    cbor_value_skip_tag(&it);
-
-    size_t mapLen = 0;
-    cbor_value_get_map_length(&it, &mapLen);
-    cout << "map len " << mapLen << endl;
-
-    CborValue element;
-    cbor_value_map_find_value(&it, "serial_number", &element);
-
-    cout << int(element.type) << endl;
-    size_t str_len = 0;
-    cbor_value_get_string_length(&element, &str_len);
-    cout << "strlen " << str_len << endl;
+    zcbor_state_t states[14];
+    zcbor_new_state(states, ARRAY_SIZE(states), cborBuffer, cborFilelength, 1);
+    res = zcbor_map_start_decode(states);
 
     cborFile.close();
     delete (cborBuffer);

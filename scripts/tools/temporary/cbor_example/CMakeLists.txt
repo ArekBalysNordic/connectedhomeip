@@ -17,11 +17,14 @@ cmake_minimum_required(VERSION 3.13.1)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+get_filename_component(CHIP_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/third_party/connectedhomeip REALPATH)
+get_filename_component(NRFCONNECT_COMMON ${CHIP_ROOT}/examples/platform/nrfconnect REALPATH)
+
 project(chip-nrfconnect_cbor_example)
 
 add_executable(app main.cpp
-                    tiny_cbor/tinycbor/src/cborencoder.c
-                    tiny_cbor/tinycbor/src/cborparser.c 
+                    zcbor/zcbor/src/cbor_decode.c
+                    zcbor/zcbor/src/cbor_encode.c
                     )
 
-target_include_directories(app PUBLIC . tiny_cbor/tinycbor/src)
+target_include_directories(app PUBLIC . zcbor/zcbor/include)
