@@ -62,6 +62,7 @@ class FactoryDataGenerator:
         self.__args = arguments
         self.__factory_data = list()
         self.__json_data = None
+        self.__user_data = dict()
 
         try:
             self.__validate_args()
@@ -89,7 +90,7 @@ class FactoryDataGenerator:
         # validate optional
         if self.__args.user:
             try:
-                json.loads(self.__args.user)
+                self.__user_data = json.loads(self.__args.user)
             except json.decoder.JSONDecodeError as e:
                 raise ValidatorError("Provided wrong user data, this is not a Json format! {}".format(e))
         if self.__args.spake2_gen and (not self.__args.spake2_salt or not self.__args.spake2_it):
@@ -133,17 +134,20 @@ class FactoryDataGenerator:
                     spake_2_verifier = self.__generate_spake2_verifier()
 
                 self.__add_entry("rd_uid", rd_uid)
-                self.__add_entry("cd", self.__args.pincode)
+                self.__add_entry("cd", self.__args.cd)
                 self.__add_entry("passcode", self.__args.passcode)
                 self.__add_entry("spake2_it", self.__args.spake2_it)
-                self.__add_entry("spake2_salt", self.__args.spake2_it)
+                self.__add_entry("spake2_salt", self.__args.spake2_salt)
                 self.__add_entry("spake2_verifier", spake_2_verifier)
-                self.__add_entry("pincode", self.__args.pincode)
                 self.__add_entry("discriminator", self.__args.discriminator)
 
+                # add user-specific data
+                for entry in self.__user_data:
+                    self.__add_entry(entry, self.__user_data[entry])
+
                 factory_data_dict = self.__generate_dict()
-                self.__json_data = json.dumps(factory_data_dict)
-                json_file.write(self.__json_data)
+                log.debug(factory_data_dict)
+                json_file.write(json.dumps(factory_data_dict))
                 self.__generate_cddl()
                 json_file.close()
         except IOError as e:
@@ -158,10 +162,7 @@ class FactoryDataGenerator:
     def __generate_spake2_verifier(self):
         check_tools_exists()
         spake2_params = gen_spake2p_params(self.__args.passcode, self.__args.spake2_it, self.__args.spake2_salt)
-        self.__add_entry("spake2_iterations_counter", spake2_params["Iteration Count"])
-        self.__add_entry("spake2_salt", spake2_params["Salt"])
-        self.__add_entry("spake2_verifier", spake2_params["Verifier"])
-        return True
+        return spake2_params["Verifier"]
 
     def __generate_dict(self):
         factory_data_names = list()
@@ -169,7 +170,11 @@ class FactoryDataGenerator:
         for entry in self.__factory_data:
             factory_data_names.append(entry[0])
             factory_data_values.add(entry[1])
-        return dict(zip(factory_data_names, factory_data_values))
+            log.debug("{} {}".format(entry[0], entry[1]))
+        log.debug(factory_data_values)
+        ret = dict(zip(factory_data_names, factory_data_values))
+        log.debug(ret)
+        return ret
 
     def __generate_cddl(self):
         def get_type(value):
@@ -232,9 +237,9 @@ def main():
     mandatory_arguments.add_argument(
         "--date", type=str, help="Provide manufacturing date in format MM.DD.YYYY_GG:MM", required=True)
     mandatory_arguments.add_argument(
-        "--hw_ver", type=allow_any_int, help="Provide hardware version in int format. Alternatively you can use --hw_ver_str to store string format of hardware version")
+        "--hw_ver", type=allow_any_int, help="Provide hardware version in int format.", required=True)
     mandatory_arguments.add_argument(
-        "--hw_ver_str", type=str, help="Provide hardware version in string format. Alternatively you can use --hw_ver to store int format of hardware version")
+        "--hw_ver_str", type=str, help="Provide hardware version in string format.", required=True)
     mandatory_arguments.add_argument(
         "--dac_cert", type=str, help="Provide the path to .der file containing DAC certificate", required=True)
     mandatory_arguments.add_argument("--dac_key", type=str, help="Provide the path to .der file containing DAC keys", required=True)
@@ -242,12 +247,11 @@ def main():
         "--pai_cert", type=str, help="Provide the path to .der file containing PAI certificate", required=True)
     parser.add_argument("--cd", type=str, help="Provide the path to .der file containing Certificate Declaration", required=True)
     # optional keys
-    optional_arguments.add_argument("--pincode", type=allow_any_int, help="Provide BLE Pairing Pincode")
     optional_arguments.add_argument("--discriminator", type=hex, help="Provide BLE pairing discriminator")
     optional_arguments.add_argument("--rd_uid", type=str,
                                     help="Provide the rotating device unique ID. To generate the new rotate device unique ID use --rd_uid_gen")
     optional_arguments.add_argument("--rd_uid_gen", action="store_true", help="Generate and save the new Rotating Device Unique ID")
-    optional_arguments.add_argument("--passcode", type=allow_any_int, help="Passcode to generate Spake2 verifier")
+    optional_arguments.add_argument("--passcode", type=allow_any_int, help="Default PASE session passcode")
     optional_arguments.add_argument("--spake2_it", type=allow_any_int,
                                     help="Provide Spake2 Iteraction Counter. This is mandatory to generate Spake2 Verifier")
     optional_arguments.add_argument("--spake2_salt", type=str,
