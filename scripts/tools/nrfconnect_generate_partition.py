@@ -21,9 +21,7 @@ from intelhex import IntelHex
 import argparse
 import json
 import logging as log
-import sys
 import cbor2 as cbor
-from ordered_set import OrderedSet
 
 
 class PartitionCreator:
