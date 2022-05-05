@@ -23,8 +23,20 @@ import json
 import logging as log
 import cbor2 as cbor
 
+HEX_PREFIX = "hex:"
+
 
 class PartitionCreator:
+    """
+    Class to create nrfconnect partition containing FactoryData
+
+    :param offset: This is a partition offset where data will be stored in device's flash memory
+    :param length: This is a maximum partition size
+    :param input: This is a path to input JSON file
+    :param output: This is a path to output directory
+
+    """
+
     def __init__(self, offset: int, length: int, input: str, output: str) -> None:
         self.__ih = IntelHex()
         self.__length = length
@@ -37,13 +49,20 @@ class PartitionCreator:
 
     @staticmethod
     def encrypt(data: bytes):
+        # TODO is encryption needed here?
         return data
 
     @staticmethod
     def decrypt(data: bytes):
+        # TODO is encryption needed here?
         return data
 
     def generate_cbor(self):
+        """
+        Generates .cbor file using cbor2 library.
+        It generate a CBORTag 55799 which is user-specific tag
+
+        """
         if self.__data_to_save:
             # prepare raw data from Json
             cbor_data = cbor.dumps(self.__data_to_save)
@@ -52,6 +71,11 @@ class PartitionCreator:
             return cbor_data
 
     def create_hex(self, data: bytes):
+        """
+        Creates .hex file from CBOR.
+        This file can be write directly to device.
+
+        """
         if len(data) > self.__length:
             log.warning("generated CBOR file exceeds declared maximum partition size! {} > {}".format(len(data), self.__length))
         self.__ih.putsz(self.__offset, self.encrypt(data))
@@ -60,6 +84,10 @@ class PartitionCreator:
         return True
 
     def create_bin(self):
+        """
+        Creates raw binary data of created previously .hex file
+
+        """
         if not self.__data_ready:
             log.error("Please create hex file first!")
             return False
@@ -68,15 +96,22 @@ class PartitionCreator:
 
     @staticmethod
     def __convert_to_dict(data):
+        """
+        Converts a list containing tuples ("key_name", "key_value") to a dictionary
+
+        If "key_value" of data entry is a string-type variable and contains a HEX_PREFIX algorithm decodes it 
+        to hex format to be sure that a cbor file will contain proper bytes.
+
+        If "key_value" of data entry is a dictionary, algorithm appends it to the created dictionary.
+        """
         output_dict = dict()
         for entry in data:
             if not isinstance(entry, dict):
                 log.debug("Processing entry {}".format(entry))
-                if isinstance(data[entry], str):
-                    try:
-                        output_dict[entry] = codecs.decode(data[entry], "hex")
-                    except binascii.Error:
-                        output_dict[entry] = data[entry].encode("utf-8")
+                if isinstance(data[entry], str) and data[entry].find(HEX_PREFIX) != -1:
+                    output_dict[entry] = codecs.decode(data[entry][len(HEX_PREFIX):], "hex")
+                elif isinstance(data[entry], str):
+                    output_dict[entry] = data[entry].encode("utf-8")
                 else:
                     output_dict[entry] = data[entry]
             else:
@@ -84,11 +119,17 @@ class PartitionCreator:
         return output_dict
 
     def __load_json(self):
+        """
+        Loads file containing a JSON data and converts it to JSON format
+
+        :raises IOError: if provided JSON file can not be read out.
+        """
         try:
             with open(self.__input, "rb") as json_file:
                 return json.loads(json_file.read())
-        except IOError:
+        except IOError as e:
             log.error("Can not read Json file {}".format(self.__input))
+            raise e
 
 
 def print_flashing_help():
@@ -108,11 +149,16 @@ def main():
     def allow_any_int(i): return int(i, 0)
 
     parser = argparse.ArgumentParser(description="NrfConnect Factory Data NVS partition generator tool")
-    parser.add_argument("-i", "--input", type=str, help="Path to input json file", required=True)
-    parser.add_argument("-o", "--output", type=str, help="Output path to store .json file", required=True)
-    parser.add_argument("--offset", type=allow_any_int, help="Provide partition offset", required=True)
-    parser.add_argument("--size", type=allow_any_int, help="Provide maximum partition size", required=True)
-    parser.add_argument("-v", "--verbose", action="store_true", help="Run this script with DEBUG logging level")
+    parser.add_argument("-i", "--input", type=str, required=True,
+                        help="Path to input .json file")
+    parser.add_argument("-o", "--output", type=str, required=True,
+                        help="Path to DIRECTORY, where .hex, .cbor and .bin files will be stored")
+    parser.add_argument("--offset", type=allow_any_int, required=True,
+                        help="Partiton offset - a place in device's flash memory, where factory data will be stored")
+    parser.add_argument("--size", type=allow_any_int, required=True,
+                        help="The maximum partition size")
+    parser.add_argument("-v", "--verbose", action="store_true",
+                        help="Run this script with DEBUG logging level")
     args = parser.parse_args()
 
     if args.verbose:

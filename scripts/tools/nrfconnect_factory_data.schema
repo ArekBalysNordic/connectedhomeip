@@ -2,6 +2,7 @@
     "$id": "NrfConnect_Factory_Data_schema",
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "description": "A representation of all factory data used in Matter's NrfConnect device",
+    "type": "object",
     "required": [
         "sn",
         "date",
@@ -23,9 +24,11 @@
             "maxLength": 32
         },
         "date": {
-            "description": "Manufacturing date in format MM.DD.YYYY_GG:MM",
+            "description": "Manufacturing date according to ISO 8601 in notation YYYYMMDD",
             "type": "string",
-            "pattern": "[0-1]{1}[]"
+            "minLength": 8,
+            "maxLength": 8,
+            "pattern": "[0-9]{4}[0-1]{1}[0-2]{1}[0-3]{1}[0-9]{1}"
         },
         "hw_ver": {
             "description": "Hardware version - integer",
@@ -36,6 +39,7 @@
         "hw_ver_str": {
             "description": "A string representation of hardware version",
             "type": "string",
+            "minLength": 1,
             "maxLength": 64
         },
         "rd_uid": {
