@@ -70,21 +70,20 @@ class PartitionCreator:
 
     @staticmethod
     def __convert_to_dict(data):
-        data_names = list()
-        data_values = OrderedSet()
+        output_dict = dict()
         for entry in data:
-            log.debug("Processing entry {}".format(entry))
-            data_names.append(entry)
-            if isinstance(data[entry], str):
-                try:
-                    data_values.add(codecs.decode(data[entry], "hex"))
-                    log.debug(codecs.decode(data[entry], "hex"))
-                except binascii.Error:
-                    data_values.add(data[entry].encode("utf-8"))
-
+            if not isinstance(entry, dict):
+                log.debug("Processing entry {}".format(entry))
+                if isinstance(data[entry], str):
+                    try:
+                        output_dict[entry] = codecs.decode(data[entry], "hex")
+                    except binascii.Error:
+                        output_dict[entry] = data[entry].encode("utf-8")
+                else:
+                    output_dict[entry] = data[entry]
             else:
-                data_values.add(data[entry])
-        return dict(zip(data_names, data_values))
+                output_dict[entry] = entry
+        return output_dict
 
     def __load_json(self):
         try:

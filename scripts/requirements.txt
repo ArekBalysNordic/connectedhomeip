@@ -4,6 +4,9 @@ virtualenv
 # esp-idf
 -r requirements.esp32.txt
 
+# nrfconnect
+-r requirements.nrfconnect.txt
+
 # mbed-os
 -r requirements.mbed.txt
 

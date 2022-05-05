@@ -17,17 +17,20 @@
 
 import sys
 import json
+import jsonschema
 import shutil
 from random import randint
 import argparse
 import subprocess
 import logging as log
-from ordered_set import OrderedSet
 
 TOOLS = {}
 
 
 def check_tools_exists():
+    """
+    Checking that spake2p tool exist in PATH environment
+    """
     TOOLS['spake2p'] = shutil.which('spake2p')
     if TOOLS['spake2p'] is None:
         log.error('spake2p not found, please build and add spake2p path to PATH environment variable')
@@ -43,13 +46,22 @@ def gen_spake2p_params(passcode, it, salt):
         '--pin-code', str(passcode),
         '--out', '-',
     ]
-
     output = subprocess.check_output(cmd)
     output = output.decode('utf-8').splitlines()
     return dict(zip(output[0].split(','), output[1].split(',')))
 
 
+def generate_dict(input_list: list):
+    output_dict = dict()
+    for entry in input_list:
+        output_dict[entry[0]] = entry[1]
+    ret = output_dict
+    return ret
+
+
 class ValidatorError(Exception):
+    """ Exception raised when input argument is wrong """
+
     def __init__(self, message="str"):
         self.message = message
 
@@ -58,10 +70,15 @@ class ValidatorError(Exception):
 
 
 class FactoryDataGenerator:
+    """
+    Class to generate factory Data fromm given arguments and generate a Json file
+
+    :param arguments: All input arguments parsed using ArgParse
+    """
+
     def __init__(self, arguments) -> None:
         self.__args = arguments
         self.__factory_data = list()
-        self.__json_data = None
         self.__user_data = dict()
 
         try:
@@ -103,6 +120,10 @@ class FactoryDataGenerator:
         if self.__args.rd_uid and self.__args.rd_uid_gen:
             raise ValidatorError(
                 "Can not both provide and generate a rotating device unique ID, please choose only one of them. (--rd_uid or --rd_uid_gen)")
+        if not self.__args.rd_uid and not self.__args.rd_uid_gen:
+            raise ValidatorError(
+                "Please Enter rotating device unique ID or request to generate it by adding --rd_uid_gen to arguments list"
+            )
         if (not self.__args.spake2_salt and self.__args.spake2_it) or (self.__args.spake2_salt and not self.__args.spake2_it):
             raise ValidatorError("Provided only on of spake2 input parameters (salt or Iteration counter)")
         elif self.__args.spake2_verifier and self.__args.spake2_gen:
@@ -120,7 +141,7 @@ class FactoryDataGenerator:
                 if self.__args.hw_ver_str:
                     hw_version = self.__args.hw_ver_str
                 self.__add_entry("hw_ver", self.__args.hw_ver)
-                self.__add_entry("hw_ver", self.__args.hw_ver_str)
+                self.__add_entry("hw_ver_str", self.__args.hw_ver_str)
                 self.__add_entry("dac_cert", self.__process_der(self.__args.dac_cert))
                 self.__add_entry("dac_key", self.__process_der(self.__args.dac_key))
                 self.__add_entry("pai_cert", self.__process_der(self.__args.pai_cert))
@@ -134,21 +155,21 @@ class FactoryDataGenerator:
                     spake_2_verifier = self.__generate_spake2_verifier()
 
                 self.__add_entry("rd_uid", rd_uid)
-                self.__add_entry("cd", self.__args.cd)
                 self.__add_entry("passcode", self.__args.passcode)
                 self.__add_entry("spake2_it", self.__args.spake2_it)
                 self.__add_entry("spake2_salt", self.__args.spake2_salt)
                 self.__add_entry("spake2_verifier", spake_2_verifier)
                 self.__add_entry("discriminator", self.__args.discriminator)
 
+                factory_data_dict = generate_dict(self.__factory_data)
                 # add user-specific data
-                for entry in self.__user_data:
-                    self.__add_entry(entry, self.__user_data[entry])
-
-                factory_data_dict = self.__generate_dict()
-                log.debug(factory_data_dict)
-                json_file.write(json.dumps(factory_data_dict))
-                self.__generate_cddl()
+                factory_data_dict["user"] = self.__create_user_entry()
+                json_object = json.dumps(factory_data_dict)
+                json_file.write(json_object)
+                if self.__args.schema:
+                    self.__validate_output_json(json_object)
+                else:
+                    log.warning("Json Schema file has not been provided, the output file can be wrong. Be aware of that.")
                 json_file.close()
         except IOError as e:
             log.error("Error with processing file: {}".format(self.__args.output))
@@ -159,60 +180,37 @@ class FactoryDataGenerator:
             log.debug("Adding entry '{}' with size {} and type {}".format(name, sys.getsizeof(value), type(value)))
             self.__factory_data.append((name, value))
 
+    def __create_user_entry(self):
+        user_data = list()
+        for entry in self.__user_data:
+            user_data.append((entry, self.__user_data[entry]))
+        return generate_dict(user_data)
+
     def __generate_spake2_verifier(self):
         check_tools_exists()
         spake2_params = gen_spake2p_params(self.__args.passcode, self.__args.spake2_it, self.__args.spake2_salt)
         return spake2_params["Verifier"]
 
-    def __generate_dict(self):
-        factory_data_names = list()
-        factory_data_values = OrderedSet()
-        for entry in self.__factory_data:
-            factory_data_names.append(entry[0])
-            factory_data_values.add(entry[1])
-            log.debug("{} {}".format(entry[0], entry[1]))
-        log.debug(factory_data_values)
-        ret = dict(zip(factory_data_names, factory_data_values))
-        log.debug(ret)
-        return ret
-
-    def __generate_cddl(self):
-        def get_type(value):
-            if type(value) == str:
-                return "bstr"
-            elif type(value) == int:
-                return "int"
-            elif type(value) == bytes:
-                return "bstr"
-            elif type(value) == float:
-                return "float"
-            elif type(value) == bool:
-                return "bool"
-            else:
-                return "any"
-
-        try:
-            with open(self.__args.output + "/output.cddl", "w+") as cddl_file:
-                cddl_file.write("factory_data { \n")
-                for entry in self.__factory_data:
-                    cddl_file.write('\t"{}": {},\n'.format(entry[0], get_type(entry[1])))
-                cddl_file.write(" }")
-                cddl_file.close()
-        except IOError:
-            pass
-
     def __generate_rotating_device_uid(self):
         rdu = bytes()
         for i in range(16):
             rdu += randint(0, 255).to_bytes(1, byteorder="big")
-        return rdu
+        return rdu.hex()
+
+    def __validate_output_json(self, output_json: str):
+        try:
+            with open(self.__args.schema) as schema_file:
+                schema = json.loads(schema_file.read())
+                jsonschema.validate(instance=output_json, schema=schema)
+        except IOError as e:
+            log.error("provided Json schema file is wrong: {}".format(self.__args.schema))
+            raise e
 
     def __process_der(self, path: str):
         log.debug("Processing der file...")
         try:
             with open(path, 'rb') as f:
                 data = f.read().hex()
-                print(data)
                 f.close()
                 return data
         except IOError as e:
@@ -228,8 +226,8 @@ def main():
     mandatory_arguments = parser.add_argument_group("Mandatory arguments", "These arguments must be provided to generate Json file")
     optional_arguments = parser.add_argument_group(
         "Optional arguments", "These arguments are optional and they depend on the user-purpose")
-
-    parser.add_argument("-o", "--output", type=str, help="Output path to store .json file", required=True)
+    parser.add_argument("-s", "--schema", type=str, help="Json schema file to validate Json output data")
+    parser.add_argument("-o", "--output", type=str, help="Output directory to store .json file", required=True)
     parser.add_argument("-v", "--verbose", action="store_true", help="Run this script with DEBUG logging level")
     # Json known-keys values
     # mandatory keys
