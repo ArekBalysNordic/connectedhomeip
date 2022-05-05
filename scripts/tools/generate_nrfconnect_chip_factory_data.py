@@ -137,9 +137,6 @@ class FactoryDataGenerator:
                 # serialize mandatory data
                 self.__add_entry("sn", self.__args.sn)
                 self.__add_entry("date", self.__args.date)
-                hw_version = self.__args.hw_ver
-                if self.__args.hw_ver_str:
-                    hw_version = self.__args.hw_ver_str
                 self.__add_entry("hw_ver", self.__args.hw_ver)
                 self.__add_entry("hw_ver_str", self.__args.hw_ver_str)
                 self.__add_entry("dac_cert", self.__process_der(self.__args.dac_cert))
@@ -226,39 +223,50 @@ def main():
     mandatory_arguments = parser.add_argument_group("Mandatory arguments", "These arguments must be provided to generate Json file")
     optional_arguments = parser.add_argument_group(
         "Optional arguments", "These arguments are optional and they depend on the user-purpose")
-    parser.add_argument("-s", "--schema", type=str, help="Json schema file to validate Json output data")
-    parser.add_argument("-o", "--output", type=str, help="Output directory to store .json file", required=True)
-    parser.add_argument("-v", "--verbose", action="store_true", help="Run this script with DEBUG logging level")
+    parser.add_argument("-s", "--schema", type=str,
+                        help="Json schema file to validate Json output data")
+    parser.add_argument("-o", "--output", type=str, required=True,
+                        help="Output directory to store .json file")
+    parser.add_argument("-v", "--verbose", action="store_true",
+                        help="Run this script with DEBUG logging level")
     # Json known-keys values
     # mandatory keys
-    mandatory_arguments.add_argument("--sn", type=str, help="Provide serial number", required=True)
-    mandatory_arguments.add_argument(
-        "--date", type=str, help="Provide manufacturing date in format MM.DD.YYYY_GG:MM", required=True)
-    mandatory_arguments.add_argument(
-        "--hw_ver", type=allow_any_int, help="Provide hardware version in int format.", required=True)
-    mandatory_arguments.add_argument(
-        "--hw_ver_str", type=str, help="Provide hardware version in string format.", required=True)
-    mandatory_arguments.add_argument(
-        "--dac_cert", type=str, help="Provide the path to .der file containing DAC certificate", required=True)
-    mandatory_arguments.add_argument("--dac_key", type=str, help="Provide the path to .der file containing DAC keys", required=True)
-    mandatory_arguments.add_argument(
-        "--pai_cert", type=str, help="Provide the path to .der file containing PAI certificate", required=True)
-    parser.add_argument("--cd", type=str, help="Provide the path to .der file containing Certificate Declaration", required=True)
+    mandatory_arguments.add_argument("--sn", type=str, required=True,
+                                     help="Provide serial number")
+    mandatory_arguments.add_argument("--date", type=str, required=True,
+                                     help="Provide manufacturing date in format MM.DD.YYYY_GG:MM")
+    mandatory_arguments.add_argument("--hw_ver", type=allow_any_int, required=True,
+                                     help="Provide hardware version in int format.")
+    mandatory_arguments.add_argument("--hw_ver_str", type=str, required=True,
+                                     help="Provide hardware version in string format.")
+    mandatory_arguments.add_argument("--dac_cert", type=str, required=True,
+                                     help="Provide the path to .der file containing DAC certificate")
+    mandatory_arguments.add_argument("--dac_key", type=str, required=True,
+                                     help="Provide the path to .der file containing DAC keys")
+    mandatory_arguments.add_argument("--pai_cert", type=str, required=True,
+                                     help="Provide the path to .der file containing PAI certificate")
+    mandatory_arguments.add_argument("--cd", type=str, required=True,
+                                     help="Provide the path to .der file containing Certificate Declaration")
     # optional keys
-    optional_arguments.add_argument("--discriminator", type=hex, help="Provide BLE pairing discriminator")
+    optional_arguments.add_argument("--discriminator", type=hex,
+                                    help="Provide BLE pairing discriminator")
     optional_arguments.add_argument("--rd_uid", type=str,
                                     help="Provide the rotating device unique ID. To generate the new rotate device unique ID use --rd_uid_gen")
-    optional_arguments.add_argument("--rd_uid_gen", action="store_true", help="Generate and save the new Rotating Device Unique ID")
-    optional_arguments.add_argument("--passcode", type=allow_any_int, help="Default PASE session passcode")
+    optional_arguments.add_argument("--rd_uid_gen", action="store_true",
+                                    help="Generate and save the new Rotating Device Unique ID")
+    optional_arguments.add_argument("--passcode", type=allow_any_int,
+                                    help="Default PASE session passcode")
     optional_arguments.add_argument("--spake2_it", type=allow_any_int,
+
                                     help="Provide Spake2 Iteraction Counter. This is mandatory to generate Spake2 Verifier")
     optional_arguments.add_argument("--spake2_salt", type=str,
                                     help="Provide Spake2 Salt. This is mandatory to generate Spake2 Verifier")
-    optional_arguments.add_argument("--spake2_verifier", type=str, help="Provide Spake2 Verifier without generating")
+    optional_arguments.add_argument("--spake2_verifier", type=str,
+                                    help="Provide Spake2 Verifier without generating")
     optional_arguments.add_argument("--spake2_gen", action="store_true",
                                     help="Generate and save new Spake2 Verifier according to given Iteraction Counter and Salt")
-    optional_arguments.add_argument(
-        "--user", type=str, help="Provide additional user-specific keys in Json format: {'name_1': 'value_1', 'name_2': 'value_2', ... 'name_n', 'value_n'}")
+    optional_arguments.add_argument("--user", type=str,
+                                    help="Provide additional user-specific keys in Json format: {'name_1': 'value_1', 'name_2': 'value_2', ... 'name_n', 'value_n'}")
     args = parser.parse_args()
 
     if args.verbose:
