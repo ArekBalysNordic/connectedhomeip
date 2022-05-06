@@ -67,7 +67,7 @@ class PartitionCreator:
             # prepare raw data from Json
             cbor_data = cbor.dumps(self.__data_to_save)
             with open(self.__output + "/output.cbor", "w+b") as cbor_output:
-                cbor.dump(cbor.CBORTag(55799, cbor.loads(cbor_data)), cbor_output)
+                cbor.dump(cbor.loads(cbor_data), cbor_output)
             return cbor_data
 
     def create_hex(self, data: bytes):
