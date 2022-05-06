@@ -17,35 +17,22 @@
 
 import sys
 import json
-from wsgiref.validate import validator
 import jsonschema
-import shutil
+import secrets
 from random import randint
 import argparse
 import subprocess
 import logging as log
 
-TOOLS = {}
 HEX_PREFIX = "hex:"
 
 
-def check_tools_exists():
-    """
-    Checking that spake2p tool exist in PATH environment
-    """
-    TOOLS['spake2p'] = shutil.which('spake2p')
-    if TOOLS['spake2p'] is None:
-        log.error('spake2p not found, please build and add spake2p path to PATH environment variable')
-        log.error('You can find spake2p in connectedhomeip/src/tools/spake2p directory')
-        sys.exit(1)
-
-
-def gen_spake2p_params(passcode, it, salt):
+def gen_spake2p_params(spake2p_path: str, passcode: int, it: int, salt: str):
     """ Generate spake2 params using external spake2p script"""
     cmd = [
-        TOOLS['spake2p'], 'gen-verifier',
+        spake2p_path, 'gen-verifier',
         '--iteration-count', str(it),
-        '--salt-len', str(len(salt)),
+        '--salt', str(salt),
         '--pin-code', str(passcode),
         '--out', '-',
     ]
@@ -76,7 +63,7 @@ class ValidatorError(Exception):
 
 class FactoryDataGenerator:
     """
-    Class to generate factory Data fromm given arguments and generate a Json file
+    Class to generate factory Data from given arguments and generate a Json file
 
     :param arguments: All input arguments parsed using ArgParse
     """
@@ -98,11 +85,9 @@ class FactoryDataGenerator:
                 self.__user_data = json.loads(self.__args.user)
             except json.decoder.JSONDecodeError as e:
                 raise ValidatorError("Provided wrong user data, this is not a Json format! {}".format(e))
-        if (self.__args.spake2_salt or self.__args.spake2_it) and not (self.__args.spake2_verifier or self.__args.passcode):
+        if not self.__args.spake2_verifier and not (self.__args.passcode and self.__args.spake2p_path):
             raise ValidatorError(
-                "Provided spake2 salt or spake2 iteration counter, but no verifier nor passcode to generate a new verifier")
-        if not self.__args.spake2_verifier and not self.__args.passcode:
-            raise ValidatorError("Can not find spake2 verifier, to generate a new one please enter passcode (--passcode)")
+                "Can not find spake2 verifier, to generate a new one please provide passcode (--passcode) and path to spake2p script (--spake2p_path)")
         if not self.__args.rd_uid:
             log.warning("Can not find rotating device UID in provided arguments list. A new one will be generated.")
 
@@ -112,7 +97,7 @@ class FactoryDataGenerator:
 
         To validate generated JSON data a scheme must be provided within script's arguments
 
-        - In the first part, if the rotating device's unique id has been not provided 
+        - In the first part, if the rotating device id unique id has been not provided 
             as an argument, it will be created.
         - If user provided passcode and spake2 verifier have been not provided 
             as an argument, it will be created using an external script
@@ -137,7 +122,7 @@ class FactoryDataGenerator:
                 self.__add_entry("date", self.__args.date)
                 self.__add_entry("hw_ver", self.__args.hw_ver)
                 self.__add_entry("hw_ver_str", self.__args.hw_ver_str)
-                self.__add_entry("rd_uid", rd_uid)
+                self.__add_entry("rd_uid", HEX_PREFIX + rd_uid)
                 self.__add_entry("dac_cert", self.__process_der(self.__args.dac_cert))
                 self.__add_entry("dac_key", self.__process_der(self.__args.dac_key))
                 self.__add_entry("pai_cert", self.__process_der(self.__args.pai_cert))
@@ -145,13 +130,13 @@ class FactoryDataGenerator:
                 if self.__args.include_passcode:
                     self.__add_entry("passcode", self.__args.passcode)
                 self.__add_entry("spake2_it", self.__args.spake2_it)
-                self.__add_entry("spake2_salt", self.__args.spake2_salt)
+                self.__add_entry("spake2_salt", HEX_PREFIX + self.__args.spake2_salt)
                 self.__add_entry("spake2_verifier", spake_2_verifier)
                 self.__add_entry("discriminator", self.__args.discriminator)
 
                 factory_data_dict = generate_dict(self.__factory_data)
                 # add user-specific data
-                factory_data_dict["user"] = self.__create_user_entry()
+                factory_data_dict["user"] = self.__user_data
 
                 json_object = json.dumps(factory_data_dict)
                 json_file.write(json_object)
@@ -160,10 +145,8 @@ class FactoryDataGenerator:
                     self.__validate_output_json(json_object)
                 else:
                     log.warning("Json Schema file has not been provided, the output file can be wrong. Be aware of that.")
-                json_file.close()
         except IOError as e:
-            log.error("Error with processing file: {}".format(self.__args.output))
-            json_file.close()
+            log.error("Can not save output file into directory: {}".format(self.__args.output))
 
     def __add_entry(self, name: str, value: any):
         """ Add single entry to list of tuples ("key", "value") """
@@ -171,24 +154,15 @@ class FactoryDataGenerator:
             log.debug("Adding entry '{}' with size {} and type {}".format(name, sys.getsizeof(value), type(value)))
             self.__factory_data.append((name, value))
 
-    def __create_user_entry(self):
-        """ Collect all user entries provided as Json-type object"""
-        user_data = list()
-        for entry in self.__user_data:
-            user_data.append((entry, self.__user_data[entry]))
-        return generate_dict(user_data)
-
     def __generate_spake2_verifier(self):
         """ If verifier has not been provided in arguments list it should be generated via external script """
-        check_tools_exists()
-        spake2_params = gen_spake2p_params(self.__args.passcode, self.__args.spake2_it, self.__args.spake2_salt)
+        spake2_params = gen_spake2p_params(self.__args.spake2p_path, self.__args.passcode,
+                                           self.__args.spake2_it, self.__args.spake2_salt)
         return spake2_params["Verifier"]
 
     def __generate_rotating_device_uid(self):
         """ If rotating device unique ID has not been provided it should be generated """
-        rdu = bytes()
-        for i in range(16):
-            rdu += randint(0, 255).to_bytes(1, byteorder="big")
+        rdu = secrets.token_bytes(16)
         log.info("\n\nThe new rotate device UID: {}\n".format(rdu.hex()))
         return rdu.hex()
 
@@ -215,7 +189,6 @@ class FactoryDataGenerator:
         try:
             with open(path, 'rb') as f:
                 data = HEX_PREFIX + f.read().hex()
-                f.close()
                 return data
         except IOError as e:
             log.error(e)
@@ -256,17 +229,19 @@ def main():
                                      help="Provide the path to .der file containing PAI certificate")
     mandatory_arguments.add_argument("--cd", type=str, required=True,
                                      help="Provide the path to .der file containing Certificate Declaration")
+    mandatory_arguments.add_argument("--spake2_it", type=allow_any_int,
+                                     help="Provide Spake2 Iteraction Counter. This is mandatory to generate Spake2 Verifier")
+    mandatory_arguments.add_argument("--spake2_salt", type=str, required=True,
+                                     help="Provide Spake2 Salt. This is mandatory to generate Spake2 Verifier")
+    mandatory_arguments.add_argument("--discriminator", type=allow_any_int,
+                                     help="Provide BLE pairing discriminator")
     # optional keys
-    optional_arguments.add_argument("--discriminator", type=hex,
-                                    help="Provide BLE pairing discriminator")
     optional_arguments.add_argument("--rd_uid", type=str,
                                     help="Provide the rotating device unique ID. To generate the new rotate device unique ID use --rd_uid_gen")
     optional_arguments.add_argument("--passcode", type=allow_any_int,
                                     help="Default PASE session passcode")
-    optional_arguments.add_argument("--spake2_it", type=allow_any_int,
-                                    help="Provide Spake2 Iteraction Counter. This is mandatory to generate Spake2 Verifier")
-    optional_arguments.add_argument("--spake2_salt", type=str,
-                                    help="Provide Spake2 Salt. This is mandatory to generate Spake2 Verifier")
+    optional_arguments.add_argument("--spake2p_path", type=str,
+                                    help="Provide a path to spake2p. By default You can find spake2p in connectedhomeip/src/tools/spake2p directory and build it there.")
     optional_arguments.add_argument("--spake2_verifier", type=str,
                                     help="Provide Spake2 Verifier without generating")
     optional_arguments.add_argument("--user", type=str,

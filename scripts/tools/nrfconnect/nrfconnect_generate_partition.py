@@ -16,7 +16,6 @@
 #
 
 import codecs
-import binascii
 from intelhex import IntelHex
 import argparse
 import json
@@ -77,7 +76,7 @@ class PartitionCreator:
 
         """
         if len(data) > self.__length:
-            log.warning("generated CBOR file exceeds declared maximum partition size! {} > {}".format(len(data), self.__length))
+            raise ValueError("generated CBOR file exceeds declared maximum partition size! {} > {}".format(len(data), self.__length))
         self.__ih.putsz(self.__offset, self.encrypt(data))
         self.__ih.write_hex_file(self.__output + "/output.hex", True)
         self.__data_ready = True
@@ -108,7 +107,7 @@ class PartitionCreator:
         for entry in data:
             if not isinstance(entry, dict):
                 log.debug("Processing entry {}".format(entry))
-                if isinstance(data[entry], str) and data[entry].find(HEX_PREFIX) != -1:
+                if isinstance(data[entry], str) and data[entry].startswith(HEX_PREFIX):
                     output_dict[entry] = codecs.decode(data[entry][len(HEX_PREFIX):], "hex")
                 elif isinstance(data[entry], str):
                     output_dict[entry] = data[entry].encode("utf-8")

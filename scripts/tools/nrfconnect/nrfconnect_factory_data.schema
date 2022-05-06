@@ -28,7 +28,7 @@
             "type": "string",
             "minLength": 8,
             "maxLength": 8,
-            "pattern": "[0-9]{4}[0-1]{1}[0-2]{1}[0-3]{1}[0-9]{1}"
+            "pattern": "[0-9]{4}[0-1]{1}[0-9]{1}[0-3]{1}[0-9]{1}"
         },
         "hw_ver": {
             "description": "Hardware version - integer",
@@ -43,10 +43,10 @@
             "maxLength": 64
         },
         "rd_uid": {
-            "description": "A randomly-generated 128-bit or longer octet string",
+            "description": "A randomly-generated 128-bit or longer octet string. Length has been expanded with 'hex:' prefix",
             "type": "string",
-            "minLength": 16,
-            "maxLength": 32
+            "minLength": 20,
+            "maxLength": 36
         },
         "dac_cert": {
             "description": "DAC certificate in hex-string format",
@@ -73,14 +73,14 @@
         "spake2_it": {
             "description": "An Iteration counter for the Symmetric Password-Authenticated Key Exchange",
             "type": "integer",
-            "minimum": 0,
-            "maximum": 4294967296
+            "minimum": 1000,
+            "maximum": 100000
         },
         "spake2_salt": {
-            "description": "A key-derivation function for the Symmetric Password-Authenticated Key Exchange",
+            "description": "A key-derivation function for the Symmetric Password-Authenticated Key Exchange. Length has been expanded with 'hex:' prefix",
             "type": "string",
-            "minLength": 32,
-            "maxLength": 32
+            "minLength": 20,
+            "maxLength": 36
         },
         "spake2_verifier": {
             "description": "A verifier for the Symmetric Password-Authenticated Key Exchange",
