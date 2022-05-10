@@ -23,6 +23,7 @@ from random import randint
 import argparse
 import subprocess
 import logging as log
+import base64
 
 HEX_PREFIX = "hex:"
 
@@ -41,16 +42,6 @@ def gen_spake2p_params(spake2p_path: str, passcode: int, it: int, salt: str):
     return dict(zip(output[0].split(','), output[1].split(',')))
 
 
-def generate_dict(input_list: list):
-    """ Creates simple dictionary from given list of tuples ("key", "value") """
-
-    output_dict = dict()
-    for entry in input_list:
-        output_dict[entry[0]] = entry[1]
-    ret = output_dict
-    return ret
-
-
 class ValidatorError(Exception):
     """ Exception raised when input argument is wrong """
 
@@ -63,7 +54,7 @@ class ValidatorError(Exception):
 
 class FactoryDataGenerator:
     """
-    Class to generate factory Data from given arguments and generate a Json file
+    Class to generate factory data from given arguments and generate a Json file
 
     :param arguments: All input arguments parsed using ArgParse
     """
@@ -90,6 +81,8 @@ class FactoryDataGenerator:
                 "Can not find spake2 verifier, to generate a new one please provide passcode (--passcode) and path to spake2p script (--spake2p_path)")
         if not self.__args.rd_uid:
             log.warning("Can not find rotating device UID in provided arguments list. A new one will be generated.")
+        if not self.__args.output.endswith(".json"):
+            raise ValidatorError("Output path doesn't contain .json file path. ({})".format(self.__args.output))
 
     def generate_json(self):
         """
@@ -97,9 +90,9 @@ class FactoryDataGenerator:
 
         To validate generated JSON data a scheme must be provided within script's arguments
 
-        - In the first part, if the rotating device id unique id has been not provided 
+        - In the first part, if the rotating device id unique id has been not provided
             as an argument, it will be created.
-        - If user provided passcode and spake2 verifier have been not provided 
+        - If user provided passcode and spake2 verifier have been not provided
             as an argument, it will be created using an external script
         - Passcode is not stored in JSON by default. To store it for debugging purposes, add --include_passcode argument.
         - Validating output JSON is not mandatory, but highly recommended.
@@ -111,12 +104,12 @@ class FactoryDataGenerator:
         else:
             rd_uid = self.__args.rd_uid
         if not self.__args.spake2_verifier:
-            spake_2_verifier = self.__generate_spake2_verifier()
+            spake_2_verifier = HEX_PREFIX + base64.b64decode(self.__generate_spake2_verifier()).hex()
         else:
-            spake_2_verifier = self.__args.spake2_verifier
+            spake_2_verifier = HEX_PREFIX + self.__args.spake2_verifier.hex()
 
         try:
-            with open(self.__args.output + "/output.json", "w+") as json_file:
+            with open(self.__args.output, "w+") as json_file:
                 # serialize mandatory data
                 self.__add_entry("sn", self.__args.sn)
                 self.__add_entry("date", self.__args.date)
@@ -130,21 +123,23 @@ class FactoryDataGenerator:
                 if self.__args.include_passcode:
                     self.__add_entry("passcode", self.__args.passcode)
                 self.__add_entry("spake2_it", self.__args.spake2_it)
-                self.__add_entry("spake2_salt", HEX_PREFIX + self.__args.spake2_salt)
+                self.__add_entry("spake2_salt", self.__args.spake2_salt)
                 self.__add_entry("spake2_verifier", spake_2_verifier)
                 self.__add_entry("discriminator", self.__args.discriminator)
 
-                factory_data_dict = generate_dict(self.__factory_data)
+                factory_data_dict = dict(self.__factory_data)
                 # add user-specific data
                 factory_data_dict["user"] = self.__user_data
 
                 json_object = json.dumps(factory_data_dict)
-                json_file.write(json_object)
+                is_json_valid = True
 
                 if self.__args.schema:
-                    self.__validate_output_json(json_object)
+                    is_json_valid = self.__validate_output_json(json_object)
                 else:
                     log.warning("Json Schema file has not been provided, the output file can be wrong. Be aware of that.")
+                if is_json_valid:
+                    json_file.write(json_object)
         except IOError as e:
             log.error("Can not save output file into directory: {}".format(self.__args.output))
 
@@ -167,8 +162,8 @@ class FactoryDataGenerator:
         return rdu.hex()
 
     def __validate_output_json(self, output_json: str):
-        """ 
-        Validate output JSON data with provided .scheme file 
+        """
+        Validate output JSON data with provided .scheme file
         This function will raise error if JSON does not match schema.
 
         """
@@ -180,9 +175,10 @@ class FactoryDataGenerator:
                 validator.validate(instance=json.loads(output_json))
         except IOError as e:
             log.error("provided Json schema file is wrong: {}".format(self.__args.schema))
-            raise e
+            return False
         else:
             log.info("Validate OK")
+            return True
 
     def __process_der(self, path: str):
         log.debug("Processing der file...")
@@ -200,13 +196,13 @@ def main():
 
     def allow_any_int(i): return int(i, 0)
 
-    mandatory_arguments = parser.add_argument_group("Mandatory arguments", "These arguments must be provided to generate Json file")
+    mandatory_arguments = parser.add_argument_group("Mandatory keys", "These arguments must be provided to generate Json file")
     optional_arguments = parser.add_argument_group(
-        "Optional arguments", "These arguments are optional and they depend on the user-purpose")
+        "Optional keys", "These arguments are optional and they depend on the user-purpose")
     parser.add_argument("-s", "--schema", type=str,
                         help="Json schema file to validate Json output data")
     parser.add_argument("-o", "--output", type=str, required=True,
-                        help="Output directory to store .json file")
+                        help="Output path to store .json file, e.g. my_dir/output.json")
     parser.add_argument("-v", "--verbose", action="store_true",
                         help="Run this script with DEBUG logging level")
     parser.add_argument("--include_passcode", action="store_true",
@@ -214,38 +210,38 @@ def main():
     # Json known-keys values
     # mandatory keys
     mandatory_arguments.add_argument("--sn", type=str, required=True,
-                                     help="Provide serial number")
+                                     help="[ascii string] Provide serial number.")
     mandatory_arguments.add_argument("--date", type=str, required=True,
-                                     help="Provide manufacturing date in format MM.DD.YYYY_GG:MM")
+                                     help="[ascii string] Provide manufacturing date in format MM.DD.YYYY_GG:MM .")
     mandatory_arguments.add_argument("--hw_ver", type=allow_any_int, required=True,
-                                     help="Provide hardware version in int format.")
+                                     help="[int | hex int] Provide hardware version in int format.")
     mandatory_arguments.add_argument("--hw_ver_str", type=str, required=True,
-                                     help="Provide hardware version in string format.")
+                                     help="[ascii string] Provide hardware version in string format.")
     mandatory_arguments.add_argument("--dac_cert", type=str, required=True,
-                                     help="Provide the path to .der file containing DAC certificate")
+                                     help="[.der] Provide the path to .der file containing DAC certificate.")
     mandatory_arguments.add_argument("--dac_key", type=str, required=True,
-                                     help="Provide the path to .der file containing DAC keys")
+                                     help="[.der] Provide the path to .der file containing DAC keys.")
     mandatory_arguments.add_argument("--pai_cert", type=str, required=True,
-                                     help="Provide the path to .der file containing PAI certificate")
+                                     help="[.der] Provide the path to .der file containing PAI certificate.")
     mandatory_arguments.add_argument("--cd", type=str, required=True,
-                                     help="Provide the path to .der file containing Certificate Declaration")
+                                     help="[.der] Provide the path to .der file containing Certificate Declaration.")
     mandatory_arguments.add_argument("--spake2_it", type=allow_any_int,
-                                     help="Provide Spake2 Iteraction Counter. This is mandatory to generate Spake2 Verifier")
+                                     help="[int | hex int] Provide Spake2 Iteraction Counter.")
     mandatory_arguments.add_argument("--spake2_salt", type=str, required=True,
-                                     help="Provide Spake2 Salt. This is mandatory to generate Spake2 Verifier")
+                                     help="[ascii string] Provide Spake2 Salt.")
     mandatory_arguments.add_argument("--discriminator", type=allow_any_int,
-                                     help="Provide BLE pairing discriminator")
+                                     help="[int] Provide BLE pairing discriminator.")
     # optional keys
     optional_arguments.add_argument("--rd_uid", type=str,
-                                    help="Provide the rotating device unique ID. To generate the new rotate device unique ID use --rd_uid_gen")
+                                    help="[base64 string] Provide the rotating device unique ID. To generate the new rotate device unique ID use --rd_uid_gen/")
     optional_arguments.add_argument("--passcode", type=allow_any_int,
-                                    help="Default PASE session passcode")
+                                    help="[int | hex] Default PASE session passcode. (This is mandatory to generate Spake2 Verifier).")
     optional_arguments.add_argument("--spake2p_path", type=str,
-                                    help="Provide a path to spake2p. By default You can find spake2p in connectedhomeip/src/tools/spake2p directory and build it there.")
+                                    help="[string] Provide a path to spake2p. By default You can find spake2p in connectedhomeip/src/tools/spake2p directory and build it there.")
     optional_arguments.add_argument("--spake2_verifier", type=str,
-                                    help="Provide Spake2 Verifier without generating")
+                                    help="[base64 string] Provide Spake2 Verifier without generating it.")
     optional_arguments.add_argument("--user", type=str,
-                                    help="Provide additional user-specific keys in Json format: {'name_1': 'value_1', 'name_2': 'value_2', ... 'name_n', 'value_n'}")
+                                    help="[string] Provide additional user-specific keys in Json format: {'name_1': 'value_1', 'name_2': 'value_2', ... 'name_n', 'value_n'}.")
     args = parser.parse_args()
 
     if args.verbose:
