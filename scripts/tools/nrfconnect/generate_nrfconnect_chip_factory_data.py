@@ -71,7 +71,7 @@ class FactoryDataGenerator:
                 self._user_data = json.loads(self._args.user)
             except json.decoder.JSONDecodeError as e:
                 raise AssertionError("Provided wrong user data, this is not a Json format! {}".format(e))
-        assert (not self._args.spake2_verifier or (self._args.passcode and self._args.spake2p_path)), \
+        assert (self._args.spake2_verifier or (self._args.passcode and self._args.spake2p_path)), \
             "Can not find spake2 verifier, to generate a new one please provide passcode (--passcode) and path to spake2p script (--spake2p_path)"
         if not self._args.rd_uid:
             log.warning("Can not find rotating device UID in provided arguments list. A new one will be generated.")
@@ -102,7 +102,7 @@ class FactoryDataGenerator:
         if not self._args.spake2_verifier:
             spake_2_verifier = base64.b64decode(self._generate_spake2_verifier()).hex()
         else:
-            spake_2_verifier = self._args.spake2_verifier.hex()
+            spake_2_verifier = self._args.spake2_verifier
 
         try:
             json_file = open(self._args.output, "w+")
@@ -110,8 +110,12 @@ class FactoryDataGenerator:
             print("Can not create JSON file in this location: {}".format(self._args.output))
             sys.exit(-1)
         with json_file:
-            # serialize mandatory data
+            # serialize data
             self._add_entry("sn", self._args.sn)
+            self._add_entry("vid", self._args.vid)
+            self._add_entry("pid", self._args.pid)
+            self._add_entry("vendor_name", self._args.vendor_name)
+            self._add_entry("product_name", self._args.product_name)
             self._add_entry("date", self._args.date)
             self._add_entry("hw_ver", self._args.hw_ver)
             self._add_entry("hw_ver_str", self._args.hw_ver_str)
@@ -119,7 +123,6 @@ class FactoryDataGenerator:
             self._add_entry("dac_cert", self._process_der(self._args.dac_cert))
             self._add_entry("dac_key", self._process_der(self._args.dac_key))
             self._add_entry("pai_cert", self._process_der(self._args.pai_cert))
-            self._add_entry("cd", self._process_der(self._args.cd))
             if self._args.include_passcode:
                 self._add_entry("passcode", self._args.passcode)
             self._add_entry("spake2_it", self._args.spake2_it)
@@ -146,7 +149,7 @@ class FactoryDataGenerator:
 
     def _add_entry(self, name: str, value: any):
         """ Add single entry to list of tuples ("key", "value") """
-        if value:
+        if value or (isinstance(value, int) and value == 0):
             log.debug("Adding entry '{}' with size {} and type {}".format(name, sys.getsizeof(value), type(value)))
             self._factory_data.append((name, value))
 
@@ -211,9 +214,22 @@ def main():
     # Json known-keys values
     # mandatory keys
     mandatory_arguments.add_argument("--sn", type=str, required=True,
-                                     help="[ascii string] Provide serial number.")
+                                     help="[ascii string] Serial number of a device which can be used to identify \
+	                                        the serial number field in the Matter certificate structure. \
+	                                        Maximum length of serial number is 20 bytes. \
+	                                        Strings longer than 20 bytes will be declined in script")
+    mandatory_arguments.add_argument("--vid", type=allow_any_int,
+                                     help="[int | hex int] Provide Vendor Identification Number")
+    mandatory_arguments.add_argument("--pid", type=allow_any_int,
+                                     help="[int | hex int] Provide Product Identification Number")
+    mandatory_arguments.add_argument("--vendor_name", type=str,
+                                     help="[string] provide human-readable vendor name")
+    mandatory_arguments.add_argument("--product_name", type=str,
+                                     help="[string] provide human-readable product name")
     mandatory_arguments.add_argument("--date", type=str, required=True,
-                                     help="[ascii string] Provide manufacturing date in format MM.DD.YYYY_GG:MM .")
+                                     help="[ascii string] Provide manufacturing date \
+                                            A manufacturing date specifies the date that the Node was manufactured. \
+	                                        Used format for providing a manufacturing date is ISO 8601 e.g. YYYY-MM-DD.")
     mandatory_arguments.add_argument("--hw_ver", type=allow_any_int, required=True,
                                      help="[int | hex int] Provide hardware version in int format.")
     mandatory_arguments.add_argument("--hw_ver_str", type=str, required=True,
@@ -224,17 +240,17 @@ def main():
                                      help="[.der] Provide the path to .der file containing DAC keys.")
     mandatory_arguments.add_argument("--pai_cert", type=str, required=True,
                                      help="[.der] Provide the path to .der file containing PAI certificate.")
-    mandatory_arguments.add_argument("--cd", type=str, required=True,
-                                     help="[.der] Provide the path to .der file containing Certificate Declaration.")
-    mandatory_arguments.add_argument("--spake2_it", type=allow_any_int,
-                                     help="[int | hex int] Provide Spake2 Iteraction Counter.")
+    mandatory_arguments.add_argument("--spake2_it", type=allow_any_int, required=True,
+                                     help="[int | hex int] Provide Spake2 Iteration Counter.")
     mandatory_arguments.add_argument("--spake2_salt", type=str, required=True,
                                      help="[ascii string] Provide Spake2 Salt.")
-    optional_arguments.add_argument("--discriminator", type=allow_any_int, required=True,
-                                    help="[int] Provide BLE pairing discriminator.")
+    mandatory_arguments.add_argument("--discriminator", type=allow_any_int, required=True,
+                                     help="[int] Provide BLE pairing discriminator. \
+                                     A 12-bit value matching the field of the same name in \
+                                     the setup code. Discriminator is used during a discovery process.")
     # optional keys
     optional_arguments.add_argument("--rd_uid", type=str,
-                                    help="[hex string] Provide the rotating device unique ID. To generate the new rotate device unique ID use --rd_uid_gen.")
+                                    help="[hex string] Provide the rotating device unique ID. If this argument is not provided a new rotating device id unique id will be generated.")
     optional_arguments.add_argument("--passcode", type=allow_any_int,
                                     help="[int | hex] Default PASE session passcode. (This is mandatory to generate Spake2 Verifier).")
     optional_arguments.add_argument("--spake2p_path", type=str,

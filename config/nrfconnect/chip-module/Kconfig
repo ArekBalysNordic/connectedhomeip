@@ -72,3 +72,228 @@ config CHIP_DEBUG_SYMBOLS
 	default y
 	help
 	  Build the application with debug symbols.
+
+config CHIP_FACTORY_DATA_ENABLE
+	bool "Enables Factory Data support"
+	default n
+	help
+	  Enables generation of factory data after building.
+	  It requires factory_data partition to exist in the partition manager 
+	  configuration file pm_static.yml.
+	  As a result a new output file factory_data.hex will be created.
+
+if CHIP_FACTORY_DATA_ENABLE
+
+# Factory data definitions
+config CHIP_FACTORY_DATA_PARTITION_ADDRESS
+	hex "An address in device NVM memory where factory data will be stored"
+	default 0xfb000
+	help 
+	  An address of factory data must be coherent with partition manager definitions. 
+	  See the partition manager file e.g., pm_static.yaml, 
+	  to verify if and on which address the factory_data partition was created.
+
+config CHIP_FACTORY_DATA_PARTITION_SIZE
+	hex "A size of partition for factory data"
+	default 0x1000
+	help
+	  Size of factory data partition that must be coherent with partition manager definitions. 
+	  See the partition manager file e.g., pm_static.yaml, 
+	  to verify if and on which address the factory_data partition was created.
+
+config CHIP_MERGE_FACTORY_DATA_WITH_FIRMWARE
+	bool "Enables merging generated factory data with the build target .hex file"
+	help
+	  Enables merging generated factory data with the build target merged.hex file.
+	  As a result, a new output file merged_fd.hex file will be created, 
+	  that includes all partitions from merged.hex file and additionally factory data partition.
+
+# Use default certificates without generating or providing them
+config CHIP_FACTORY_DATA_USE_DEFAULTS_CERTS
+	bool "Uses a default certificates located in Matter repository"
+	default y
+	help
+	  Pre-generated certificates can be used for development purpose.
+	  This config includes default pre-generated certificates 
+	  which are located in credentials/development/attestation/ directory 
+	  instead of generating new ones.
+	  This option can be enabled only if CHIP_FACTORY_DATA_GENERATE_DAC_CERT
+	  and CHIP_FACTORY_DATA_GENERATE_PAI_CERT are set to n.
+
+
+if !CHIP_FACTORY_DATA_USE_DEFAULTS_CERTS
+# if using default certificates is disabled a proper ones must be provided or generated
+
+config CHIP_FACTORY_DATA_GENERATE_DAC_CERT
+	bool "Enables a DAC cert generation"
+	help
+	  Enables generation of the Device Attestation Certificate according to 
+	  the given Vendor and Product IDs.
+	  To generate DAC Cert a chip-cert executable must be available 
+	  from system variables environment PATH.
+	  Currently DAC cert generation is supported only on the Linux system.
+
+config CHIP_FACTORY_DATA_GENERATE_PAI_CERT
+	bool "Enables PAI cert generation"
+	help
+	  Enables generation of Product Attestation Intermediate Certificate 
+	  according to given Vendor and Product IDs.
+	  To generate PAI Cert a chip-cert executable must be available 
+	  from system variables environment PATH.
+	  Currently generating PAI cert is supported only on the Linux system. 
+
+
+if !CHIP_FACTORY_DATA_GENERATE_PAI_CERT && !CHIP_FACTORY_DATA_GENERATE_DAC_CERT
+
+config CHIP_DEVICE_DAC_CERT_PATH
+	string "A path to the Device Attestation Certificate"
+	help
+	  A full path to Device Attestation Certificate file in .der format or
+	  raw data of certificate. Certificate can be generated during build 
+	  if CHIP_FACTORY_DATA_GENERATE_DAC_CERT is enabled.
+
+config CHIP_DEVICE_DAC_KEY_PATH
+	string "A path to the Device Attestation Certificate Key"
+	help
+	  A full path to Device Attestation Certificate Key file in .der format or
+	  raw data of certificate key. Key for this certificate can be generated during build 
+	  if CHIP_FACTORY_DATA_GENERATE_DAC_CERT is enabled.
+
+config CHIP_DEVICE_PAI_CERT_PATH
+	string "A path to Product Attestation Intermediate"
+	help
+	  A full path to Product Attestation Intermediate file in .der format or
+	  raw data of certificate. Certificate can be generated during build 
+	  if CHIP_FACTORY_DATA_GENERATE_DAC_CERT is enabled.
+
+endif # !CHIP_FACTORY_DATA_GENERATE_PAI_CERT && !CHIP_FACTORY_DATA_GENERATE_DAC_CERT
+
+endif # !CHIP_FACTORY_DATA_USE_DEFAULTS_CERTS
+
+# Configs for SPAKE2 generation
+config CHIP_FACTORY_DATA_GENERATE_SPAKE2_VERIFIER
+	bool "Enables spake2 verifier generation"
+	help
+	  Enables generation of spake2 verifier according to 
+	  given iteration counter, salt and passcode.
+	  To generate Spake2 verifier a spake2p executable must be available 
+	  from system variables environment.
+	  Currently only Linux system is supported to generate PAI cert.
+
+endif #CHIP_FACTORY_DATA_ENABLE
+
+# Factory data parameters
+config CHIP_DEVICE_SERIAL_NUMBER
+	string "Serial number of device"
+	default "11223344556677889900"
+	help
+	  A serial number parameter defines an unique number of manufactured device.
+	  Maximum length of serial number is 20 bytes.
+
+config CHIP_DEVICE_VENDOR_NAME
+	string "Human-readable vendor name"
+	default "Nordic Semiconductor ASA"
+	help
+	  A human-readable vendor name which provides a simple string 
+	  containing identification of device's vendor for the Content APP.
+	  This information should be included in the Matter Basic Cluster.
+
+config CHIP_DEVICE_PRODUCT_NAME
+	string "Human-readable product name"
+	default "not-specified"
+	help
+	  A human-readable product name which provides a simple string 
+	  containing identification of the product for the Content APP.
+
+config CHIP_DEVICE_MANUFACTURING_DATE
+	string "Manufacturing date in ISO 8601"
+	default "2022-01-01"
+	help
+	  A manufacturing date specifies the date that the device was manufactured.
+	  The format used for providing a manufacturing date is ISO 8601 e.g. YYYY-MM-DD.
+	
+config CHIP_DEVICE_HARDWARE_VERSION
+	int "Integer representation of hardware version"
+	default 0
+	help
+	  A hardware version number specifies the version number
+	  of the hardware of the device. The meaning of its value, 
+	  and the versioning scheme, are vendor defined.
+
+config CHIP_DEVICE_HARDWARE_VERSION_STRING
+	string "user-friendly string representation of hardware version"
+	default "prerelease"
+	help
+	  A hardware version string parameter specifies the version
+	  of the hardware of the device as a more user-friendly value
+	  than that represented by the hardware version integer value.
+	  The meaning of its value, and the versioning scheme, are
+	  vendor defined.
+
+config CHIP_DEVICE_DISCRIMINATOR
+	hex "Device pairing discriminator"
+	default 0xF00
+	help
+	  A 12-bit value matching the field of the same name in
+	  the setup code. Discriminator is used during
+	  a discovery process.
+
+config CHIP_DEVICE_PAIRING_PASSCODE 
+	int "Device Pass code"
+	default 20202021
+	range 1 99999998
+	help
+	  A pairing passcode is a 27-bit unsigned integer which serves
+	  as a proof of possession during commissioning. 
+	  Its value shall be restricted to the values 0x0000001 to 0x5F5E0FE
+	  (00000001 to 99999998 in decimal), excluding the invalid Passcode values:
+	  - 00000000, 11111111, 22222222, 33333333, 44444444, 55555555, 
+	  66666666, 77777777, 88888888, 99999999, 12345678, 87654321.
+
+config CHIP_DEVICE_SPAKE2_IT
+	int "Spake 2 iteration count"
+	default 1000
+	help
+	  The Spake2 iteration count is associated with the ephemeral
+	  PAKE passcode verifier to be used for the commissioning.
+	  The iteration count is used as a crypto parameter to process
+	  spake2 verifier.
+
+config CHIP_DEVICE_SPAKE2_SALT
+	string "Spake 2 salt in string format"
+	default "12345678901234567890123456789012"
+	help
+	  The spake2 salt is random data that is used as an additional input 
+	  to a one-way function that “hashes” data. 
+	  A new salt should be randomly generated for each password.
+	  The minimum length of spake2 salt is 16 Bytes.
+	  The maximum length of spake2 salt is 32 Bytes.
+
+config CHIP_DEVICE_SPAKE2_TEST_VERIFIER
+	string "Testing spake 2 verifier"
+	default "95294fec01726afc5a4477be089d234fb8b5e7036a583460bced6f4fa22e065504419883d08bd5e699188fa11340456bf7a73cb658947e319fae197d60dbba2795ca733b743464340f5e1fc47619b23fa776d8d833637caf7995eb25b33a516252"
+	help
+	  The spake 2 verifier generated using default SPAKE2 salt, 
+	  iteration count and passcode. This value can be used for development
+	  or testing purposes. To use this value all needed input parameters:
+	  - CHIP_DEVICE_SPAKE2_SALT
+	  - CHIP_PAIRING_PASSCODE
+	  - CHIP_DEVICE_SPAKE2_IT
+	  must be consist with generated verifier.
+	  The minimum length of spake2 verifier is 97 Bytes.
+
+config CHIP_DEVICE_GENERATE_ROTATING_DEVICE_UID
+	bool "Enables generation of a new Rotating device id unique id"
+	help
+	  Enables generation of a new Rotating device id unique id.
+
+if !CHIP_DEVICE_GENERATE_ROTATING_DEVICE_UID  && CHIP_FACTORY_DATA_ENABLE
+
+config CHIP_DEVICE_ROTATING_DEVICE_UID
+	string  "A rotating device id unique id"
+	default "91a9c12a7c80700a31ddcfa7fce63e44"
+	help
+	  A device rotating id unique id which will be generated if
+	  this config is not set in prj.conf file.
+
+endif #CHIP_DEVICE_GENERATE_ROTATING_DEVICE_UID

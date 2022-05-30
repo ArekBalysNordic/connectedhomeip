@@ -30,6 +30,8 @@ if (CONFIG_CHIP)
 include(ExternalProject)
 include(../../zephyr/ota-image.cmake)
 include(../../zephyr/zephyr-util.cmake)
+include(ota-content-header.cmake)
+include(generate_factory_data.cmake)
 
 # ==============================================================================
 # Declare configuration variables and define constants
@@ -348,6 +350,14 @@ if (CONFIG_CHIP_OTA_IMAGE_BUILD)
     )
 
     add_dependencies(chip-ota-image dfu_multi_image_pkg)
+endif()
+
+# ==============================================================================
+# Define 'factory_data' target for generating a factory data partition
+# ==============================================================================
+
+if(CONFIG_CHIP_FACTORY_DATA_ENABLE)
+    nrfconnect_generate_factory_data(factory_data)
 endif()
 
 endif() # CONFIG_CHIP
