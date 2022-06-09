@@ -24,14 +24,52 @@ import argparse
 import subprocess
 import logging as log
 import base64
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives.serialization import load_der_private_key
 
 HEX_PREFIX = "hex:"
+PUB_KEY_PREFIX = b'\x04'
 INVALID_PASSCODES = [00000000, 11111111, 22222222, 33333333, 44444444,
                      55555555, 66666666, 77777777, 88888888, 99999999, 12345678, 87654321]
 
 
-def gen_spake2p_params(spake2p_path: str, passcode: int, it: int, salt: str):
-    """ Generate spake2 params using external spake2p script"""
+def get_raw_private_key_der(der_file: str, password: str):
+    """ Split given der file to get separated key pair consisting of public and private keys.
+
+    Args:
+        der_file (str): Path to .der file containing public and private keys
+        password (str): Password to decrypt Keys. It can be None, and then KEY is not encrypted.
+
+    Returns:
+        hex string: return a hex string containing extracted and decrypted private KEY from given .der file.
+    """
+    try:
+        with open(der_file, 'rb') as file:
+            key_data = file.read()
+            if password is None:
+                log.warning("KEY password has not been provided. It means that DAC key is not encrypted.")
+            keys = load_der_private_key(key_data, password, backend=default_backend())
+            private_key = keys.private_numbers().private_value.to_bytes(32, byteorder='big')
+
+            return private_key.hex()
+
+    except IOError or ValueError:
+        return None
+
+
+def gen_spake2p_params(spake2p_path: str, passcode: int, it: int, salt: str) -> dict:
+    """ Generate spake2 params using external spake2p script
+
+    Args:
+        spake2p_path (str): path to spake2 executable
+        passcode (int): Pairing passcode using in SPAKE 2
+        it (int): Iteration counter for SPAKE2 Verifier generation
+        salt (str): Salt used to generate SPAKE2 password
+
+    Returns:
+        dict: dictionary containing passcode, it, salt, and generated Verifier
+    """
+
     cmd = [
         spake2p_path, 'gen-verifier',
         '--iteration-count', str(it),
@@ -52,8 +90,8 @@ class FactoryDataGenerator:
 
     def __init__(self, arguments) -> None:
         """
-        :param arguments: All input arguments parsed using ArgParse
-
+        Args:
+            arguments (any):All input arguments parsed using ArgParse
         """
         self._args = arguments
         self._factory_data = list()
@@ -108,6 +146,12 @@ class FactoryDataGenerator:
         else:
             spake_2_verifier = base64.b64decode(self._args.spake2_verifier).hex()
 
+        # try to read DAC public and private keys
+        dac_priv_key = get_raw_private_key_der(self._args.dac_key, self._args.dac_key_password)
+        if dac_priv_key is None:
+            log.error("Can not read DAC keys from : {}".format(self._args.dac_key))
+            sys.exit(-1)
+
         try:
             json_file = open(self._args.output, "w+")
         except FileNotFoundError:
@@ -123,9 +167,9 @@ class FactoryDataGenerator:
             self._add_entry("date", self._args.date)
             self._add_entry("hw_ver", self._args.hw_ver)
             self._add_entry("hw_ver_str", self._args.hw_ver_str)
-            self._add_entry("dac_cert", self._process_der(self._args.dac_cert))
-            self._add_entry("dac_key", self._process_der(self._args.dac_key))
-            self._add_entry("pai_cert", self._process_der(self._args.pai_cert))
+            self._add_entry("dac_cert", HEX_PREFIX + self._process_der(self._args.dac_cert))
+            self._add_entry("dac_key", HEX_PREFIX + dac_priv_key)
+            self._add_entry("pai_cert", HEX_PREFIX + self._process_der(self._args.pai_cert))
             if self._args.include_passcode:
                 self._add_entry("passcode", self._args.passcode)
             self._add_entry("spake2_it", self._args.spake2_it)
@@ -194,7 +238,7 @@ class FactoryDataGenerator:
         log.debug("Processing der file...")
         try:
             with open(path, 'rb') as f:
-                data = HEX_PREFIX + f.read().hex()
+                data = f.read().hex()
                 return data
         except IOError as e:
             log.error(e)
@@ -250,6 +294,7 @@ def main():
                                      help="[int] Provide BLE pairing discriminator. \
                                      A 12-bit value matching the field of the same name in \
                                      the setup code. Discriminator is used during a discovery process.")
+
     # optional keys
     optional_arguments.add_argument("--chip_cert_path", type=str,
                                     help="Generate DAC and PAI certificates instead giving a path to .der files. This option requires a path to chip-cert executable."
@@ -258,10 +303,12 @@ def main():
                                     help="[.der] Provide the path to .der file containing DAC certificate.")
     optional_arguments.add_argument("--dac_key", type=str,
                                     help="[.der] Provide the path to .der file containing DAC keys.")
-    optional_arguments.add_argument("--pai_cert", type=str,
-                                    help="[.der] Provide the path to .der file containing PAI certificate.")
     optional_arguments.add_argument("--generate_rd_uid", action="store_true",
                                     help="Generate a new rotating device unique ID, print it out to console output and store it in factory data.")
+    optional_arguments.add_argument("--dac_key_password", type=str,
+                                    help="Provide a password to decode dac key. If dac key is not encrypted do not provide this argument.")
+    optional_arguments.add_argument("--pai_cert", type=str,
+                                    help="[.der] Provide the path to .der file containing PAI certificate.")
     optional_arguments.add_argument("--rd_uid", type=str,
                                     help="[hex string] Provide the rotating device unique ID. If this argument is not provided a new rotating device id unique id will be generated.")
     optional_arguments.add_argument("--passcode", type=allow_any_int,
@@ -280,7 +327,11 @@ def main():
     if args.verbose:
         log.basicConfig(format='[%(asctime)s][%(levelname)s] %(message)s', level=log.DEBUG)
     else:
-        log.basicConfig(format='[%(asctime)s] %(message)s', level=log.INFO)
+        log.basicConfig(format='[%(levelname)s] %(message)s', level=log.INFO)
+
+    if(args.chip_cert_path):
+        log.error("Generating DAC and PAI certificates is not supported yet")
+        return
 
     # check if json file already exist
     if(exists(args.output) and not args.overwrite):

@@ -73,15 +73,19 @@
         },
         "dac_cert": {
             "description": "DAC certificate in hex-string format",
-            "type": "string"
+            "type": "string",
+            "maxLength": 1204
         },
         "dac_key": {
             "description": "DAC Private Key in hex-string format",
-            "type": "string"
+            "type": "string",
+            "minLength": 68,
+            "maxLength": 68
         },
         "pai_cert": {
             "description": "PAI certificate in hex-string format",
-            "type": "string"
+            "type": "string",
+            "maxLength": 1204
         },
         "passcode": {
             "description": "A default PASE session passcode",
