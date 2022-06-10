@@ -51,7 +51,7 @@ def get_raw_private_key_der(der_file: str, password: str):
             keys = load_der_private_key(key_data, password, backend=default_backend())
             private_key = keys.private_numbers().private_value.to_bytes(32, byteorder='big')
 
-            return private_key.hex()
+            return private_key
 
     except IOError or ValueError:
         return None
@@ -142,9 +142,12 @@ class FactoryDataGenerator:
         else:
             rd_uid = self._args.rd_uid
         if not self._args.spake2_verifier:
-            spake_2_verifier = base64.b64decode(self._generate_spake2_verifier()).hex()
+            spake_2_verifier = base64.b64decode(self._generate_spake2_verifier())
         else:
-            spake_2_verifier = base64.b64decode(self._args.spake2_verifier).hex()
+            spake_2_verifier = base64.b64decode(self._args.spake2_verifier)
+
+        # convert salt to bytestring to be coherent with spake2 verifier type
+        spake_2_salt = base64.b64decode(self._args.spake2_salt)
 
         # try to read DAC public and private keys
         dac_priv_key = get_raw_private_key_der(self._args.dac_key, self._args.dac_key_password)
@@ -167,17 +170,17 @@ class FactoryDataGenerator:
             self._add_entry("date", self._args.date)
             self._add_entry("hw_ver", self._args.hw_ver)
             self._add_entry("hw_ver_str", self._args.hw_ver_str)
-            self._add_entry("dac_cert", HEX_PREFIX + self._process_der(self._args.dac_cert))
-            self._add_entry("dac_key", HEX_PREFIX + dac_priv_key)
-            self._add_entry("pai_cert", HEX_PREFIX + self._process_der(self._args.pai_cert))
+            self._add_entry("dac_cert", self._process_der(self._args.dac_cert))
+            self._add_entry("dac_key", dac_priv_key)
+            self._add_entry("pai_cert", self._process_der(self._args.pai_cert))
             if self._args.include_passcode:
                 self._add_entry("passcode", self._args.passcode)
             self._add_entry("spake2_it", self._args.spake2_it)
-            self._add_entry("spake2_salt", self._args.spake2_salt)
-            self._add_entry("spake2_verifier", HEX_PREFIX + spake_2_verifier)
+            self._add_entry("spake2_salt", spake_2_salt)
+            self._add_entry("spake2_verifier", spake_2_verifier)
             self._add_entry("discriminator", self._args.discriminator)
             if rd_uid:
-                self._add_entry("rd_uid", HEX_PREFIX + rd_uid)
+                self._add_entry("rd_uid", rd_uid)
             # add user-specific data
             self._add_entry("user", self._args.user)
 
@@ -198,6 +201,8 @@ class FactoryDataGenerator:
 
     def _add_entry(self, name: str, value: any):
         """ Add single entry to list of tuples ("key", "value") """
+        if(isinstance(value, bytes) or isinstance(value, bytearray)):
+            value = HEX_PREFIX + value.hex()
         if value or (isinstance(value, int) and value == 0):
             log.debug("Adding entry '{}' with size {} and type {}".format(name, sys.getsizeof(value), type(value)))
             self._factory_data.append((name, value))
@@ -212,8 +217,8 @@ class FactoryDataGenerator:
         """ If rotating device unique ID has not been provided it should be generated """
         log.warning("Can not find rotating device UID in provided arguments list. A new one will be generated.")
         rdu = secrets.token_bytes(16)
-        log.info("\n\nThe new rotate device UID: {}\n".format(rdu.hex()))
-        return rdu.hex()
+        log.info("\n\nThe new rotate device UID: {}\n".format(rdu).hex())
+        return rdu
 
     def _validate_output_json(self, output_json: str):
         """
@@ -238,7 +243,7 @@ class FactoryDataGenerator:
         log.debug("Processing der file...")
         try:
             with open(path, 'rb') as f:
-                data = f.read().hex()
+                data = f.read()
                 return data
         except IOError as e:
             log.error(e)

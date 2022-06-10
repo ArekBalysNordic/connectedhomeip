@@ -102,8 +102,8 @@
         "spake2_salt": {
             "description": "A key-derivation function for the Symmetric Password-Authenticated Key Exchange.",
             "type": "string",
-            "minLength": 16,
-            "maxLength": 32
+            "minLength": 36,
+            "maxLength": 68
         },
         "spake2_verifier": {
             "description": "A verifier for the Symmetric Password-Authenticated Key Exchange",
@@ -115,10 +115,6 @@
             "type": "integer",
             "minimum": 0,
             "maximum": 4095
-        },
-        "fw_info": {
-            "description": "Information about programmed firmware in TLV format",
-            "type": "string"
         },
         "user": {
             "description": "A user-specific additional data which should be added to factory data. This should be a Json format.",
