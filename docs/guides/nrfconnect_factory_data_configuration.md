@@ -64,15 +64,15 @@ A factory data set consists of following parameters:
 
 ### Factory data format
 
-The Factory data set is kept in JSON format that is regulated by [JSON Schema](https://github.com/project-chip/connectedhomeip/blob/master/scripts/tools/nrfconnect/nrfconnect_factory_data.schema) file. All parameters are divided between `mandatory `and `optional.` 
-- `Mandatory` parameters must be provided because, without them, the device will not be able to perform commissioning to the Matter network. 
-- `Optional` parameters can be used for development and testing purposes. A `user` data parameter can consist of all data needed by a specific manufacturer that is not included in mandatory parameters.
+The Factory data set is represented by JSON format that is regulated by [JSON Schema](https://github.com/project-chip/connectedhomeip/blob/master/scripts/tools/nrfconnect/nrfconnect_factory_data.schema) file. All parameters are divided between `mandatory `and `optional.` 
+- `Mandatory` parameters must be provided as they are required e.g. to perform commissioning to the Matter network. 
+- `Optional` parameters may be used for development and testing purposes. A `user` data parameter can consist of all data needed by a specific manufacturer that is not included in mandatory parameters.
 
-In the factory data set, there are some of the formats used. 
+In the factory data set, the following formats are used:
 
 - `uint16` and `uint32` are the numeric formats representing respectively two-bytes length unsigned integer and four-bytes length unsigned integer.
 - `hex string` meaning the bytes in hexadecimal representation given in a string. An prefix `hex:` is added to parameter to mark that is a `hex string`. E.g. an ASCII string *abba* is represented as *hex:61626261*, and its length is two times greater than ASCII string plus length of prefix. 
-- `ASCII string` is a string representation in ASCII encoding.
+- `ASCII string` is a string representation in ASCII encoding without null-terminating.
 - `ISO 8601` format is a [date format](https://www.iso.org/iso-8601-date-and-time-format.html) which represents a date given as YYYY-MM-DD or YYYYMMDD.
 - All certificates stored in factory data are given in [X.509](https://www.itu.int/rec/T-REC-X.509-201910-I/en) format.
 
@@ -92,7 +92,7 @@ In the factory data set, there are some of the formats used.
 
 ### Verifying using a JSON schema
 
-Ready JSON file containing factory data can be verified using prepared [JSON Schema](https://github.com/project-chip/connectedhomeip/blob/master/scripts/tools/nrfconnect/nrfconnect_factory_data.schema). JSON Schema is a tool for validating the structure of JSON data. For this purpose, checking the correctness of given factory data is helpful. First, JSON Schema contains a list of mandatory parameters that must be stored in factory data. Missing at least one mandatory parameter will cause a checking error. Then, each parameter is checked according to the given pattern in the second phase of Schema work. The process of validating factory data JSON files is optional, but it can help avoid problems with reading parameters by Matter Device so it is strongly recommended to verify a newly created JSON file.
+Ready JSON file containing factory data can be verified using [JSON Schema tool](https://github.com/project-chip/connectedhomeip/blob/master/scripts/tools/nrfconnect/nrfconnect_factory_data.schema). JSON Schema is a tool for validating the structure and content of JSON data. User should validate factory data JSON file.
 
 To check JSON file using JSON Schema manually on Linux machine install *php-json-schema* package:
 ```
@@ -104,24 +104,22 @@ And use following command:
 $ validate-json <path_to_JSON_file> <path_to_schema_file>
 ```
 
-If in the console there are not any outputs, it means that JSON is correct.
+The tool returns empty output in case of success.
 
 JSON file can be checked automatically by the python script during its generation by given a path to JSON schema file as an additional argument:
 ```
 $ python generate_nrfconnect_chip_factory_data.py --schema <path_to_schema>
 ```
 
-> Note: This [website](https://json-schema.org/understanding-json-schema/) can help better understand JSON schema. 
+> Note: To learn more about JSON scheme, check this [website](https://json-schema.org/understanding-json-schema/). 
 
 ### Preparing factory data partition on a device
 
-The factory data partition is an area in a device's persistent storage where a factory data set is stored. This area is configured using the [Partition Manager](https://developer.nordicsemi.com/nRF_Connect_SDK/doc/latest/nrf/scripts/partition_manager/partition_manager.html), within which all partitions are declared by writing the `pm_static.yml` file. 
-
-Partitions and their sizes may be different according to different nRF Connect boards. Each nRF Connect board that the example supports contains a `pm_static.yml` file in "*connectedhomeip/examples/< example_name >/nrfconnect/configuration/< pcb name >*" directory. 
+The factory data partition is an area in a device's persistent storage where a factory data set is stored. This area is configured using the [Partition Manager](https://developer.nordicsemi.com/nRF_Connect_SDK/doc/latest/nrf/scripts/partition_manager/partition_manager.html), within which all partitions are declared in the `pm_static.yml` file. 
 
 To prepare an example that support a factory data, a *pm_static* file has to contain a partition named `factory_data`, and its size should be equal to at least 4 kB and be multiple of one Flash page (for nRF52 and nRF53 boards, a single page is 4 kB size).
 
-Below, there is an example of how to create a factory data partition in `pm_static.yml` file according to `pm_static.yml` from [lock app example](../../examples/lock-app/nrfconnect/configuration/nrf52840dk_nrf52840/pm_static_dfu.yml) and nRF52840DK board:
+Se below example to learn how to create a factory data partition in `pm_static.yml` file according to `pm_static.yml` from [lock app example](../../examples/lock-app/nrfconnect/configuration/nrf52840dk_nrf52840/pm_static_dfu.yml) and nRF52840DK board:
 
 ```
 ...
