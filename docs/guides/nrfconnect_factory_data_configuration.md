@@ -1,6 +1,6 @@
 # Configuring factory data for nRF Connect examples
 
-Factory data is a set of parameters written to flash by a device's manufacturer during the manufacturing process. All of them are written to the non-volatile memory (persistent storage) of microcontroller storage and are protected against rewriting by the software. These parameters should be the same during the whole lifetime of a device, and they can be replaced only by reprogramming the entire device using a programmer. 
+Factory data is a set of device's parameters written to a non-volatile memory during the manufacturing process. All of them are immutable i.e. they are protected against modifications by the software. These parameters meant to be the same during the whole lifetime of a device and preserves factory resets. Factory data can be replaced only by reprogramming the entire device using a programmer.  
 
 <p align="center">
   <img src="../../examples/platform/nrfconnect/doc/images/Logo_RGB_H-small.png" alt="Nordic Semiconductor logo"/>
@@ -9,7 +9,7 @@ Factory data is a set of parameters written to flash by a device's manufacturer 
 
 <hr>
 This document is based on [Matter](https://github.com/project-chip/connectedhomeip), and Nordic
-Semiconductor's nRF Connect SDK, and supports creating factory data.
+Semiconductor's nRF Connect SDK, and describes the process of creating and programming factory data.
 
 -   [Overview](#overview)
     -   [Factory data components](#factory-data-components)
@@ -30,7 +30,7 @@ Semiconductor's nRF Connect SDK, and supports creating factory data.
 
 The factory data parameter set includes information such as a manufacturer name, date of manufacturing, product certifications, and PCB versioning. 
 
-On the nRF connect devices, factory data is stored in the Flash memory in a separate partition. This help keep this partition secure by applying non-writable attribute and encryption. Parameters are read at the boot time of a device, and then they can be used in the Matter stack and user application.
+For the nRF Connect platform, factory data is stored by default in the internal Flash memory in a separate partition. This helps to keep factory partition secure by applying hardware protection. Parameters are read at the boot time of a device, and then they can be used in the Matter stack and user application.
 
 > Note: Encryption and security of the factory data partition is not provided yet for this feature.
 
