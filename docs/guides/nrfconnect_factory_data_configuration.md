@@ -14,12 +14,15 @@ Semiconductor's nRF Connect SDK, and describes the process of creating and progr
 -   [Overview](#overview)
     -   [Factory data components](#factory-data-components)
     -   [Factory data format](#factory-data-format)
+-   [Using own factory data](#using-own-factory-data)
 -   [Generating factory data](#generating-factory-data)
     -   [Creating factory data JSON file](#creating-factory-data-json-file)
     -   [Verifying using a JSON schema](#verifying-using-a-json-schema)
     -   [Preparing factory data partition on a device](#preparing-factory-data-partition-on-a-device)
     -   [Generating factory data partition](#generating-factory-data-partition)
 -   [Building an example with factory data](#building-an-example-with-factory-data)
+    -   [Providing factory data parameters as a build argument list](#providing-factory-data-parameters-as-a-build-argument-list)
+    - [Setting factory data parameters using interactive Kconfig interfaces](#setting-factory-data-parameters-using-interactive-kconfig-interfaces)
 -   [Programming factory data](#programming-factory-data)
 
 <hr>
@@ -72,6 +75,13 @@ In the factory data set, there are some of the formats used.
 - `ASCII string` is a string representation in ASCII encoding.
 - `ISO 8601` format is a [date format](https://www.iso.org/iso-8601-date-and-time-format.html) which represents a date given as YYYY-MM-DD or YYYYMMDD.
 - All certificates stored in factory data are given in [X.509](https://www.itu.int/rec/T-REC-X.509-201910-I/en) format.
+
+<hr>
+<a name="Using own factory data"></a>
+
+## Using own factory data
+
+
 
 <hr>
 <a name="Generating factory data"></a>
