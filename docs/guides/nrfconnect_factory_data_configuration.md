@@ -1,6 +1,6 @@
 # Configuring factory data for nRF Connect examples
 
-Factory data is a set of parameters written to flash by a device's manufacturer during the manufacturing process. All of them are written to the non-volatile memory (persistent storage) of microcontroller storage and are protected against rewriting by the software. These parameters should be the same during the whole lifetime of a device, and they can be replaced only by reflashing the entire device using a programmer. 
+Factory data is a set of parameters written to flash by a device's manufacturer during the manufacturing process. All of them are written to the non-volatile memory (persistent storage) of microcontroller storage and are protected against rewriting by the software. These parameters should be the same during the whole lifetime of a device, and they can be replaced only by reprogramming the entire device using a programmer. 
 
 <p align="center">
   <img src="../../examples/platform/nrfconnect/doc/images/Logo_RGB_H-small.png" alt="Nordic Semiconductor logo"/>
@@ -20,7 +20,7 @@ Semiconductor's nRF Connect SDK, and supports creating factory data.
     -   [Preparing factory data partition on a device](#preparing-factory-data-partition-on-a-device)
     -   [Generating factory data partition](#generating-factory-data-partition)
 -   [Building an example with factory data](#building-an-example-with-factory-data)
--   [Flashing factory data](#flashing-factory-data)
+-   [Programming factory data](#programming-factory-data)
 
 <hr>
 
@@ -30,8 +30,9 @@ Semiconductor's nRF Connect SDK, and supports creating factory data.
 
 The factory data parameter set includes information such as a manufacturer name, date of manufacturing, product certifications, and PCB versioning. 
 
-On the nRF connect devices, factory data is stored in a Flash memory in a separate partition. This help keep this partition secure by applying non-writable attribute and encryption (Encryption is not implemented yet). Parameters are read at the boot time of a device, and then they can be used 
-in the Matter stack and user application.
+On the nRF connect devices, factory data is stored in the Flash memory in a separate partition. This help keep this partition secure by applying non-writable attribute and encryption. Parameters are read at the boot time of a device, and then they can be used in the Matter stack and user application.
+
+> Note: Encryption and security of the factory data partition is not provided yet for this feature.
 
 ### Factory data components
 
@@ -40,27 +41,27 @@ A factory data set consists of following parameters:
 |Key name|Full name|Length|Format|Conformance|Description|
 |:------:|:-------:|:----:|:----:|:---------:|:---------:|
 |**`sn`**|`serial number`|<1, 32> B|*ASCII string*|mandatory|A serial number parameter defines an unique number of manufactured device. Maximum length of serial number is 32 characters.|
-|**`vendor_id`**|`vendor ID`|2 B|*uint16*|mandatory|A CHIP-assigned id for the organization responsible for producing the device.|
-|**`product_id`**|`product ID`|2 B|*uint16*|mandatory|A unique id assigned by the device vendor to identify the product or device type. Defaults to a CHIP-assigned id designating a non-production or test "product".|
-|**`vendor_name`**|`vendor name`|<1, 32> B|*ASCII string*|mandatory|A human-readable vendor name which provides a simple string containing identification of device's vendor for the Content APP.|
-|**`product_name`**|`product name`|<1, 32> B|*ASCII string*|mandatory|A human-readable product name which provides a simple string containing identification of the product for the Content APP.|
+|**`vendor_id`**|`vendor ID`|2 B|*uint16*|mandatory|A MATTER-assigned id for the organization responsible for producing the device.|
+|**`product_id`**|`product ID`|2 B|*uint16*|mandatory|A unique id assigned by the device vendor to identify the product or device type. Defaults to a MATTER-assigned id designating a non-production or test "product".|
+|**`vendor_name`**|`vendor name`|<1, 32> B|*ASCII string*|mandatory|A human-readable vendor name which provides a simple string containing identification of device's vendor for the application and Matter stack purposes.|
+|**`product_name`**|`product name`|<1, 32> B|*ASCII string*|mandatory|A human-readable product name which provides a simple string containing identification of the product for the  the application and Matter stack purposes.|
 |**`date`**|`manufacturing date`|<8, 10> B|*ISO 8601*|mandatory|A manufacturing date specifies the date that the device was manufactured. The format used for providing a manufacturing date is ISO 8601 e.g. YYYY-MM-DD.|
 |**`hw_ver`**|`hardware version`|2 B|*uint16*|mandatory|A hardware version number specifies the version number of the hardware of the device. The meaning of its value, and the versioning scheme, are vendor defined.|
 |**`hw_ver_str`**|`hardware version string`|<1, 64> B|*uint16*|mandatory|A hardware version string parameter specifies the version of the hardware of the device as a more user-friendly value than that presented by the hardware version integer value. The meaning of its value, and the versioning scheme, are vendor defined.|
-|**`rd_uid`**|`rotating device ID unique ID`|<20, 36> B|*hex string*|mandatory|The rotating device ID unique ID consists of a randomly-generated 128-bit or longer octet string. This parameter should be protected against reading or writing over the air after initial introduction into the device, and stay fixed during the lifetime of the device. |
-|**`dac_cert`**|`(DAC) Device Attestation Certificate`|<1, 1204> B|*hex string*|mandatory|All commissionable Matter Nodes SHALL include a Device Attestation Certificate (DAC) and corresponding private key, unique to that Device. The DAC is used in the Device Attestation process, as part of Commissioning a Commissionee into a Fabric. The DAC is a DER-encoded X.509v3-compliant certificate as defined in RFC 5280.|
-|**`dac_key`**|`DAC private key`|68 B|*hex string*|mandatory|The Private key associated with the Device Attestation Certificate. This key should be encrypted, and maximum security should be guaranteed while generating and providing it to factory data.|
-|**`pai_cert`**|`Product Attestation Intermediate`|<1, 1204> B|*hex string*|mandatory|An intermediate certificate is an X.509 certificate, which has been signed by the root certificate. The last intermediate certificate in a chain is used to sign the leaf certificate.|
+|**`rd_uid`**|`rotating device ID unique ID`|<20, 36> B|*hex string*|mandatory|The unique ID for rotating device ID consists of a randomly-generated 128-bit or longer octet string. This parameter should be protected against reading or writing over the air after initial introduction into the device, and stay fixed during the lifetime of the device.|
+|**`dac_cert`**|`(DAC) Device Attestation Certificate`|<1, 1204> B|*hex string*|mandatory|The Device Attestation Certificate (DAC) and corresponding private key, are unique to each Matter Device. The DAC is used for the Device Attestation process, and to perform commissioning into a Fabric. The DAC is a DER-encoded X.509v3-compliant certificate as defined in RFC 5280.|
+|**`dac_key`**|`DAC private key`|68 B|*hex string*|mandatory|The Private key associated with the Device Attestation Certificate (DAC). This key should be encrypted, and maximum security should be guaranteed while generating and providing it to factory data.|
+|**`pai_cert`**|`Product Attestation Intermediate`|<1, 1204> B|*hex string*|mandatory|An intermediate certificate is an X.509 certificate, which has been signed by the root certificate. The last intermediate certificate in a chain is used to sign the leaf (the Matter device) certificate.|
 |**`spake2_it`**|`SPAKE2 Iteration Counter`|4 B|*uint32*|mandatory|The Spake2 iteration count is associated with the ephemeral PAKE passcode verifier to be used for the commissioning. The iteration count is used as a crypto parameter to process spake2 verifier.|
 |**`spake2_salt`**|`SPAKE2 Salt`| <36, 68> B|*hex string*|mandatory|The spake2 salt is random data that is used as an additional input  to a one-way function that “hashes” data. A new salt should be randomly generated for each password.|
 |**`spake2_verifier`**|`SPAKE2 Verifier`| 97 B|*hex string*|mandatory|The spake 2 verifier generated using default SPAKE2 salt, iteration count and passcode. This value can be used for development or testing purposes.|
 |**`discriminator`**|`Discriminator`| 2 B|*uint16*|mandatory|A 12-bit value matching the field of the same name in the setup code. Discriminator is used during a discovery process.|
 |**`passcode`**|`SPAKE passcode`|4 B|*uint32*|optional|A pairing passcode is a 27-bit unsigned integer which serves as a proof of possession during commissioning. Its value shall be restricted to the values 0x0000001 to 0x5F5E0FE (00000001 to 99999998 in decimal), excluding the invalid Passcode values: 00000000, 11111111, 22222222, 33333333, 44444444, 55555555, 66666666, 77777777, 88888888, 99999999, 12345678, 87654321|
-|**`user`**|`User data`| variable|*JSON string*|optional|The user data provided in |
+|**`user`**|`User data`| variable|*JSON string*|max 1024 B|The user data is provided in JSON format. This parameter is optional and depends on user/manufacturer purpose. It is getting as a string from persistent storage and then should be parsed in a user application. This data is not used in the Matter stack.|
 
 ### Factory data format
 
-The Factory data set is keep in JSON format that is regulated by [JSON Schema](https://github.com/project-chip/connectedhomeip/blob/master/scripts/tools/nrfconnect/nrfconnect_factory_data.schema) file. All parameters are divided between `mandatory `and `optional.` 
+The Factory data set is kept in JSON format that is regulated by [JSON Schema](https://github.com/project-chip/connectedhomeip/blob/master/scripts/tools/nrfconnect/nrfconnect_factory_data.schema) file. All parameters are divided between `mandatory `and `optional.` 
 - `Mandatory` parameters must be provided because, without them, the device will not be able to perform commissioning to the Matter network. 
 - `Optional` parameters can be used for development and testing purposes. A `user` data parameter can consist of all data needed by a specific manufacturer that is not included in mandatory parameters.
 
@@ -104,13 +105,13 @@ $ python generate_nrfconnect_chip_factory_data.py --schema <path_to_schema>
 
 ### Preparing factory data partition on a device
 
-The factory data partition is an area in a device's persistent storage where a factory data set is stored. This area is configured using the [Partition Manager](https://developer.nordicsemi.com/nRF_Connect_SDK/doc/latest/nrf/scripts/partition_manager/partition_manager.html), within which all partitions are declared by writing the `pm_static.yaml` file. 
+The factory data partition is an area in a device's persistent storage where a factory data set is stored. This area is configured using the [Partition Manager](https://developer.nordicsemi.com/nRF_Connect_SDK/doc/latest/nrf/scripts/partition_manager/partition_manager.html), within which all partitions are declared by writing the `pm_static.yml` file. 
 
-Partitions and their sizes may be different according to different nRFconnect boards. Each nrfconnect board that the example supports contains a `pm_static.yaml` file in "*connectedhomeip/examples/< example_name >/nrfconnect/configuration/< pcb name >*" directory. 
+Partitions and their sizes may be different according to different nRF Connect boards. Each nRF Connect board that the example supports contains a `pm_static.yml` file in "*connectedhomeip/examples/< example_name >/nrfconnect/configuration/< pcb name >*" directory. 
 
-To prepare an example to support a factory data pm_static file has to contain a partition named `factory_data`, and Its size should be equal to at least 4 kB and be multiple of one flash page (for nrf52 and nrf53 boards, a single page is 4 kB length).
+To prepare an example that support a factory data, a *pm_static* file has to contain a partition named `factory_data`, and its size should be equal to at least 4 kB and be multiple of one Flash page (for nRF52 and nRF53 boards, a single page is 4 kB size).
 
-Below, there is an example of how to create a factory data partition in pm_static.yaml file according to pm_static.yaml from [lock app example](../../examples/lock-app/nrfconnect/configuration/nrf52840dk_nrf52840/pm_static_dfu.yml) and nRF52840DK board:
+Below, there is an example of how to create a factory data partition in `pm_static.yml` file according to `pm_static.yml` from [lock app example](../../examples/lock-app/nrfconnect/configuration/nrf52840dk_nrf52840/pm_static_dfu.yml) and nRF52840DK board:
 
 ```
 ...
@@ -132,11 +133,17 @@ settings_storage:
     region: flash_primary
 ...
 ```
-In this example, a `factory_data` partition has been placed after the application partition(mcuboot_primary_app is a container to store application firmware which can be replaced in the Direct Firmware Update process), and its size has been set to 4 kB (0x1000) which corresponds to one page of nrf52840 flash memory.
-Check a partition allocation using the `west` build system to ensure that the partition was appropriately created. Below there is a partition manager report output generated according to an example:
+In this example, a `factory_data` partition has been placed after the application partition(mcuboot_primary_app is a container to store application firmware which can be replaced in the Direct Firmware Update process), and its size has been set to 4 kB (0x1000) which corresponds to one page of nRF52840 flash memory.
+
+Check a partition allocation using the `west` build system to ensure that the partition was appropriately created. To use the partition manager report tool, go to an example's directory and run the following command:
 
 ```
-west build -t partition_manager_report
+$ west build -t partition_manager_report
+```
+
+The output should be similar to:
+
+```
 
   external_flash (0x800000 - 8192kB): 
 +---------------------------------------------+
@@ -184,12 +191,12 @@ To see optional arguments for the script use the following command:
 $ python nrfconnect_generate_partition.py -h
 ```
 
-**Example of command for nrf52840DK**:
+**Example of command for nRF52840DK**:
 ```
 $ python nrfconnect_generate_partition.py -i build/zephyr/factory_data.json -o build/zephyr/factory_data --offset 0xfb000 --size 0x1000
 ```
 
-As a result a *factory_data.hex* and *factory_data.bin* files will be created in */build/zephyr/* directory. The first contains memory offset; therefore, it can be flashed directly to the device using a programmer (E.g. nrfjprog).
+As a result a *factory_data.hex* and *factory_data.bin* files will be created in */build/zephyr/* directory. The first contains memory offset; therefore, it can be programmed directly to the device using a programmer (E.g. nrfjprog).
 
 
 <hr>
@@ -197,24 +204,24 @@ As a result a *factory_data.hex* and *factory_data.bin* files will be created in
 
 ## Building an example with factory data
 
-Generating factory data set can be done manually using instructions described in [Generating factory data](#generating-factory-data) topic. But there is another way to generate factory data. Inside the nrfconnect build system, there is a script that generates factory data automatically using kConfigs and merges it to the firmware .hex file.
+Generating factory data set can be done manually using instructions described in [Generating factory data](#generating-factory-data) topic. But there is another way to generate factory data. Inside the nRF Connect build system, there is a script that generates factory data automatically using kConfigs and merges it to the firmware .hex file.
 
-To enable generating factory data set automatically build an example with the following option:
+To enable generating factory data set automatically go to example's directory and build an example with the following option:
+
 ```
-$ west build -b nrf52840dk_nrf52840 -- --DCHIP_FACTORY_DATA_BUILD=y
+$ west build -b nrf52840dk_nrf52840 -- -DCONFIG_CHIP_FACTORY_DATA_BUILD=y
 ```
-or add `CHIP_FACTORY_DATA_BUILD=y` config to a ***prj.conf*** file.
+or add `CONFIG_CHIP_FACTORY_DATA_BUILD=y` config to a ***prj.conf*** file.
 
 Each factory data parameter has default value and they are described in [Kconfig file](../../config/nrfconnect/chip-module/Kconfig). Setting a new value for factory data parameter can be done in two ways - by providing it as a build argument list or by using interactive Kconfig interfaces.
 
 ### Providing factory data parameters as a build argument list
 
-
 This solution of providing factory data can be used with third-party build script because it uses only one command.
 All parameters can be edited manually by providing them as an additional option for the west command e.g.:
 
 ```
-$ west build -b nrf52840dk_nrf52840 -- --DCHIP_FACTORY_DATA_BUILD=y --DCHIP_DEVICE_DISCRIMINATOR=0xF11
+$ west build -b nrf52840dk_nrf52840 -- --DCONFIG_CHIP_FACTORY_DATA_BUILD=y --DCONFIG_CHIP_DEVICE_DISCRIMINATOR=0xF11
 ```
 or by adding them to a ***prj.conf*** file.
 
@@ -222,26 +229,13 @@ or by adding them to a ***prj.conf*** file.
 
 All configs can be edited also using interactive Kconfig interface.
 
-To run interactive mode use following command:
+See [Configuring nRF Connect examples](../guides/nrfconnect_examples_configuration.md) instruction to get know how to configure Kconfigs.
+
+In configuration window expand an items named `Modules -> connectedhomeip (/home/arbl/matter/connectedhomeip/config/nrfconnect/chip-module) -> Connected Home over IP protocol stack`. After that there should be visible all factory data configs.
 
 ```
-west build -t guiconfig
-```
-to run graphical configs creator, or 
-```
-west build -t menuconfig
-```
-to run terminal-based configs creator.
-
-In configuration window expand an item named `Modules`, then find and expand an item named `connectedhomeip (/home/arbl/matter/connectedhomeip/config/nrfconnect/chip-module)`. After that there should be visible all factory data configs.
-
-```
-[*] Connected Home over IP protocol stack  --->
-[*] Enable NFC commissioning support
-(1024) OTA Requestor image buffer size
-[*] Auto-reboot when firmware update is applied
-[*] Include default device information provider build
-[*] Generate debug symbols
+(65521) Device vendor ID
+(32774) Device product ID
 [*] Enable Factory Data build
 [*]     Enable merging generated factory data with the build tar
 [*]     Use default certificates located in Matter repository
@@ -260,17 +254,15 @@ In configuration window expand an item named `Modules`, then find and expand an 
 (uWFwqugDNGiEck/po7KHwwMwwqZgN10XuyBajPGuyzUEV/iree4lOrao5GuwnlQ
 (91a9c12a7c80700a31ddcfa7fce63e44) A rotating device id unique i
 ```
-Each config has implemented a help prompt, which appears after selecting an item on the GUI interface or selecting an item and clicking the `?` key on the keyboard on the terminal-based interface. 
-
 
 > Note: To get more information about how to use Interactive Kconfig interfaces go to [Kconfig docummentation](https://developer.nordicsemi.com/nRF_Connect_SDK/doc/latest/zephyr/build/kconfig/menuconfig.html).
 
 <hr>
-<a name="Flashing factory data"></a>
+<a name="Programming factory data"></a>
 
-## Flashing factory data
+## Programming factory data
 
-Ready HEX file containing factory data can be flashed into device's FLASH memory using *nrfjprog* and J-Link programmer. To do that use following command:
+Ready HEX file containing factory data can be programmed into device's FLASH memory using *nrfjprog* and J-Link programmer. To do that use following command:
 
 ```
 $ nrfjprog --program factory_data.hex
@@ -285,7 +277,7 @@ $ nrfjprog --family NRF52 --program factory_data.hex
 > Note: Go [here](https://infocenter.nordicsemi.com/index.jsp?topic=%2Fug_nrf_cltools%2FUG%2Fcltools%2Fnrf_nrfjprogexe.html) to get more information about how to use nrfjprog utility.
 
 
-Another way to flash factory data to a device is to use the nrfconnect build system described in [Building an example with factory data](#building-an-example-with-factory-data), and build an example with option `--DCONFIG_CHIP_MERGE_FACTORY_DATA_WITH_FIRMWARE=y`. After that, use the following command from the example's directory to write firmware and newly generated factory data at the same time:
+Another way to program factory data to a device is to use the nrfconnect build system described in [Building an example with factory data](#building-an-example-with-factory-data), and build an example with option `--DCONFIG_CHIP_MERGE_FACTORY_DATA_WITH_FIRMWARE=y`. After that, use the following command from the example's directory to write firmware and newly generated factory data at the same time:
 ```
 $ west flash
 ```

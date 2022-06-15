@@ -16,6 +16,8 @@
 
 rsource "../../zephyr/Kconfig"
 
+if CHIP
+
 config CHIP_NFC_COMMISSIONING
 	bool "Enable NFC commissioning support"
 	default n
@@ -224,3 +226,5 @@ config CHIP_DEVICE_ROTATING_DEVICE_UID
 	help
 	  A device rotating id unique id which will be generated if
 	  this config is not set in prj.conf file.
+
+endif
