@@ -14,7 +14,7 @@ Semiconductor's nRF Connect SDK, and describes the process of creating and progr
 -   [Overview](#overview)
     -   [Factory data components](#factory-data-components)
     -   [Factory data format](#factory-data-format)
--   [Using own factory data](#using-own-factory-data)
+-   [Using own factory data implementation](#using-own-factory-data-implementation)
 -   [Generating factory data](#generating-factory-data)
     -   [Creating factory data JSON file](#creating-factory-data-json-file)
     -   [Verifying using a JSON schema](#verifying-using-a-json-schema)
@@ -35,12 +35,18 @@ The factory data parameter set includes information such as a manufacturer name,
 
 For the nRF Connect platform, factory data is stored by default in the internal Flash memory in a separate partition. This helps to keep factory partition secure by applying hardware protection. Parameters are read at the boot time of a device, and then they can be used in the Matter stack and user application.
 
+The factory data set described in [Factory data components](#factory-data-components) can be implemented in various ways as long as the final hex file will contain all mandatory components defined in the factory data components table. In this document, the [Generating factory data](#generating-factory-data) and the [Building an example with factory data](#building-an-example-with-factory-data) sections describe one of the implementations of the factory data set created by the nRF Connect platform's maintainers. As a result, a hex file is generated and it contains a factory data partition in the CBOR format. 
+
+The default implementation of the Factory Data Accessor assumes that factory data stored in the device's Flash memory is provided in CBOR format. However, it is possible to generate factory data set without using nRF Connect scripts and implement another parser and Factory Data Accessor. This is possible if the newly provided implementation is consistent with the [Factor Data Provider](../../src/platform/nrfconnect/FactoryDataProvider.h). More information about preparing a factory data accessor was explained in [Using own factory data implementation](#using-own-factory-data-implementation) section.
+
+
 > Note: Encryption and security of the factory data partition is not provided yet for this feature.
 
 ### Factory data components
 
 A factory data set consists of following parameters:
 
+##### A table represents all factory data components
 |Key name|Full name|Length|Format|Conformance|Description|
 |:------:|:-------:|:----:|:----:|:---------:|:---------:|
 |**`sn`**|`serial number`|<1, 32> B|*ASCII string*|mandatory|A serial number parameter defines an unique number of manufactured device. Maximum length of serial number is 32 characters.|
@@ -79,7 +85,7 @@ In the factory data set, the following formats are used:
 <hr>
 <a name="Using own factory data"></a>
 
-## Using own factory data
+## Using own factory data implementation
 
 
 
