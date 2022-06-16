@@ -87,7 +87,7 @@ config CHIP_FACTORY_DATA_BUILD
 if CHIP_FACTORY_DATA_BUILD
 
 # Factory data definitions
-config CHIP_MERGE_FACTORY_DATA_WITH_FIRMWARE
+config CHIP_FACTORY_DATA_MERGE_WITH_FIRMWARE
 	bool "Enable merging generated factory data with the build target .hex file"
 	default y
 	help

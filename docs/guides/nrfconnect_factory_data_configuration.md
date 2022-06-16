@@ -46,7 +46,6 @@ The default implementation of the Factory Data Accessor assumes that factory dat
 
 A factory data set consists of the following parameters:
 
-##### A table represents all factory data components
 |Key name|Full name|Length|Format|Conformance|Description|
 |:------:|:-------:|:----:|:----:|:---------:|:---------:|
 |**`sn`**|`serial number`|<1, 32> B|*ASCII string*|mandatory|A serial number parameter defines an unique number of manufactured device. Maximum length of serial number is 32 characters.|
@@ -91,6 +90,41 @@ In the factory data set, the following formats are used:
 
 ## Using own factory data implementation
 
+The following example of a factory data generation process is only the nRF Connect implementation. Nothing stands in the way to create a HEX file containing all [factory data components](#factory-data-components) in any format and then implement a parser that can read out all parameters and pass them to an accessor. Each manufacturer can implement a factory data set in its way by implementing a parser and a factory data accessor inside Matter stack. The [nRF Connect Accessor](../../src/platform/nrfconnect/FactoryDataProvider.h) and [FactoryDataParser](../../src/platform/nrfconnect/FactoryDataParser.h) can be used as an example to create another ones locally.  
+
+In the nRF Connect example the FactoryDataProvider is a template class that inherits from `DeviceAttestationCredentialsProvider`, `CommissionableDataProvider` and `DeviceInstanceInfoProvider` classes. Another implementation must also inherit from these classes and implement their functions to get all factory data parameters from the device's Flash memory. These classes are purely virtual and need to be overridden by the derived class. To do that, all the following methods:
+
+```
+    // ===== Members functions that implement the DeviceAttestationCredentialsProvider
+    CHIP_ERROR GetCertificationDeclaration(MutableByteSpan & outBuffer) override;
+    CHIP_ERROR GetFirmwareInformation(MutableByteSpan & out_firmware_info_buffer) override;
+    CHIP_ERROR GetDeviceAttestationCert(MutableByteSpan & outBuffer) override;
+    CHIP_ERROR GetProductAttestationIntermediateCert(MutableByteSpan & outBuffer) override;
+    CHIP_ERROR SignWithDeviceAttestationKey(const ByteSpan & digestToSign, MutableByteSpan & outSignBuffer) override;
+
+    // ===== Members functions that implement the CommissionableDataProvider
+    CHIP_ERROR GetSetupDiscriminator(uint16_t & setupDiscriminator) override;
+    CHIP_ERROR SetSetupDiscriminator(uint16_t setupDiscriminator) override;
+    CHIP_ERROR GetSpake2pIterationCount(uint32_t & iterationCount) override;
+    CHIP_ERROR GetSpake2pSalt(MutableByteSpan & saltBuf) override;
+    CHIP_ERROR GetSpake2pVerifier(MutableByteSpan & verifierBuf, size_t & verifierLen) override;
+    CHIP_ERROR GetSetupPasscode(uint32_t & setupPasscode) override;
+    CHIP_ERROR SetSetupPasscode(uint32_t setupPasscode) override;
+
+    // ===== Members functions that implement the DeviceInstanceInfoProvider
+    CHIP_ERROR GetVendorName(char * buf, size_t bufSize) override;
+    CHIP_ERROR GetVendorId(uint16_t & vendorId) override;
+    CHIP_ERROR GetProductName(char * buf, size_t bufSize) override;
+    CHIP_ERROR GetProductId(uint16_t & productId) override;
+    CHIP_ERROR GetSerialNumber(char * buf, size_t bufSize) override;
+    CHIP_ERROR GetManufacturingDate(uint16_t & year, uint8_t & month, uint8_t & day) override;
+    CHIP_ERROR GetHardwareVersion(uint16_t & hardwareVersion) override;
+    CHIP_ERROR GetHardwareVersionString(char * buf, size_t bufSize) override;
+    CHIP_ERROR GetRotatingDeviceIdUniqueId(MutableByteSpan & uniqueIdSpan) override;
+```
+must be overridden in this way that the name of the method means. 
+
+Reading factory data from the device's Flash memory can be done differently depending on user purpose and format. In nRF Connect example the factory data is stored in CBOR format and then a device uses [FactoryDataParser](../../src/platform/nrfconnect/FactoryDataParser.h) to read out raw data, decode them and store to `FactoryData` structure. The [Factor Data Provider](../../src/platform/nrfconnect/FactoryDataProvider.c) implementation uses this parser to get all needed factory data parameter and provide them to the Matter core.
 
 
 <hr>
@@ -295,7 +329,7 @@ $ nrfjprog --family NRF52 --program factory_data.hex
 > Note: Go [here](https://infocenter.nordicsemi.com/index.jsp?topic=%2Fug_nrf_cltools%2FUG%2Fcltools%2Fnrf_nrfjprogexe.html) to get more information about how to use nrfjprog utility.
 
 
-Another way to program factory data to a device is to use the nrfconnect build system described in [Building an example with factory data](#building-an-example-with-factory-data), and build an example with option `--DCONFIG_CHIP_MERGE_FACTORY_DATA_WITH_FIRMWARE=y`. After that, use the following command from the example's directory to write firmware and newly generated factory data at the same time:
+Another way to program factory data to a device is to use the nrfconnect build system described in [Building an example with factory data](#building-an-example-with-factory-data), and build an example with option `--DCONFIG_CHIP_FACTORY_DATA_MERGE_WITH_FIRMWARE=y`. After that, use the following command from the example's directory to write firmware and newly generated factory data at the same time:
 ```
 $ west flash
 ```
