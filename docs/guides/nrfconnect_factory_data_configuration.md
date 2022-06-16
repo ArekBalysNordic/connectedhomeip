@@ -126,11 +126,14 @@ must be overridden in this way that the name of the method means.
 
 Reading factory data from the device's Flash memory can be done differently depending on user purpose and format. In nRF Connect example the factory data is stored in CBOR format and then a device uses [FactoryDataParser](../../src/platform/nrfconnect/FactoryDataParser.h) to read out raw data, decode them and store to `FactoryData` structure. The [Factor Data Provider](../../src/platform/nrfconnect/FactoryDataProvider.c) implementation uses this parser to get all needed factory data parameter and provide them to the Matter core.
 
+Last but not least thing to do is to add newly created parser and accessor to the build system by replacing default ones. To do that we recommend to put new implementations into *connectedhomeip-root/src/platform/nrfconnect* directory, edit the [BUILD.gn](../../src/platform/nrfconnect/BUILD.gn), find out `if (chip_enable_factory_data)` section and replace existing `FactoryDataProvider.cpp` and `FactoryDataProvider.h` with own file names.
 
 <hr>
 <a name="Generating factory data"></a>
 
 ## Generating factory data
+
+This is an example of generating factory data using nRF Connect python scripts. The first one allows for creating a JSON file containing a user-friendly representation of factory data. The second script uses a previously created JSON file and creates a factory data partition in the HEX file. After these processes factory data set can be programmed into the device's Flash memory. The second script can be used without invoking the first one by providing a JSON file written in another way. To ensure that JSON file is correct see [Verifying using a JSON schema](#verifying-using-a-json-schema) section.
 
 ### Creating factory data JSON file
 
