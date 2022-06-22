@@ -19,6 +19,7 @@
 #include "AppConfig.h"
 #include "AppEvent.h"
 #include "LEDUtil.h"
+#include "LockManager.h"
 #include "binding-handler.h"
 
 #include <DeviceInfoProviderImpl.h>
@@ -52,6 +53,8 @@ using namespace ::chip::DeviceLayer;
 #define APP_EVENT_QUEUE_SIZE 10
 #define BUTTON_PUSH_EVENT 1
 #define BUTTON_RELEASE_EVENT 0
+#define DOOR_LOCK_USERS 5
+#define DOOR_LOCK_CREDENTIALS_PER_USER 5
 
 LOG_MODULE_DECLARE(app, CONFIG_MATTER_LOG_LEVEL);
 K_MSGQ_DEFINE(sAppEventQueue, sizeof(AppEvent), APP_EVENT_QUEUE_SIZE, alignof(AppEvent));
@@ -178,6 +181,12 @@ CHIP_ERROR AppTask::Init()
     // Initialize timer user data
     k_timer_init(&sFunctionTimer, &AppTask::TimerEventHandler, nullptr);
     k_timer_user_data_set(&sFunctionTimer, this);
+
+    // Initialize Lock Manager
+    if (!LockMgr().Init(nullptr, DOOR_LOCK_USERS, DOOR_LOCK_CREDENTIALS_PER_USER, LockManager::State::kLockingCompleted))
+    {
+        LOG_ERR("LockManager.Init() failed");
+    }
 
     // Initialize CHIP server
     SetDeviceAttestationCredentialsProvider(Examples::GetExampleDACProvider());

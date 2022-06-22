@@ -21,6 +21,7 @@
 
 #include <lib/core/ClusterEnums.h>
 
+#include "LockManager.h"
 #include <zephyr/zephyr.h>
 
 #include <cstdint>
@@ -30,38 +31,27 @@ class AppEvent;
 class BoltLockManager
 {
 public:
-    enum class State : uint8_t
-    {
-        kLockingInitiated = 0,
-        kLockingCompleted,
-        kUnlockingInitiated,
-        kUnlockingCompleted,
-    };
-
-    using OperationSource     = chip::app::Clusters::DoorLock::DlOperationSource;
-    using StateChangeCallback = void (*)(State, OperationSource);
+    using OperationSource = LockManager::OperationSource;
+    using State           = LockManager::State;
 
     static constexpr uint32_t kActuatorMovementTimeMs = 2000;
 
-    void Init(StateChangeCallback callback);
+    CHIP_ERROR Init(LockManager::StateChangeCallback callback);
 
-    State GetState() const { return mState; }
-    bool IsLocked() const { return mState == State::kLockingCompleted; }
+    State GetState() const { return LockMgr().GetState(); }
+    bool IsLocked() const { return LockMgr().GetState() == LockManager::State::kLockingCompleted; }
 
+    bool Lock(OperationSource source, chip::EndpointId endpointId, const Optional<chip::ByteSpan> & pin, DlOperationError & err);
+    bool Unlock(OperationSource source, chip::EndpointId endpointId, const Optional<chip::ByteSpan> & pin, DlOperationError & err);
     void Lock(OperationSource source);
     void Unlock(OperationSource source);
 
 private:
-    void SetState(State state, OperationSource source);
-
     static void ActuatorTimerEventHandler(k_timer * timer);
     static void ActuatorAppEventHandler(AppEvent * aEvent);
     friend BoltLockManager & BoltLockMgr();
 
-    State mState                             = State::kLockingCompleted;
-    StateChangeCallback mStateChangeCallback = nullptr;
-    OperationSource mActuatorOperationSource = OperationSource::kButton;
-    k_timer mActuatorTimer                   = {};
+    k_timer mActuatorTimer = {};
 
     static BoltLockManager sLock;
 };

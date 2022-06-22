@@ -53,13 +53,14 @@ target_include_directories(app PRIVATE
 
 target_sources(app PRIVATE
                main/AppTask.cpp
-               main/BoltLockManager.cpp
                main/main.cpp
                main/ZclCallbacks.cpp
+               main/BoltLockManager.cpp
                ${GEN_DIR}/lock-app/zap-generated/callback-stub.cpp
                ${GEN_DIR}/lock-app/zap-generated/IMClusterCommandHandler.cpp
                ${NRFCONNECT_COMMON}/util/LEDWidget.cpp
-               ${NRFCONNECT_COMMON}/util/ThreadUtil.cpp)
+               ${NRFCONNECT_COMMON}/util/ThreadUtil.cpp
+               ${NRFCONNECT_COMMON}/util/LockManager.cpp)
 
 chip_configure_data_model(app
     INCLUDE_SERVER
