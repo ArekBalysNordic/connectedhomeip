@@ -104,6 +104,7 @@ public:
     CHIP_ERROR GetPrimary802154MACAddress(uint8_t * buf);
     CHIP_ERROR GetExternalIPv6Address(chip::Inet::IPAddress & addr);
     CHIP_ERROR GetPollPeriod(uint32_t & buf);
+    CHIP_ERROR SetTxPower(uint8_t txPower);
 
     CHIP_ERROR JoinerStart();
     CHIP_ERROR SetThreadProvision(ByteSpan aDataset);
@@ -191,8 +192,8 @@ protected:
     ~ThreadStackManager() = default;
 
     // No copy, move or assignment.
-    ThreadStackManager(const ThreadStackManager &)  = delete;
-    ThreadStackManager(const ThreadStackManager &&) = delete;
+    ThreadStackManager(const ThreadStackManager &)             = delete;
+    ThreadStackManager(const ThreadStackManager &&)            = delete;
     ThreadStackManager & operator=(const ThreadStackManager &) = delete;
 };
 
@@ -439,6 +440,11 @@ inline CHIP_ERROR ThreadStackManager::GetExternalIPv6Address(chip::Inet::IPAddre
 inline CHIP_ERROR ThreadStackManager::GetPollPeriod(uint32_t & buf)
 {
     return static_cast<ImplClass *>(this)->_GetPollPeriod(buf);
+}
+
+inline CHIP_ERROR ThreadStackManager::SetTxPower(uint8_t txPower)
+{
+    return static_cast<ImplClass *>(this)->_SetTxPower(txPower);
 }
 
 inline CHIP_ERROR ThreadStackManager::JoinerStart()

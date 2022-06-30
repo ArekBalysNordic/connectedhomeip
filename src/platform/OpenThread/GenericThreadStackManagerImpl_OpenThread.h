@@ -99,6 +99,7 @@ protected:
     static void _OnNetworkScanFinished(otActiveScanResult * aResult, void * aContext);
     void _OnNetworkScanFinished(otActiveScanResult * aResult);
     void _UpdateNetworkStatus();
+    CHIP_ERROR _SetTxPower(int8_t txPower);
 
 #if CHIP_DEVICE_CONFIG_ENABLE_SED
     CHIP_ERROR _GetSEDIntervalsConfig(ConnectivityManager::SEDIntervalsConfig & intervalsConfig);
@@ -221,7 +222,7 @@ private:
     static constexpr size_t kTotalDnsServiceTxtValueSize = std::max(Dnssd::CommissionAdvertisingParameters::kTxtTotalValueSize,
                                                                     Dnssd::OperationalAdvertisingParameters::kTxtTotalValueSize);
     static constexpr size_t kTotalDnsServiceTxtKeySize   = std::max(Dnssd::CommissionAdvertisingParameters::kTxtTotalKeySize,
-                                                                  Dnssd::OperationalAdvertisingParameters::kTxtTotalKeySize);
+                                                                    Dnssd::OperationalAdvertisingParameters::kTxtTotalKeySize);
 #else
     // Thread only supports operational discovery.
     static constexpr uint8_t kMaxDnsServiceTxtEntriesNumber = Dnssd::OperationalAdvertisingParameters::kTxtMaxNumber;
@@ -269,7 +270,10 @@ private:
     CHIP_ERROR SetSEDIntervalMode(ConnectivityManager::SEDIntervalMode intervalType);
 #endif
 
-    inline ImplClass * Impl() { return static_cast<ImplClass *>(this); }
+    inline ImplClass * Impl()
+    {
+        return static_cast<ImplClass *>(this);
+    }
 };
 
 // Instruct the compiler to instantiate the template only when explicitly told to do so.

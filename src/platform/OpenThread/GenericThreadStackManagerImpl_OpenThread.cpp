@@ -33,6 +33,7 @@
 #include <openthread/joiner.h>
 #include <openthread/link.h>
 #include <openthread/netdata.h>
+#include <openthread/platform/radio.h>
 #include <openthread/tasklet.h>
 #include <openthread/thread.h>
 
@@ -1961,6 +1962,17 @@ void GenericThreadStackManagerImpl_OpenThread<ImplClass>::_UpdateNetworkStatus()
         mpStatusChangeCallback->OnNetworkingStatusChange(NetworkCommissioning::Status::kNetworkNotFound, MakeOptional(extpanid),
                                                          MakeOptional(static_cast<int32_t>(OT_ERROR_DETACHED)));
     }
+}
+
+template <class ImplClass>
+CHIP_ERROR GenericThreadStackManagerImpl_OpenThread<ImplClass>::_SetTxPower(int8_t txPower)
+{
+    CHIP_ERROR error = CHIP_NO_ERROR;
+
+    Impl()->LockThreadStack();
+    error = MapOpenThreadError(otPlatRadioSetTransmitPower(mOTInst, txPower));
+    Impl()->UnlockThreadStack();
+    return error;
 }
 
 #if CHIP_DEVICE_CONFIG_ENABLE_THREAD_SRP_CLIENT

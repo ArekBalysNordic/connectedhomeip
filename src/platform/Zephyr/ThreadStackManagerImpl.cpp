@@ -77,5 +77,14 @@ void ThreadStackManagerImpl::_UnlockThreadStack()
     openthread_api_mutex_unlock(openthread_get_default_context());
 }
 
+CHIP_ERROR ThreadStackManagerImpl::_SetTxPower(int8_t txPower)
+{
+    otInstance * const instance = openthread_get_default_instance();
+    _LockThreadStack();
+    CHIP_ERROR error = MapOpenThreadError(otPlatRadioSetTransmitPower(instance, txPower));
+    _UnlockThreadStack();
+    return error;
+}
+
 } // namespace DeviceLayer
 } // namespace chip
