@@ -68,14 +68,10 @@ if(CONFIG_CHIP_FACTORY_DATA_USE_DEFAULTS_CERTS)
     string(APPEND script_args "--dac_key \"${CHIP_ROOT}/credentials/development/attestation/Matter-Development-DAC-${raw_pid}-Key.der\"\n")
     string(APPEND script_args "--pai_cert \"${CHIP_ROOT}/credentials/development/attestation/Matter-Development-PAI-noPID-Cert.der\"\n")
 else()
-    # try to generate a new DAC and PAI certs and DAC key
-    # request script to generate a new certificates
-    # by adding an argument to script_args
-    find_program(chip-cert NAMES chip-cert)
-    if(NOT chip-cert)
-        message(FATAL_ERROR "Could not find chip_cert_path executable in PATH")
+    if(CONFIG_CHIP_FACTORY_DATA_GENERATE_CERTS)
+        include(generate_certs.cmake)
+        nrfconnect_generate_certs()
     endif()
-    string(APPEND script_args "--chip_cert_path ${chip-cert}\n") 
 endif()
 
 # add Password-Authenticated Key Exchange parameters
