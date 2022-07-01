@@ -90,10 +90,7 @@ private:
 
     BitFlags<Flags> mFlags;
 
-    ImplClass * Impl()
-    {
-        return static_cast<ImplClass *>(this);
-    }
+    ImplClass * Impl() { return static_cast<ImplClass *>(this); }
 };
 
 template <class ImplClass>

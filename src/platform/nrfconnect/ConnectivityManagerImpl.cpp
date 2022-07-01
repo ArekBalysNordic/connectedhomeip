@@ -55,15 +55,6 @@ CHIP_ERROR ConnectivityManagerImpl::_Init()
     return CHIP_NO_ERROR;
 }
 
-// CHIP_ERROR ConnectivityManagerImpl::_SetThreadTxPower(int8_t txPower)
-// {
-//     // Forward the event to the generic base classes as needed.
-// #if CHIP_DEVICE_CONFIG_ENABLE_THREAD
-//     return GenericConnectivityManagerImpl_Thread<ConnectivityManagerImpl>::_SetThreadTxPower(txPower);
-// #endif
-//     return CHIP_NO_ERROR;
-// }
-
 void ConnectivityManagerImpl::_OnPlatformEvent(const ChipDeviceEvent * event)
 {
     // Forward the event to the generic base classes as needed.

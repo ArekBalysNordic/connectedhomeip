@@ -92,6 +92,7 @@ CHIP_ERROR GenericConnectivityManagerImpl_Thread<ImplClass>::_SetThreadMode(Conn
 exit:
     return err;
 }
+
 template <class ImplClass>
 void GenericConnectivityManagerImpl_Thread<ImplClass>::UpdateServiceConnectivity()
 {
