@@ -62,7 +62,7 @@ class ThreadStackManagerImpl final : public ThreadStackManager,
 public:
     // ===== Methods that implement the ThreadStackManager abstract interface.
     CHIP_ERROR _InitThreadStack();
-    CHIP_ERROR _SetTxPower(int8_t txPower);
+    CHIP_ERROR _SetThreadTxPower(int8_t txPower);
 
 protected:
     // ===== Methods that implement the ThreadStackManager abstract interface.

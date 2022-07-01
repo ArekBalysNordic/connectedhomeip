@@ -80,6 +80,8 @@ public:
 
     void _UpdateNetworkStatus();
 
+    CHIP_ERROR _SetThreadTxPower(int8_t txPower);
+
     static void _OnThreadBrAttachFinished(GObject * source_object, GAsyncResult * res, gpointer user_data);
 
     ConnectivityManager::ThreadDeviceType _GetThreadDeviceType();

@@ -888,6 +888,11 @@ void ThreadStackManagerImpl::_UpdateNetworkStatus()
     }
 }
 
+CHIP_ERROR ThreadStackManagerImpl::_SetThreadTxPower(int8_t txPower)
+{
+    return ThreadStackMgrImpl().SetThreadTxPower(txPower);
+}
+
 ThreadStackManager & ThreadStackMgr()
 {
     return chip::DeviceLayer::ThreadStackManagerImpl::sInstance;

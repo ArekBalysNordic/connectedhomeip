@@ -116,6 +116,13 @@ CHIP_ERROR AppTask::Init()
         return err;
     }
 
+    err = ConnectivityMgr().SetThreadTxPower(CONFIG_CHIP_802_15_4_TX_POWER);
+    if (err != CHIP_NO_ERROR)
+    {
+        LOG_ERR("ThreadStackMgr().SetThreadTxPower() failed");
+        return err;
+    }
+
     // Initialize LEDs
     LEDWidget::InitGpio();
     LEDWidget::SetStateUpdateCallback(LEDStateUpdateHandler);

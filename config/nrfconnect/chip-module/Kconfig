@@ -75,6 +75,14 @@ config CHIP_DEBUG_SYMBOLS
 	help
 	  Build the application with debug symbols.
 
+config CHIP_802_15_4_TX_POWER
+	int "Set output tx power for 802.15.4 packets in dBm"
+	default 0
+	help
+	  Use this config to set the output power of the device for 802.15.4 OpenThread communication. 
+	  This config should be set due to proper controlling FEM devices. For devices without FEM support
+	  this value should be set to at most 0 dBm.
+
 config CHIP_FACTORY_DATA
 	bool "Enable Factory Data support"
 	select ZCBOR

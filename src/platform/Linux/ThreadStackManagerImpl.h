@@ -110,6 +110,8 @@ public:
 
     void _ResetThreadNetworkDiagnosticsCounts();
 
+    CHIP_ERROR _SetThreadTxPower(int8_t txPower);
+
     CHIP_ERROR _WriteThreadNetworkDiagnosticAttributeToTlv(AttributeId attributeId, app::AttributeValueEncoder & encoder);
 
     CHIP_ERROR _StartThreadScan(NetworkCommissioning::ThreadDriver::ScanCallback * callback);

@@ -113,6 +113,13 @@ CHIP_ERROR AppTask::Init()
         return err;
     }
 
+    err = ConnectivityMgr().SetThreadTxPower(CONFIG_CHIP_802_15_4_TX_POWER);
+    if (err != CHIP_NO_ERROR)
+    {
+        LOG_ERR("ThreadStackMgr().SetThreadTxPower() failed");
+        return err;
+    }
+
 #if CONFIG_CHIP_THREAD_SSED
     err = ConnectivityMgr().SetThreadDeviceType(ConnectivityManager::kThreadDeviceType_SynchronizedSleepyEndDevice);
 #elif CONFIG_OPENTHREAD_MTD_SED

@@ -452,6 +452,11 @@ CHIP_ERROR ThreadStackManagerImpl::_StartThreadScan(ThreadDriver::ScanCallback *
 
 void ThreadStackManagerImpl::_ResetThreadNetworkDiagnosticsCounts() {}
 
+CHIP_ERROR ThreadStackManagerImpl::_SetThreadTxPower(int8_t txPower)
+{
+    return ThreadStackMgrImpl().SetThreadTxPower(txPower);
+}
+
 CHIP_ERROR ThreadStackManagerImpl::_WriteThreadNetworkDiagnosticAttributeToTlv(AttributeId attributeId,
                                                                                app::AttributeValueEncoder & encoder)
 {

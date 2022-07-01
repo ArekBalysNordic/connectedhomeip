@@ -72,6 +72,7 @@ protected:
     bool _IsThreadProvisioned();
     void _ErasePersistentInfo();
     void _ResetThreadNetworkDiagnosticsCounts();
+    CHIP_ERROR _SetThreadTxPower(int8_t txPower);
     CHIP_ERROR _WriteThreadNetworkDiagnosticAttributeToTlv(AttributeId attributeId, app::AttributeValueEncoder & encoder);
 
     // ===== Members for use by the implementation subclass.
@@ -89,7 +90,10 @@ private:
 
     BitFlags<Flags> mFlags;
 
-    ImplClass * Impl() { return static_cast<ImplClass *>(this); }
+    ImplClass * Impl()
+    {
+        return static_cast<ImplClass *>(this);
+    }
 };
 
 template <class ImplClass>
@@ -175,6 +179,12 @@ GenericConnectivityManagerImpl_Thread<ImplClass>::_WriteThreadNetworkDiagnosticA
                                                                                               app::AttributeValueEncoder & encoder)
 {
     return ThreadStackMgrImpl().WriteThreadNetworkDiagnosticAttributeToTlv(attributeId, encoder);
+}
+
+template <class ImplClass>
+inline CHIP_ERROR GenericConnectivityManagerImpl_Thread<ImplClass>::_SetThreadTxPower(int8_t txPower)
+{
+    return ThreadStackMgrImpl().SetThreadTxPower(txPower);
 }
 
 } // namespace Internal

@@ -112,4 +112,16 @@ endif # SOC_SERIES_NRF53X
 
 endif # CHIP_DFU_OVER_BT_SMP
 
+if MPSL_FEM
+
+config CHIP_802_15_4_TX_POWER
+	int
+	default 20
+
+config MPSL_FEM_NRF21540_TX_GAIN_DB
+	int 
+	default 20
+
+endif # MPSL_FEM
+
 endif # CHIP

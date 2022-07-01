@@ -203,6 +203,7 @@ public:
     bool IsThreadProvisioned();
     void ErasePersistentInfo();
     void ResetThreadNetworkDiagnosticsCounts();
+    CHIP_ERROR SetThreadTxPower(int8_t txPower);
     CHIP_ERROR WriteThreadNetworkDiagnosticAttributeToTlv(AttributeId attributeId, app::AttributeValueEncoder & encoder);
 
 // Sleepy end device methods
@@ -283,8 +284,8 @@ protected:
     ~ConnectivityManager() = default;
 
     // No copy, move or assignment.
-    ConnectivityManager(const ConnectivityManager &)  = delete;
-    ConnectivityManager(const ConnectivityManager &&) = delete;
+    ConnectivityManager(const ConnectivityManager &)             = delete;
+    ConnectivityManager(const ConnectivityManager &&)            = delete;
     ConnectivityManager & operator=(const ConnectivityManager &) = delete;
 };
 
@@ -506,6 +507,11 @@ inline void ConnectivityManager::ErasePersistentInfo()
 inline void ConnectivityManager::ResetThreadNetworkDiagnosticsCounts()
 {
     static_cast<ImplClass *>(this)->_ResetThreadNetworkDiagnosticsCounts();
+}
+
+inline CHIP_ERROR ConnectivityManager::SetThreadTxPower(int8_t txPower)
+{
+    return static_cast<ImplClass *>(this)->_SetThreadTxPower(txPower);
 }
 
 /*
