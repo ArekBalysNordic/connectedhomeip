@@ -76,7 +76,6 @@ private:
 
     CHIP_ERROR _Init(void);
     void _OnPlatformEvent(const ChipDeviceEvent * event);
-    CHIP_ERROR _SetThreadTxPower(int8_t txPower);
 
     // ===== Members for internal use by the following friends.
 
