@@ -57,6 +57,7 @@ protected:
     bool _IsThreadProvisioned(void);
     void _ErasePersistentInfo(void);
     void _ResetThreadNetworkDiagnosticsCounts(void);
+    CHIP_ERROR _SetThreadTxPower(int8_t txPower);
     CHIP_ERROR _WriteThreadNetworkDiagnosticAttributeToTlv(AttributeId attributeId, app::AttributeValueEncoder & encoder);
 
     ImplClass * Impl() { return static_cast<ImplClass *>(this); }
@@ -142,6 +143,12 @@ inline void GenericConnectivityManagerImpl_NoThread<ImplClass>::_ResetThreadNetw
 template <class ImplClass>
 inline CHIP_ERROR GenericConnectivityManagerImpl_NoThread<ImplClass>::_WriteThreadNetworkDiagnosticAttributeToTlv(
     AttributeId attributeId, app::AttributeValueEncoder & encoder)
+{
+    return CHIP_ERROR_UNSUPPORTED_CHIP_FEATURE;
+}
+
+template <class ImplClass>
+inline CHIP_ERROR GenericConnectivityManagerImpl_NoThread<ImplClass>::_SetThreadTxPower(int8_t txPower)
 {
     return CHIP_ERROR_UNSUPPORTED_CHIP_FEATURE;
 }
