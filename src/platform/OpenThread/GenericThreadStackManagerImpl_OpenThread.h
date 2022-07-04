@@ -99,7 +99,7 @@ protected:
     static void _OnNetworkScanFinished(otActiveScanResult * aResult, void * aContext);
     void _OnNetworkScanFinished(otActiveScanResult * aResult);
     void _UpdateNetworkStatus();
-    CHIP_ERROR _SetTxPower(int8_t txPower);
+    CHIP_ERROR _SetThreadTxPower(int8_t txPower);
 
 #if CHIP_DEVICE_CONFIG_ENABLE_SED
     CHIP_ERROR _GetSEDIntervalsConfig(ConnectivityManager::SEDIntervalsConfig & intervalsConfig);

@@ -1965,7 +1965,7 @@ void GenericThreadStackManagerImpl_OpenThread<ImplClass>::_UpdateNetworkStatus()
 }
 
 template <class ImplClass>
-CHIP_ERROR GenericThreadStackManagerImpl_OpenThread<ImplClass>::_SetTxPower(int8_t txPower)
+CHIP_ERROR GenericThreadStackManagerImpl_OpenThread<ImplClass>::_SetThreadTxPower(int8_t txPower)
 {
     CHIP_ERROR error = CHIP_NO_ERROR;
 

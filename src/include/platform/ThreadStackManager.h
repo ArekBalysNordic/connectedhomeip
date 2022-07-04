@@ -104,7 +104,7 @@ public:
     CHIP_ERROR GetPrimary802154MACAddress(uint8_t * buf);
     CHIP_ERROR GetExternalIPv6Address(chip::Inet::IPAddress & addr);
     CHIP_ERROR GetPollPeriod(uint32_t & buf);
-    CHIP_ERROR SetThreadTxPower(uint8_t txPower);
+    CHIP_ERROR SetThreadTxPower(int8_t txPower);
 
     CHIP_ERROR JoinerStart();
     CHIP_ERROR SetThreadProvision(ByteSpan aDataset);
@@ -442,7 +442,7 @@ inline CHIP_ERROR ThreadStackManager::GetPollPeriod(uint32_t & buf)
     return static_cast<ImplClass *>(this)->_GetPollPeriod(buf);
 }
 
-inline CHIP_ERROR ThreadStackManager::SetThreadTxPower(uint8_t txPower)
+inline CHIP_ERROR ThreadStackManager::SetThreadTxPower(int8_t txPower)
 {
     return static_cast<ImplClass *>(this)->_SetThreadTxPower(txPower);
 }
