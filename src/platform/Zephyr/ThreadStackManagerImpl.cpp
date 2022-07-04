@@ -29,7 +29,6 @@
 
 #include <inet/UDPEndPointImpl.h>
 #include <lib/support/CodeUtils.h>
-#include <lib/support/logging/CHIPLogging.h>
 #include <platform/OpenThread/OpenThreadUtils.h>
 #include <platform/ThreadStackManager.h>
 
@@ -76,15 +75,6 @@ bool ThreadStackManagerImpl::_TryLockThreadStack()
 void ThreadStackManagerImpl::_UnlockThreadStack()
 {
     openthread_api_mutex_unlock(openthread_get_default_context());
-}
-
-CHIP_ERROR ThreadStackManagerImpl::_SetThreadTxPower(int8_t txPower)
-{
-    otInstance * const instance = openthread_get_default_instance();
-    _LockThreadStack();
-    CHIP_ERROR error = MapOpenThreadError(otPlatRadioSetTransmitPower(instance, txPower));
-    _UnlockThreadStack();
-    return error;
 }
 
 } // namespace DeviceLayer
