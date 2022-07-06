@@ -46,6 +46,9 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/zephyr.h>
 
+#include <openthread/platform/radio.h>
+#include <platform/OpenThread/OpenThreadUtils.h>
+
 using namespace ::chip;
 using namespace ::chip::app;
 using namespace ::chip::app::Clusters::DoorLock;
@@ -60,6 +63,8 @@ using namespace ::chip::DeviceLayer;
 
 namespace {
 constexpr EndpointId kLockEndpointId = 1;
+
+constexpr int8_t kThreadTxPower = 10;
 
 // NOTE! This key is for test/certification only and should not be available in production devices.
 // Ideally, it should be a part of the factory data set.
@@ -109,6 +114,17 @@ CHIP_ERROR AppTask::Init()
     {
         LOG_ERR("ThreadStackMgr().InitThreadStack() failed");
         return err;
+    }
+
+    err = Internal::MapOpenThreadError(otPlatRadioSetTransmitPower(DeviceLayer::ThreadStackMgrImpl().OTInstance(), kThreadTxPower));
+    if (err != CHIP_NO_ERROR)
+    {
+        LOG_ERR("Setting Thread power failed");
+        return err;
+    }
+    else
+    {
+        LOG_INF("Thread output power has been set to: %d", kThreadTxPower);
     }
 
 #ifdef CONFIG_OPENTHREAD_MTD_SED
