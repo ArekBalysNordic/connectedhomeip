@@ -122,10 +122,18 @@ config CHIP_FACTORY_DATA_MERGE_WITH_FIRMWARE
 	  As a result, a new output file merged.hex will consist of all partitions including 
 	  factory data.
 
+config CHIP_FACTORY_DATA_GENERATE_CERTS
+	bool "Try to generate new DAC and PAI certs"
+	help
+	  This config allows generating certificates during the building process 
+	  according to the given PID and VID. Generated certificates can be used 
+	  for development purposes.
+
 # Use default certificates without generating or providing them
 config CHIP_FACTORY_DATA_USE_DEFAULTS_CERTS
 	bool "Use default certificates located in Matter repository"
-	default y
+	default y if !CHIP_FACTORY_DATA_GENERATE_CERTS
+	depends on !CHIP_FACTORY_DATA_GENERATE_CERTS
 	help
 	  Pre-generated certificates can be used for development purpose.
 	  This config includes default pre-generated certificates 

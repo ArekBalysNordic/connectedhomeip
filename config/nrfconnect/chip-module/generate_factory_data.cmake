@@ -57,8 +57,14 @@ if(NOT CONFIG_CHIP_DEVICE_GENERATE_ROTATING_DEVICE_UID)
     endif()
 endif()
 
+if(CONFIG_CHIP_FACTORY_DATA_GENERATE_CERTS)
+    find_program(chip_cert_exe NAMES chip-cert)
+    if(NOT chip_cert_exe)
+        message(FATAL_ERROR "Could not find chip-cert executable in PATH. Pleas compile it and add to SYSTEM PATH.")
+    endif()
+    string(APPEND script_args "--chip_cert_path ${chip_cert_exe}\n")
 # for development purpose user can use default certs instead of generating or providing them
-if(CONFIG_CHIP_FACTORY_DATA_USE_DEFAULTS_CERTS)
+elseif(CONFIG_CHIP_FACTORY_DATA_USE_DEFAULTS_CERTS)
     # convert decimal PID to its hexadecimal representation to find out certification files in repository
     math(EXPR LOCAL_PID "${CONFIG_CHIP_DEVICE_PRODUCT_ID}" OUTPUT_FORMAT HEXADECIMAL)
     string(SUBSTRING ${LOCAL_PID} 2 -1 raw_pid)
@@ -68,14 +74,7 @@ if(CONFIG_CHIP_FACTORY_DATA_USE_DEFAULTS_CERTS)
     string(APPEND script_args "--dac_key \"${CHIP_ROOT}/credentials/development/attestation/Matter-Development-DAC-${raw_pid}-Key.der\"\n")
     string(APPEND script_args "--pai_cert \"${CHIP_ROOT}/credentials/development/attestation/Matter-Development-PAI-noPID-Cert.der\"\n")
 else()
-    # try to generate a new DAC and PAI certs and DAC key
-    # request script to generate a new certificates
-    # by adding an argument to script_args
-    find_program(chip-cert NAMES chip-cert)
-    if(NOT chip-cert)
-        message(FATAL_ERROR "Could not find chip_cert_path executable in PATH")
-    endif()
-    string(APPEND script_args "--chip_cert_path ${chip-cert}\n") 
+    message(FATAL_ERROR "Could not find certificates. Please use CONFIG_CHIP_FACTORY_DATA_GENERATE_CERTS or CONFIG_CHIP_FACTORY_DATA_USE_DEFAULTS_CERTS config.")
 endif()
 
 # add Password-Authenticated Key Exchange parameters
