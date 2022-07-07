@@ -163,6 +163,12 @@ CHIP_ERROR GenericDeviceInstanceInfoProvider<ConfigClass>::GetRotatingDeviceIdUn
     return err;
 }
 
+template <class ConfigClass>
+CHIP_ERROR GenericDeviceInstanceInfoProvider<ConfigClass>::GetEnableKey(MutableByteSpan & enableKey)
+{
+    return CHIP_ERROR_UNSUPPORTED_CHIP_FEATURE;
+}
+
 } // namespace Internal
 } // namespace DeviceLayer
 } // namespace chip

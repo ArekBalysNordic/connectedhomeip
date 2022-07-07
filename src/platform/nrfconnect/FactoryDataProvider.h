@@ -104,6 +104,7 @@ public:
     CHIP_ERROR GetHardwareVersion(uint16_t & hardwareVersion) override;
     CHIP_ERROR GetHardwareVersionString(char * buf, size_t bufSize) override;
     CHIP_ERROR GetRotatingDeviceIdUniqueId(MutableByteSpan & uniqueIdSpan) override;
+    CHIP_ERROR GetEnableKey(MutableByteSpan & enableKey) override;
 
 private:
     static constexpr uint16_t kFactoryDataPartitionSize    = PM_FACTORY_DATA_SIZE;
