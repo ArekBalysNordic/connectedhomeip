@@ -74,23 +74,6 @@ def gen_test_certs(chip_cert_exe: str, output: str, vendor_id: int, product_id: 
 
     log.info("Generating new certificates using chip-cert...")
 
-    # generate Certifiation declaration
-    cmd = [chip_cert_exe, "gen-cd",
-           "--key", CD_KEY_PATH,
-           "--cert", CD_PATH,
-           "--out", output + "/CD.der",
-           "--format-version",  str(1),
-           "--vendor-id",  hex(vendor_id),
-           "--product-id",  hex(product_id),
-           "--device-type-id", "0xA",
-           "--certificate-id", "ZIG20142ZB330003-24",
-           "--security-level",  str(0),
-           "--security-info",  str(0),
-           "--certification-type",  str(0),
-           "--version-number", "0x2694",
-           ]
-    subprocess.run(cmd)
-
     new_certificates = {"PAI_CERT": output + "/PAI_cert",
                         "PAI_KEY": output + "/PAI_key",
                         "DAC_CERT": output + "/DAC_cert",
@@ -233,8 +216,8 @@ class FactoryDataGenerator:
         spake_2_salt = base64.b64decode(self._args.spake2_salt)
 
         if self._args.chip_cert_path:
-            log.error(self._args.output)
-            log.error(self._args.output.rfind("/"))
+            log.debug(self._args.output)
+            log.debug(self._args.output.rfind("/"))
             certs = gen_test_certs(self._args.chip_cert_path,
                                    self._args.output[:self._args.output.rfind("/")],
                                    self._args.vendor_id,
