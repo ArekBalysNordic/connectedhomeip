@@ -322,7 +322,7 @@ def main():
     optional_arguments.add_argument("--pai_cert", type=str,
                                     help="[.der] Provide the path to .der file containing PAI certificate.")
     optional_arguments.add_argument("--rd_uid", type=str,
-                                    help="[hex string] [pattern: 'FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF'] Provide the rotating device unique ID. If this argument is not provided a new rotating device id unique id will be generated.")
+                                    help="[hex string] [128-bit hex-encoded] Provide the rotating device unique ID. If this argument is not provided a new rotating device id unique id will be generated.")
     optional_arguments.add_argument("--passcode", type=allow_any_int,
                                     help="[int | hex] Default PASE session passcode. (This is mandatory to generate Spake2 Verifier).")
     optional_arguments.add_argument("--spake2p_path", type=str,
@@ -330,7 +330,7 @@ def main():
     optional_arguments.add_argument("--spake2_verifier", type=str,
                                     help="[ascii string] Provide Spake2 Verifier without generating it.")
     optional_arguments.add_argument("--enable_key", type=str,
-                                    help="[hex string] [pattern: 'FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF'] The Enable Key is a 128-bit value that triggers manufacturer-specific action while invoking the TestEventTrigger Command."
+                                    help="[hex string] [128-bit hex-encoded] The Enable Key is a 128-bit value that triggers manufacturer-specific action while invoking the TestEventTrigger Command."
                                     "This value is used during Certification Tests, and should not be present on production devices.")
     optional_arguments.add_argument("--user", type=str,
                                     help="[string] Provide additional user-specific keys in Json format: {'name_1': 'value_1', 'name_2': 'value_2', ... 'name_n', 'value_n'}.")
