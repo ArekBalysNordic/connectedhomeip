@@ -77,12 +77,14 @@
             "type": "string",
             "pattern:": "^hex:{1}",
             "minLength": 20,
+            "minLength": 5,
             "maxLength": 36
         },
         "dac_cert": {
             "description": "DAC certificate in hex-string format",
             "type": "string",
             "pattern:": "^hex:{1}",
+            "minLength": 5,
             "maxLength": 1204
         },
         "dac_key": {
@@ -96,6 +98,7 @@
             "description": "PAI certificate in hex-string format",
             "type": "string",
             "pattern:": "^hex:{1}",
+            "minLength": 5,
             "maxLength": 1204
         },
         "passcode": {
@@ -132,7 +135,7 @@
         "enable_key": {
             "description": "The Enable Key is a 128-bit value that triggers manufacturer-specific action while invoking the TestEventTrigger Command",
             "type": "string",
-            "pattern": "^hex:{1}([0-9]|[A,B,C,D,E,F]){32}",
+            "pattern": "^hex:{1}([0-9A-F]){32}",
             "minLength": 36, 
             "maxLength": 36
         },

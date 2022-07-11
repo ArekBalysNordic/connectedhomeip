@@ -58,17 +58,20 @@ using namespace ::chip::DeviceLayer;
 
 namespace {
 
-constexpr int kFactoryResetTriggerTimeout        = 3000;
-constexpr int kFactoryResetCancelWindowTimeout   = 3000;
-constexpr int kAppEventQueueSize                 = 10;
-constexpr uint8_t kButtonPushEvent               = 1;
-constexpr uint8_t kButtonReleaseEvent            = 0;
-constexpr EndpointId kLightEndpointId            = 1;
-constexpr uint32_t kIdentifyBlinkRateMs          = 500;
-constexpr uint8_t kDefaultMinLevel               = 0;
-constexpr uint8_t kDefaultMaxLevel               = 254;
-constexpr uint8_t kTestEventTriggerEnableKey[16] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
-                                                     0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff };
+constexpr int kFactoryResetTriggerTimeout      = 3000;
+constexpr int kFactoryResetCancelWindowTimeout = 3000;
+constexpr int kAppEventQueueSize               = 10;
+constexpr uint8_t kButtonPushEvent             = 1;
+constexpr uint8_t kButtonReleaseEvent          = 0;
+constexpr EndpointId kLightEndpointId          = 1;
+constexpr uint32_t kIdentifyBlinkRateMs        = 500;
+constexpr uint8_t kDefaultMinLevel             = 0;
+constexpr uint8_t kDefaultMaxLevel             = 254;
+
+// NOTE! This key is for test/certification only and should not be available in production devices.
+// Ideally, it should be a part of the factory data set.
+static uint8_t sTestEventTriggerEnableKey[16] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
+                                                  0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff };
 
 K_MSGQ_DEFINE(sAppEventQueue, sizeof(AppEvent), kAppEventQueueSize, alignof(AppEvent));
 k_timer sFunctionTimer;
@@ -173,12 +176,16 @@ CHIP_ERROR AppTask::Init()
     SetDeviceInstanceInfoProvider(&mFactoryDataProvider);
     SetDeviceAttestationCredentialsProvider(&mFactoryDataProvider);
     SetCommissionableDataProvider(&mFactoryDataProvider);
+    // Read EnableKey from the factory data.
+    MutableByteSpan enableKey(sTestEventTriggerEnableKey);
+    err = mFactoryDataProvider.GetEnableKey(enableKey);
+    static OTATestEventTriggerDelegate testEventTriggerDelegate{ ByteSpan(enableKey) };
 #else
     SetDeviceAttestationCredentialsProvider(Examples::GetExampleDACProvider());
+    static OTATestEventTriggerDelegate testEventTriggerDelegate{ ByteSpan(sTestEventTriggerEnableKey) };
 #endif
 
     static CommonCaseDeviceServerInitParams initParams;
-    static OTATestEventTriggerDelegate testEventTriggerDelegate{ ByteSpan(kTestEventTriggerEnableKey) };
     (void) initParams.InitializeStaticResourcesBeforeServerInit();
     initParams.testEventTriggerDelegate = &testEventTriggerDelegate;
     ReturnErrorOnFailure(chip::Server::GetInstance().Init(initParams));

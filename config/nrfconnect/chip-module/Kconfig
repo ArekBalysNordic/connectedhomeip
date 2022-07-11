@@ -255,10 +255,10 @@ config CHIP_DEVICE_ROTATING_DEVICE_UID
 	  this config is not set in prj.conf file.
 
 config CHIP_DEVICE_ENABLE_KEY
-	string "A 128-bit value that triggers manufacturer-specific action."
+	string "Enable Key for triggering test actions on device"
 	default "00112233445566778899AABBCCDDEEFF"
 	help
-	  The Enable Key is a 128-bit value that triggers manufacturer-specific action 
+	  The Enable Key is a 128-bit value that triggers test action 
 	  while invoking the TestEventTrigger Command. 
 	  Pattern: "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
 	  This value is used during Certification Tests,

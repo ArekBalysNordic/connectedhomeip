@@ -142,18 +142,6 @@ public:
      *          if access fails.
      */
     virtual CHIP_ERROR GetRotatingDeviceIdUniqueId(MutableByteSpan & uniqueIdSpan) = 0;
-
-    /**
-     * @brief Obtain the Enable Key from the device's factory data.
-     *
-     * The Enable Key is a 128-bit value that triggers manufacturer-specific action while invoking the TestEventTrigger Command.
-     * This value is used during Certification Tests, and should not be present on production devices.
-     *
-     * @param enableKey Reference to location where the Enable Key will be copied.
-     * @return CHIP_NO_ERROR on success, or another CHIP_ERROR from the underlying implementation
-     *          if access fails.
-     */
-    virtual CHIP_ERROR GetEnableKey(MutableByteSpan & enableKey) = 0;
 };
 
 /**
