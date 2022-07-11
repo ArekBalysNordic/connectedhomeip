@@ -155,12 +155,12 @@ def gen_test_certs(chip_cert_exe: str,
     subprocess.run(cmd)
 
     # convert to .der files
-    for cert in new_certificates.keys():
-        action_type = "convert-cert" if cert.find("CERT") != -1 else "convert-key"
-        log.info(new_certificates[cert] + ".der")
+    for cert_k, cert_v in new_certificates.items():
+        action_type = "convert-cert" if cert_k.find("CERT") != -1 else "convert-key"
+        log.info(cert_v + ".der")
         cmd = [chip_cert_exe, action_type,
-               new_certificates[cert] + ".pem",
-               new_certificates[cert] + ".der",
+               cert_v + ".pem",
+               cert_v + ".der",
                "--x509-der",
                ]
         subprocess.run(cmd)
