@@ -64,15 +64,62 @@ def get_raw_private_key_der(der_file: str, password: str):
         return None
 
 
-def gen_test_certs(chip_cert_exe: str, output: str, vendor_id: int, product_id: int, device_name: str):
+def gen_test_certs(chip_cert_exe: str,
+                   output: str,
+                   vendor_id: int,
+                   product_id: int,
+                   device_name: str,
+                   generate_cd: bool = False,
+                   paa_cert_path: str = None,
+                   paa_key_path: str = None):
+    """
+    Generate Matter certificates according to given Vendor ID and Product ID using the chip-cert executable.
+    To use own Product Attestation Authority certificate provide paa_cert_path and paa_key_path arguments.
+    Without providing these arguments a PAA certificate will be get from /credentials/test/attestation directory
+    in the Matter repository.
+
+    Args:
+        chip_cert_exe (str): path to chip-cert executable
+        output (str): output path to store a newly generated certificates (CD, DAC, PAI)
+        vendor_id (int): an identification number specific to Vendor
+        product_id (int): an identification number specific to Product
+        device_name (str): human-readable device name
+        generate_cd (bool, optional): Generate Certificate Declaration and store it in thee output directory. Defaults to False.
+        paa_cert_path (str, optional): provide PAA certification path. Defaults to None - a path will be set to /credentials/test/attestation directory.
+        paa_key_path (str, optional): provide PAA key path. Defaults to None - a path will be set to /credentials/test/attestation directory.
+
+    Returns:
+        dictionary: ["PAI_CERT": (str)<path to PAI cert .der file>, 
+                     "DAC_CERT": (str)<path to DAC cert .der file>,
+                     "DAC_KEY": (str)<path to DAC key .der file>]
+    """
+
     CD_PATH = MATTER_ROOT + "/credentials/test/certification-declaration/Chip-Test-CD-Signing-Cert.pem"
     CD_KEY_PATH = MATTER_ROOT + "/credentials/test/certification-declaration/Chip-Test-CD-Signing-Key.pem"
-    PAA_PATH = MATTER_ROOT + "/credentials/test/attestation/Chip-Test-PAA-NoVID-Cert.pem"
-    PAA_KEY_PATH = MATTER_ROOT + "/credentials/test/attestation/Chip-Test-PAA-NoVID-Key.pem"
+    PAA_PATH = paa_cert_path if paa_cert_path != None else MATTER_ROOT + "/credentials/test/attestation/Chip-Test-PAA-NoVID-Cert.pem"
+    PAA_KEY_PATH = paa_key_path if paa_key_path != None else MATTER_ROOT + "/credentials/test/attestation/Chip-Test-PAA-NoVID-Key.pem"
 
     attestation_certs = namedtuple("attestation_certs", ["dac_cert", "dac_key", "pai_cert"])
 
     log.info("Generating new certificates using chip-cert...")
+
+    if generate_cd:
+        # generate Certification Declaration
+        cmd = [chip_cert_exe, "gen-cd",
+               "--key", CD_KEY_PATH,
+               "--cert", CD_PATH,
+               "--out", output + "/CD.der",
+               "--format-version",  str(1),
+               "--vendor-id",  hex(vendor_id),
+               "--product-id",  hex(product_id),
+               "--device-type-id", "0xA",
+               "--certificate-id", "ZIG20142ZB330003-24",
+               "--security-level",  str(0),
+               "--security-info",  str(0),
+               "--certification-type",  str(0),
+               "--version-number", "0x2694",
+               ]
+        subprocess.run(cmd)
 
     new_certificates = {"PAI_CERT": output + "/PAI_cert",
                         "PAI_KEY": output + "/PAI_key",
@@ -216,13 +263,14 @@ class FactoryDataGenerator:
         spake_2_salt = base64.b64decode(self._args.spake2_salt)
 
         if self._args.chip_cert_path:
-            log.debug(self._args.output)
-            log.debug(self._args.output.rfind("/"))
             certs = gen_test_certs(self._args.chip_cert_path,
                                    self._args.output[:self._args.output.rfind("/")],
                                    self._args.vendor_id,
                                    self._args.product_id,
-                                   self._args.vendor_name + "_" + self._args.product_name)
+                                   self._args.vendor_name + "_" + self._args.product_name,
+                                   self._args.gen_cd,
+                                   self._args.paa_cert,
+                                   self._args.paa_key)
             dac_cert = certs.dac_cert
             pai_cert = certs.pai_cert
             dac_key = certs.dac_key
@@ -407,6 +455,12 @@ def main():
                                     help="[ascii string] Provide Spake2 Verifier without generating it.")
     optional_arguments.add_argument("--user", type=str,
                                     help="[string] Provide additional user-specific keys in Json format: {'name_1': 'value_1', 'name_2': 'value_2', ... 'name_n', 'value_n'}.")
+    optional_arguments.add_argument("--gen_cd", action="store_true", default=False,
+                                    help="Generate a new Certificate Declaration in .der format according to used Vendor ID and Product ID. This certificate will not be included to the factory data.")
+    optional_arguments.add_argument("--paa_cert", type=str,
+                                    help="Provide a path to the Product Attestation Authority (PAA) certificate to generate the PAI certificate. Without providing it, a testing PAA stored in the Matter repository will be used.")
+    optional_arguments.add_argument("--paa_key", type=str,
+                                    help="Provide a path to the Product Attestation Authority (PAA) key to generate the PAI certificate. Without providing it, a testing PAA key stored in the Matter repository will be used.")
     args = parser.parse_args()
 
     if args.verbose:
