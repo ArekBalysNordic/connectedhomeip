@@ -11,11 +11,14 @@
 #include "buzzer.h"
 #include <platform/CHIPDeviceLayer.h>
 
+#include <DeviceInfoProviderImpl.h>
+
 #include <app-common/zap-generated/attribute-id.h>
 #include <app-common/zap-generated/attribute-type.h>
 #include <app-common/zap-generated/attributes/Accessors.h>
 #include <app-common/zap-generated/cluster-id.h>
 #include <app-common/zap-generated/cluster-objects.h>
+#include <app/clusters/ota-requestor/OTATestEventTriggerDelegate.h>
 #include <app/server/OnboardingCodesUtil.h>
 #include <app/server/Server.h>
 #include <app/util/attribute-storage.h>
@@ -94,6 +97,13 @@ bool sIsThreadProvisioned;
 bool sIsThreadEnabled;
 bool sIsBleAdvertisingEnabled;
 bool sHaveBLEConnections;
+
+// NOTE! This key is for test/certification only and should not be available in production devices!
+// If CONFIG_CHIP_FACTORY_DATA is enabled, this value is read from the factory data.
+uint8_t sTestEventTriggerEnableKey[TestEventTriggerDelegate::kEnableKeyLength] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55,
+										   0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb,
+										   0xcc, 0xdd, 0xee, 0xff };
+chip::DeviceLayer::DeviceInfoProviderImpl gExampleDeviceInfoProvider;
 
 LedState sLedState = LedState::kAlive;
 
@@ -189,6 +199,23 @@ CHIP_ERROR AppTask::Init()
 		return chip::System::MapErrorZephyr(ret);
 	}
 
+/* Get factory data */
+#ifdef CONFIG_CHIP_FACTORY_DATA
+	ReturnErrorOnFailure(mFactoryDataProvider.Init());
+	SetDeviceInstanceInfoProvider(&mFactoryDataProvider);
+	SetDeviceAttestationCredentialsProvider(&mFactoryDataProvider);
+	SetCommissionableDataProvider(&mFactoryDataProvider);
+	// Read EnableKey from the factory data.
+	MutableByteSpan enableKey(sTestEventTriggerEnableKey);
+	err = mFactoryDataProvider.GetEnableKey(enableKey);
+	if (err != CHIP_NO_ERROR) {
+		LOG_ERR("mFactoryDataProvider.GetEnableKey() failed. Could not delegate a test event trigger");
+		memset(sTestEventTriggerEnableKey, 0, sizeof(sTestEventTriggerEnableKey));
+	}
+#else
+	SetDeviceAttestationCredentialsProvider(Examples::GetExampleDACProvider());
+#endif
+
 #ifdef CONFIG_MCUMGR_SMP_BT
 	/* Initialize DFU over SMP */
 	GetDFUOverSMP().Init(RequestSMPAdvertisingStart);
@@ -210,11 +237,15 @@ CHIP_ERROR AppTask::Init()
 		&sIdentifyTimer, [](k_timer *) { sAppTask.PostEvent(AppEvent{ AppEvent::IdentifyTimer }); }, nullptr);
 
 	/* Initialize CHIP server */
-	SetDeviceAttestationCredentialsProvider(Examples::GetExampleDACProvider());
 	static chip::CommonCaseDeviceServerInitParams initParams;
+	static OTATestEventTriggerDelegate testEventTriggerDelegate{ ByteSpan(sTestEventTriggerEnableKey) };
 	(void)initParams.InitializeStaticResourcesBeforeServerInit();
-
+	initParams.testEventTriggerDelegate = &testEventTriggerDelegate;
 	ReturnErrorOnFailure(chip::Server::GetInstance().Init(initParams));
+
+	gExampleDeviceInfoProvider.SetStorageDelegate(&Server::GetInstance().GetPersistentStorage());
+	chip::DeviceLayer::SetDeviceInfoProvider(&gExampleDeviceInfoProvider);
+
 #if CONFIG_CHIP_OTA_REQUESTOR
 	InitBasicOTARequestor();
 #endif
