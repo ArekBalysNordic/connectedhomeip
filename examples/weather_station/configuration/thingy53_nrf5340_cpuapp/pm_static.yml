@@ -28,7 +28,11 @@ mcuboot_primary_app:
 settings_storage:
   address: 0xf0000
   region: flash_primary
-  size: 0x10000
+  size: 0xf000
+factory_data:
+  address: 0xff000
+  region: flash_primary
+  size: 0x1000
 mcuboot_primary_1:
   address: 0x0
   size: 0x40000
