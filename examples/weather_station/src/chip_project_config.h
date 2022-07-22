@@ -15,14 +15,6 @@
 
 #pragma once
 
-/* Use a default pairing code if one hasn't been provisioned in flash. */
-#define CHIP_DEVICE_CONFIG_USE_TEST_SETUP_PIN_CODE 28073715
-
-/* Use a default SED idle interval */
-#define CHIP_DEVICE_CONFIG_SED_IDLE_INTERVAL 1000_ms32
-
-#define CHIP_DEVICE_CONFIG_ENABLE_EXTENDED_DISCOVERY 1
-
 #ifdef CONFIG_CHIP_FACTORY_DATA
 /* Store Certification Declaration */
 #define CHIP_DEVICE_CONFIG_CERTIFICATION_DECLARATION                                                                   \
