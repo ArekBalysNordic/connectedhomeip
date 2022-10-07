@@ -22,6 +22,7 @@
 
 #include "CHIPCryptoPAL.h"
 
+#include <lib/core/CHIPEncoding.h>
 #include <lib/core/CHIPSafeCasts.h>
 #include <lib/support/BufferWriter.h>
 #include <lib/support/BytesToHex.h>
@@ -76,17 +77,17 @@ namespace Crypto {
 
 namespace {
 
-void logMbedTLSError(int error_code)
+void logMbedTLSError(int errorCode)
 {
-    if (error_code != 0)
+    if (errorCode != 0)
     {
 #if defined(MBEDTLS_ERROR_C)
-        char error_str[MAX_ERROR_STR_LEN];
-        mbedtls_strerror(error_code, error_str, sizeof(error_str));
-        ChipLogError(Crypto, "mbedTLS error: %s", error_str);
+        char errorStr[MAX_ERROR_STR_LEN];
+        mbedtls_strerror(errorCode, errorStr, sizeof(errorStr));
+        ChipLogError(Crypto, "mbedTLS error: %s", errorStr);
 #else
         // Error codes defined in 16-bit negative hex numbers. Ease lookup by printing likewise
-        ChipLogError(Crypto, "mbedTLS error: -0x%04X", -static_cast<uint16_t>(error_code));
+        ChipLogError(Crypto, "mbedTLS error: -0x%04X", static_cast<uint16_t>(-errorCode));
 #endif
     }
 }
@@ -399,50 +400,11 @@ exit:
 CHIP_ERROR PBKDF2_sha256::pbkdf2_sha256(const uint8_t * pass, size_t pass_length, const uint8_t * salt, size_t salt_length,
                                         unsigned int iteration_count, uint32_t key_length, uint8_t * key)
 {
-    CHIP_ERROR error = CHIP_NO_ERROR;
-    int result       = 0;
-    const mbedtls_md_info_t * md_info;
-    mbedtls_md_context_t md_ctxt;
-    constexpr int use_hmac = 1;
-
-    bool free_md_ctxt = false;
-
-    VerifyOrExit(pass != nullptr, error = CHIP_ERROR_INVALID_ARGUMENT);
-    VerifyOrExit(pass_length > 0, error = CHIP_ERROR_INVALID_ARGUMENT);
-    VerifyOrExit(salt != nullptr, error = CHIP_ERROR_INVALID_ARGUMENT);
-    VerifyOrExit(salt_length >= kSpake2p_Min_PBKDF_Salt_Length, error = CHIP_ERROR_INVALID_ARGUMENT);
-    VerifyOrExit(salt_length <= kSpake2p_Max_PBKDF_Salt_Length, error = CHIP_ERROR_INVALID_ARGUMENT);
-    VerifyOrExit(key_length > 0, error = CHIP_ERROR_INVALID_ARGUMENT);
-    VerifyOrExit(key != nullptr, error = CHIP_ERROR_INVALID_ARGUMENT);
-
-    md_info = mbedtls_md_info_from_type(MBEDTLS_MD_SHA256);
-    VerifyOrExit(md_info != nullptr, error = CHIP_ERROR_INTERNAL);
-
-    mbedtls_md_init(&md_ctxt);
-    free_md_ctxt = true;
-
-    result = mbedtls_md_setup(&md_ctxt, md_info, use_hmac);
-    VerifyOrExit(result == 0, error = CHIP_ERROR_INTERNAL);
-
-    result = mbedtls_pkcs5_pbkdf2_hmac(&md_ctxt, Uint8::to_const_uchar(pass), pass_length, Uint8::to_const_uchar(salt), salt_length,
-                                       iteration_count, key_length, Uint8::to_uchar(key));
-
-    VerifyOrExit(result == 0, error = CHIP_ERROR_INTERNAL);
-
-exit:
-    logMbedTLSError(result);
-
-    if (free_md_ctxt)
-    {
-        mbedtls_md_free(&md_ctxt);
-    }
-
-    return error;
-
     /*
     TODO: Switch to the following implementation once mbedTLS gets support for PBKDF2
 
-    VerifyOrReturnError(pass != nullptr && salt != nullptr && key != nullptr, CHIP_ERROR_INVALID_ARGUMENT);
+    VerifyOrReturnError(isBufferNonEmpty(pass, pass_length), CHIP_ERROR_INVALID_ARGUMENT);
+    VerifyOrReturnError(key != nullptr, CHIP_ERROR_INVALID_ARGUMENT);
     VerifyOrReturnError(salt_length >= kSpake2p_Min_PBKDF_Salt_Length && salt_length <= kSpake2p_Max_PBKDF_Salt_Length,
                         CHIP_ERROR_INVALID_ARGUMENT);
 
@@ -470,6 +432,63 @@ exit:
 
     return error;
     */
+
+    VerifyOrReturnError(isBufferNonEmpty(pass, pass_length), CHIP_ERROR_INVALID_ARGUMENT);
+    VerifyOrReturnError(salt != nullptr && salt_length >= kSpake2p_Min_PBKDF_Salt_Length &&
+                            salt_length <= kSpake2p_Max_PBKDF_Salt_Length,
+                        CHIP_ERROR_INVALID_ARGUMENT);
+    VerifyOrReturnError(isBufferNonEmpty(key, key_length), CHIP_ERROR_INVALID_ARGUMENT);
+
+    constexpr size_t kMacLength     = PSA_MAC_LENGTH(PSA_KEY_TYPE_HMAC, pass_length * 8, PSA_ALG_HMAC(PSA_ALG_SHA_256));
+    const psa_algorithm_t algorithm = PSA_ALG_HMAC(PSA_ALG_SHA_256);
+    CHIP_ERROR error                = CHIP_NO_ERROR;
+    psa_status_t status             = PSA_SUCCESS;
+    psa_key_attributes_t attrs      = PSA_KEY_ATTRIBUTES_INIT;
+    psa_key_id_t keyId              = 0;
+
+    psa_set_key_type(&attrs, PSA_KEY_TYPE_HMAC);
+    psa_set_key_algorithm(&attrs, algorithm);
+    psa_set_key_usage_flags(&attrs, PSA_KEY_USAGE_SIGN_HASH);
+
+    status = psa_import_key(&attrs, pass, pass_length, &keyId);
+    VerifyOrExit(status == PSA_SUCCESS, error = CHIP_ERROR_INTERNAL);
+
+    for (uint32_t blockNo = 1; key_length != 0; ++blockNo)
+    {
+        uint8_t in[chip::max(kMacLength, kSpake2p_Max_PBKDF_Salt_Length + 4)];
+        size_t inLength = salt_length + 4;
+        uint8_t out[kMacLength];
+        size_t outLength;
+        uint8_t result[kMacLength] = {};
+
+        memcpy(in, salt, salt_length);
+        Encoding::BigEndian::Put32(&in[salt_length], blockNo);
+
+        for (size_t iteration = 0; iteration < iteration_count; ++iteration)
+        {
+            status = psa_mac_compute(keyId, algorithm, in, inLength, out, sizeof(out), &outLength);
+            VerifyOrExit(status == PSA_SUCCESS && outLength == kMacLength, error = CHIP_ERROR_INTERNAL);
+
+            for (size_t byteNo = 0; byteNo < kMacLength; ++byteNo)
+            {
+                result[byteNo] ^= out[byteNo];
+                in[byteNo] = out[byteNo];
+            }
+
+            inLength = outLength;
+        }
+
+        const size_t usedKeyLength = chip::min<size_t>(key_length, kMacLength);
+        memcpy(key, result, usedKeyLength);
+        key += usedKeyLength;
+        key_length -= usedKeyLength;
+    }
+
+exit:
+    psa_destroy_key(keyId);
+    psa_reset_key_attributes(&attrs);
+
+    return CHIP_NO_ERROR;
 }
 
 CHIP_ERROR add_entropy_source(entropy_source /* fn_source */, void * /* p_source */, size_t /* threshold */)
@@ -1338,8 +1357,6 @@ CHIP_ERROR ValidateCertificateChain(const uint8_t * rootCertificate, size_t root
 
     VerifyOrReturnError(rootCertificate != nullptr && rootCertificateLen != 0,
                         (result = CertificateChainValidationResult::kRootArgumentInvalid, CHIP_ERROR_INVALID_ARGUMENT));
-    VerifyOrReturnError(caCertificate != nullptr && caCertificateLen != 0,
-                        (result = CertificateChainValidationResult::kICAArgumentInvalid, CHIP_ERROR_INVALID_ARGUMENT));
     VerifyOrReturnError(leafCertificate != nullptr && leafCertificateLen != 0,
                         (result = CertificateChainValidationResult::kLeafArgumentInvalid, CHIP_ERROR_INVALID_ARGUMENT));
 
@@ -1350,9 +1367,12 @@ CHIP_ERROR ValidateCertificateChain(const uint8_t * rootCertificate, size_t root
     mbedResult = mbedtls_x509_crt_parse(&certChain, Uint8::to_const_uchar(leafCertificate), leafCertificateLen);
     VerifyOrExit(mbedResult == 0, (result = CertificateChainValidationResult::kLeafFormatInvalid, error = CHIP_ERROR_INTERNAL));
 
-    /* Add the intermediate to the chain  */
-    mbedResult = mbedtls_x509_crt_parse(&certChain, Uint8::to_const_uchar(caCertificate), caCertificateLen);
-    VerifyOrExit(mbedResult == 0, (result = CertificateChainValidationResult::kICAFormatInvalid, error = CHIP_ERROR_INTERNAL));
+    /* Add the intermediate to the chain, if present */
+    if (caCertificate != nullptr && caCertificateLen > 0)
+    {
+        mbedResult = mbedtls_x509_crt_parse(&certChain, Uint8::to_const_uchar(caCertificate), caCertificateLen);
+        VerifyOrExit(mbedResult == 0, (result = CertificateChainValidationResult::kICAFormatInvalid, error = CHIP_ERROR_INTERNAL));
+    }
 
     /* Parse the root cert */
     mbedResult = mbedtls_x509_crt_parse(&rootCert, Uint8::to_const_uchar(rootCertificate), rootCertificateLen);
