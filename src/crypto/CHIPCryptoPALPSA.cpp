@@ -52,11 +52,8 @@
 #endif
 
 #define MAX_ERROR_STR_LEN 128
-#define NUM_BYTES_IN_SHA256_HASH 32
-#define PSA_KEY_USAGE_FLAGS                                                                                                        \
-    (PSA_KEY_USAGE_EXPORT | PSA_KEY_USAGE_SIGN_MESSAGE | PSA_KEY_USAGE_VERIFY_MESSAGE | PSA_KEY_USAGE_VERIFY_HASH)
 
-constexpr static auto sKeypairBitLen = 256;
+constexpr static auto kKeypairBitLen = 256;
 
 // In mbedTLS 3.0.0 direct access to structure fields was replaced with using MBEDTLS_PRIVATE macro.
 #if (MBEDTLS_VERSION_NUMBER >= 0x03000000)
@@ -520,34 +517,56 @@ mbedtls_ecp_group_id MapECPGroupId(SupportedECPKeyTypes keyType)
     }
 }
 
-typedef struct
+struct PsaP256KeypairContext
 {
-    psa_key_id_t psa_ecdsa_key_id;
-    psa_key_id_t psa_ecdh_key_id;
-} psa_ecp_keypair;
+    psa_key_id_t key_id;
+};
 
-static inline psa_ecp_keypair * to_keypair(P256KeypairContext * context)
+static inline PsaP256KeypairContext & to_keypair_ctx(P256KeypairContext & context)
 {
-    return SafePointerCast<psa_ecp_keypair *>(context);
+    return *SafePointerCast<PsaP256KeypairContext *>(&context);
 }
 
-static inline const psa_ecp_keypair * to_const_keypair(const P256KeypairContext * context)
+static inline const PsaP256KeypairContext & to_const_keypair_ctx(const P256KeypairContext & context)
 {
-    return SafePointerCast<const psa_ecp_keypair *>(context);
+    return *SafePointerCast<const PsaP256KeypairContext *>(&context);
+}
+
+static psa_status_t ConvertEcdsaKeyToEcdh(psa_key_id_t * destination, psa_key_id_t source)
+{
+    psa_status_t status             = PSA_SUCCESS;
+    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
+    uint8_t privateKey[kP256_PrivateKey_Length];
+    size_t privateKeyLength;
+
+    status = psa_export_key(source, privateKey, sizeof(privateKey), &privateKeyLength);
+
+    if (status == PSA_SUCCESS)
+    {
+        // Type based on ECC with the elliptic curve SECP256r1 -> PSA_ECC_FAMILY_SECP_R1
+        // Algorithm Elliptic Curve Diffie-Hellman (ECDH)
+        psa_set_key_type(&attributes, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1));
+        psa_set_key_bits(&attributes, kKeypairBitLen);
+        psa_set_key_algorithm(&attributes, PSA_ALG_ECDH);
+        psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_DERIVE);
+        status = psa_import_key(&attributes, privateKey, privateKeyLength, destination);
+    }
+
+    psa_reset_key_attributes(&attributes);
+    return status;
 }
 
 CHIP_ERROR P256Keypair::ECDSA_sign_msg(const uint8_t * msg, const size_t msg_length, P256ECDSASignature & out_signature) const
 {
-    CHIP_ERROR error = CHIP_NO_ERROR;
-    psa_status_t status;
-    psa_key_attributes_t attributes     = PSA_KEY_ATTRIBUTES_INIT;
-    size_t outputLen                    = 0;
-    const psa_ecp_keypair * psa_keypair = to_const_keypair(&mKeypair);
+    VerifyOrReturnError(mInitialized, CHIP_ERROR_WELL_UNINITIALIZED);
+    VerifyOrReturnError(isBufferNonEmpty(msg, msg_length), CHIP_ERROR_INVALID_ARGUMENT);
 
-    VerifyOrExit(mInitialized, error = CHIP_ERROR_WELL_UNINITIALIZED);
-    VerifyOrExit((msg != nullptr) && (msg_length > 0), error = CHIP_ERROR_INVALID_ARGUMENT);
+    CHIP_ERROR error                      = CHIP_NO_ERROR;
+    psa_status_t status                   = PSA_SUCCESS;
+    size_t outputLen                      = 0;
+    const PsaP256KeypairContext & context = to_const_keypair_ctx(mKeypair);
 
-    status = psa_sign_message(psa_keypair->psa_ecdsa_key_id, PSA_ALG_ECDSA(PSA_ALG_SHA_256), msg, msg_length, out_signature.Bytes(),
+    status = psa_sign_message(context.key_id, PSA_ALG_ECDSA(PSA_ALG_SHA_256), msg, msg_length, out_signature.Bytes(),
                               out_signature.Capacity(), &outputLen);
 
     VerifyOrExit(status == PSA_SUCCESS, error = CHIP_ERROR_INTERNAL);
@@ -556,38 +575,32 @@ CHIP_ERROR P256Keypair::ECDSA_sign_msg(const uint8_t * msg, const size_t msg_len
 
 exit:
     logPsaError(status);
-    psa_reset_key_attributes(&attributes);
     return error;
 }
 
 CHIP_ERROR P256PublicKey::ECDSA_validate_msg_signature(const uint8_t * msg, const size_t msg_length,
                                                        const P256ECDSASignature & signature) const
 {
+    VerifyOrReturnError(isBufferNonEmpty(msg, msg_length), CHIP_ERROR_INVALID_ARGUMENT);
+
     CHIP_ERROR error                = CHIP_NO_ERROR;
-    psa_status_t status             = PSA_ERROR_BAD_STATE;
-    mbedtls_svc_key_id_t keyId      = 0;
+    psa_status_t status             = PSA_SUCCESS;
+    psa_key_id_t keyId              = 0;
     psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
 
-    VerifyOrExit((msg != nullptr) && (msg_length > 0), error = CHIP_ERROR_INVALID_ARGUMENT);
-
     psa_set_key_type(&attributes, PSA_KEY_TYPE_ECC_PUBLIC_KEY(PSA_ECC_FAMILY_SECP_R1));
-    psa_set_key_bits(&attributes, sKeypairBitLen);
     psa_set_key_algorithm(&attributes, PSA_ALG_ECDSA(PSA_ALG_SHA_256));
     psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_VERIFY_MESSAGE);
 
-    status = psa_import_key(&attributes, Uint8::to_const_uchar(*this), Length(), &keyId);
+    status = psa_import_key(&attributes, ConstBytes(), Length(), &keyId);
     VerifyOrExit(status == PSA_SUCCESS, error = CHIP_ERROR_INTERNAL);
 
     status = psa_verify_message(keyId, PSA_ALG_ECDSA(PSA_ALG_SHA_256), msg, msg_length, signature.ConstBytes(), signature.Length());
     VerifyOrExit(status == PSA_SUCCESS, error = CHIP_ERROR_INVALID_SIGNATURE);
 
 exit:
-
     logPsaError(status);
-    if (0 != keyId)
-    {
-        psa_destroy_key(keyId);
-    }
+    psa_destroy_key(keyId);
     psa_reset_key_attributes(&attributes);
 
     return error;
@@ -596,21 +609,19 @@ exit:
 CHIP_ERROR P256PublicKey::ECDSA_validate_hash_signature(const uint8_t * hash, const size_t hash_length,
                                                         const P256ECDSASignature & signature) const
 {
-    VerifyOrReturnError(hash != nullptr, CHIP_ERROR_INVALID_ARGUMENT);
-    VerifyOrReturnError(hash_length == kSHA256_Hash_Length, CHIP_ERROR_INVALID_ARGUMENT);
+    VerifyOrReturnError(hash != nullptr && hash_length == kSHA256_Hash_Length, CHIP_ERROR_INVALID_ARGUMENT);
     VerifyOrReturnError(signature.Length() == kP256_ECDSA_Signature_Length_Raw, CHIP_ERROR_INVALID_ARGUMENT);
 
     CHIP_ERROR error                = CHIP_NO_ERROR;
-    psa_status_t status             = PSA_ERROR_BAD_STATE;
+    psa_status_t status             = PSA_SUCCESS;
     mbedtls_svc_key_id_t keyId      = 0;
     psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
 
     psa_set_key_type(&attributes, PSA_KEY_TYPE_ECC_PUBLIC_KEY(PSA_ECC_FAMILY_SECP_R1));
-    psa_set_key_bits(&attributes, sKeypairBitLen);
     psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_VERIFY_HASH);
     psa_set_key_algorithm(&attributes, PSA_ALG_ECDSA(PSA_ALG_SHA_256));
 
-    status = psa_import_key(&attributes, Uint8::to_const_uchar(*this), Length(), &keyId);
+    status = psa_import_key(&attributes, ConstBytes(), Length(), &keyId);
     VerifyOrExit(status == PSA_SUCCESS, error = CHIP_ERROR_INTERNAL);
 
     status = psa_verify_hash(keyId, PSA_ALG_ECDSA(PSA_ALG_SHA_256), hash, hash_length, signature.ConstBytes(), signature.Length());
@@ -618,32 +629,33 @@ CHIP_ERROR P256PublicKey::ECDSA_validate_hash_signature(const uint8_t * hash, co
 
 exit:
     logPsaError(status);
-    if (0 != keyId)
-    {
-        psa_destroy_key(keyId);
-    }
+    psa_destroy_key(keyId);
     psa_reset_key_attributes(&attributes);
     return error;
 }
 
 CHIP_ERROR P256Keypair::ECDH_derive_secret(const P256PublicKey & remote_public_key, P256ECDHDerivedSecret & out_secret) const
 {
-    CHIP_ERROR error                    = CHIP_NO_ERROR;
-    psa_status_t status                 = PSA_ERROR_BAD_STATE;
-    size_t outputLength                 = 0;
-    const psa_ecp_keypair * psa_keypair = to_const_keypair(&mKeypair);
-    size_t outputSize                   = (out_secret.Length() == 0) ? out_secret.Capacity() : out_secret.Length();
+    VerifyOrReturnError(mInitialized, CHIP_ERROR_WELL_UNINITIALIZED);
 
-    VerifyOrExit(mInitialized, error = CHIP_ERROR_WELL_UNINITIALIZED);
+    CHIP_ERROR error                      = CHIP_NO_ERROR;
+    psa_status_t status                   = PSA_SUCCESS;
+    psa_key_id_t keyId                    = 0;
+    const PsaP256KeypairContext & context = to_const_keypair_ctx(mKeypair);
+    const size_t outputSize               = (out_secret.Length() == 0) ? out_secret.Capacity() : out_secret.Length();
+    size_t outputLength;
 
-    status = psa_raw_key_agreement(PSA_ALG_ECDH, psa_keypair->psa_ecdh_key_id, Uint8::to_const_uchar(remote_public_key),
-                                   remote_public_key.Length(), Uint8::to_uchar(out_secret), outputSize, &outputLength);
+    status = ConvertEcdsaKeyToEcdh(&keyId, context.key_id);
+    VerifyOrExit(status == PSA_SUCCESS, error = CHIP_ERROR_INTERNAL);
+
+    status = psa_raw_key_agreement(PSA_ALG_ECDH, keyId, remote_public_key.ConstBytes(), remote_public_key.Length(),
+                                   out_secret.Bytes(), outputSize, &outputLength);
     VerifyOrExit(status == PSA_SUCCESS, error = CHIP_ERROR_INTERNAL);
     SuccessOrExit(out_secret.SetLength(outputLength));
 
 exit:
     logPsaError(status);
-
+    psa_destroy_key(keyId);
     return error;
 }
 
@@ -680,78 +692,55 @@ bool IsBufferContentEqualConstantTime(const void * a, const void * b, size_t n)
 
 CHIP_ERROR P256Keypair::Initialize()
 {
-    CHIP_ERROR error = CHIP_NO_ERROR;
-    psa_status_t status;
-    psa_ecp_keypair * psa_keypair = to_keypair(&mKeypair);
-    size_t publicKeyLength        = 0;
+    VerifyOrReturnError(!mInitialized, CHIP_ERROR_INCORRECT_STATE);
 
-    if (mInitialized)
-    {
-        return CHIP_ERROR_INCORRECT_STATE;
-    }
-
-    // Generate a new Key
+    CHIP_ERROR error                = CHIP_NO_ERROR;
+    psa_status_t status             = PSA_SUCCESS;
     psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
+    PsaP256KeypairContext & context = to_keypair_ctx(mKeypair);
+    size_t publicKeyLength          = 0;
 
     // Type based on ECC with the elliptic curve SECP256r1 -> PSA_ECC_FAMILY_SECP_R1
     // Algorithm Elliptic Curve Digital Signature Algorithm (ECDSA)
     psa_set_key_type(&attributes, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1));
-    psa_set_key_bits(&attributes, sKeypairBitLen);
+    psa_set_key_bits(&attributes, kKeypairBitLen);
     psa_set_key_algorithm(&attributes, PSA_ALG_ECDSA(PSA_ALG_SHA_256));
-    psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_FLAGS);
+    psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_EXPORT | PSA_KEY_USAGE_SIGN_MESSAGE);
 
-    status = psa_generate_key(&attributes, &psa_keypair->psa_ecdsa_key_id);
-    VerifyOrExit(status == 0, error = CHIP_ERROR_INTERNAL);
+    status = psa_generate_key(&attributes, &context.key_id);
+    VerifyOrExit(status == PSA_SUCCESS, error = CHIP_ERROR_INTERNAL);
 
-    psa_reset_key_attributes(&attributes);
-
-    // Type based on ECC with the elliptic curve SECP256r1 -> PSA_ECC_FAMILY_SECP_R1
-    // Algorithm Elliptic Curve Diffie-Hellman (ECDH)
-    psa_set_key_type(&attributes, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1));
-    psa_set_key_bits(&attributes, sKeypairBitLen);
-    psa_set_key_algorithm(&attributes, PSA_ALG_ECDH);
-    psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_DERIVE);
-
-    status = psa_generate_key(&attributes, &psa_keypair->psa_ecdh_key_id);
-    VerifyOrExit(status == 0, error = CHIP_ERROR_INTERNAL);
-
-    status =
-        psa_export_public_key(psa_keypair->psa_ecdsa_key_id, Uint8::to_uchar(mPublicKey), mPublicKey.Length(), &publicKeyLength);
-    VerifyOrExit(status == 0, error = CHIP_ERROR_INTERNAL);
+    status = psa_export_public_key(context.key_id, mPublicKey.Bytes(), mPublicKey.Length(), &publicKeyLength);
+    VerifyOrExit(status == PSA_SUCCESS, error = CHIP_ERROR_INTERNAL);
     VerifyOrExit(publicKeyLength == kP256_PublicKey_Length, error = CHIP_ERROR_INTERNAL);
+
+    mInitialized = true;
 
 exit:
     logPsaError(status);
-    if (error == CHIP_NO_ERROR)
-    {
-        mInitialized = true;
-    }
     psa_reset_key_attributes(&attributes);
     return error;
 }
 
 CHIP_ERROR P256Keypair::Serialize(P256SerializedKeypair & output) const
 {
-    const psa_ecp_keypair * keypair = to_const_keypair(&mKeypair);
-    size_t len                      = output.Length() == 0 ? output.Capacity() : output.Length();
-    Encoding::BufferWriter bbuf(output, len);
-    psa_status_t status;
-    uint8_t privateKeyBuf[32];
+    CHIP_ERROR error                      = CHIP_NO_ERROR;
+    psa_status_t status                   = PSA_SUCCESS;
+    const PsaP256KeypairContext & context = to_const_keypair_ctx(mKeypair);
+    const size_t outputSize               = output.Length() == 0 ? output.Capacity() : output.Length();
+    Encoding::BufferWriter bbuf(output, outputSize);
+    uint8_t privateKey[kP256_PrivateKey_Length];
     size_t privateKeyLength = 0;
-    CHIP_ERROR error        = CHIP_NO_ERROR;
+
+    status = psa_export_key(context.key_id, privateKey, sizeof(privateKey), &privateKeyLength);
+    VerifyOrExit(status == PSA_SUCCESS, error = CHIP_ERROR_INTERNAL);
+    VerifyOrExit(privateKeyLength == kP256_PrivateKey_Length, error = CHIP_ERROR_INTERNAL);
 
     bbuf.Put(mPublicKey, mPublicKey.Length());
-
-    status = psa_export_key(keypair->psa_ecdsa_key_id, Uint8::to_uchar(privateKeyBuf), sizeof(privateKeyBuf), &privateKeyLength);
-    VerifyOrExit(status == 0, error = CHIP_ERROR_INTERNAL);
-    VerifyOrExit(privateKeyLength == sizeof(privateKeyBuf), error = CHIP_ERROR_INTERNAL);
-
-    VerifyOrExit(bbuf.Available() == sizeof(privateKeyBuf), error = CHIP_ERROR_INTERNAL);
-
-    bbuf.Put(privateKeyBuf, PSA_BITS_TO_BYTES(sKeypairBitLen));
+    bbuf.Put(privateKey, privateKeyLength);
     VerifyOrExit(bbuf.Fit(), error = CHIP_ERROR_BUFFER_TOO_SMALL);
+    error = output.SetLength(bbuf.Needed());
 
-    output.SetLength(bbuf.Needed());
 exit:
     logPsaError(status);
     return error;
@@ -759,32 +748,31 @@ exit:
 
 CHIP_ERROR P256Keypair::Deserialize(P256SerializedKeypair & input)
 {
-    Encoding::BufferWriter bbuf(mPublicKey, mPublicKey.Length());
-    psa_ecp_keypair * keypair       = to_keypair(&mKeypair);
-    CHIP_ERROR error                = CHIP_NO_ERROR;
-    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
+    VerifyOrReturnError(input.Length() == mPublicKey.Length() + kP256_PrivateKey_Length, CHIP_ERROR_INVALID_ARGUMENT);
 
-    VerifyOrExit(input.Length() == mPublicKey.Length() + kP256_PrivateKey_Length, error = CHIP_ERROR_INVALID_ARGUMENT);
+    CHIP_ERROR error                = CHIP_NO_ERROR;
+    psa_status_t status             = PSA_SUCCESS;
+    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
+    PsaP256KeypairContext & context = to_keypair_ctx(mKeypair);
+    Encoding::BufferWriter bbuf(mPublicKey, mPublicKey.Length());
 
     Clear();
 
     psa_set_key_type(&attributes, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1));
-    psa_set_key_bits(&attributes, sKeypairBitLen);
+    psa_set_key_bits(&attributes, kKeypairBitLen);
     psa_set_key_algorithm(&attributes, PSA_ALG_ECDSA(PSA_ALG_SHA_256));
-    psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_FLAGS);
+    psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_EXPORT | PSA_KEY_USAGE_SIGN_MESSAGE);
 
-    psa_import_key(&attributes, Uint8::to_uchar(input) + mPublicKey.Length(), kP256_PrivateKey_Length, &keypair->psa_ecdsa_key_id);
+    status = psa_import_key(&attributes, input.ConstBytes() + mPublicKey.Length(), kP256_PrivateKey_Length, &context.key_id);
+    VerifyOrExit(status == PSA_SUCCESS, error = CHIP_ERROR_INTERNAL);
 
-    bbuf.Put((const uint8_t *) input, mPublicKey.Length());
+    bbuf.Put(input.ConstBytes(), mPublicKey.Length());
     VerifyOrExit(bbuf.Fit(), error = CHIP_ERROR_NO_MEMORY);
 
     mInitialized = true;
 
 exit:
-    if (CHIP_NO_ERROR != error)
-    {
-        ChipLogError(Crypto, "P256Keypair deserialization error %s", error.AsString());
-    }
+    logPsaError(status);
     return error;
 }
 
@@ -792,10 +780,9 @@ void P256Keypair::Clear()
 {
     if (mInitialized)
     {
-        psa_ecp_keypair * psa_keypair = to_keypair(&mKeypair);
-        psa_destroy_key(psa_keypair->psa_ecdh_key_id);
-        psa_destroy_key(psa_keypair->psa_ecdsa_key_id);
-        memset(psa_keypair, 0, sizeof(psa_ecp_keypair));
+        PsaP256KeypairContext & context = to_keypair_ctx(mKeypair);
+        psa_destroy_key(context.key_id);
+        memset(&context, 0, sizeof(context));
         mInitialized = false;
     }
 }
