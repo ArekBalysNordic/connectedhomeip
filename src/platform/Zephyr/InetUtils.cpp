@@ -17,6 +17,8 @@
 
 #include "InetUtils.h"
 
+namespace chip {
+namespace DeviceLayer {
 namespace InetUtils {
 
 in6_addr ToZephyrAddr(const chip::Inet::IPAddress & address)
@@ -35,3 +37,5 @@ net_if * GetInterface(chip::Inet::InterfaceId ifaceId)
 }
 
 } // namespace InetUtils
+} // namespace DeviceLayer
+} // namespace chip

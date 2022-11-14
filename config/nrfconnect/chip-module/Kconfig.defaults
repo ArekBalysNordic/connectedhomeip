@@ -40,22 +40,6 @@ config LOG_DEFAULT_LEVEL
 
 endif
 
-config FLASH
-    bool
-    default y
-
-config SETTINGS
-    bool
-    default y
-
-config NVS
-    bool
-    default y
-
-config FLASH_MAP
-    bool
-    default y
-
 config PRINTK_SYNC
     bool
     default y
@@ -274,10 +258,6 @@ config NET_SOCKETS_POSIX_NAMES
 config MBEDTLS_SSL_OUT_CONTENT_LEN
     int
     default 900
-
-config CHIP_ENABLE_DNSSD_SRP
-    bool
-    default n
 
 # options managed by IP4/IP6 simultaneous support
 # aligned here to match OpenThread config

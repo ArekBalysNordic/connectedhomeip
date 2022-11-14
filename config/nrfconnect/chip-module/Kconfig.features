@@ -25,6 +25,10 @@ config CHIP_WIFI
 	select WIFI_NRF700X
 	select WIFI
 	select WPA_SUPP
+	imply FLASH
+	imply SETTINGS
+	imply NVS
+	imply FLASH_MAP
 	imply NORDIC_SECURITY_BACKEND
 	imply MBEDTLS_ENTROPY_C
 	imply MBEDTLS_PSA_CRYPTO_C

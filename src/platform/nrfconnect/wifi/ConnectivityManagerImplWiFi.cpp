@@ -21,11 +21,6 @@
 #include <platform/CommissionableDataProvider.h>
 #include <platform/ConnectivityManager.h>
 
-#include <lib/support/CodeUtils.h>
-#include <lib/support/logging/CHIPLogging.h>
-#include <platform/DiagnosticDataProvider.h>
-#include <platform/internal/BLEManager.h>
-
 #include "ConnectivityManagerImplWiFi.h"
 #include "WiFiManager.h"
 
