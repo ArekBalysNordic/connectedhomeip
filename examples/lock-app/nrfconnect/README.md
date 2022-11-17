@@ -12,9 +12,13 @@ a reference for creating your own application.
 
 The example is based on
 [Matter](https://github.com/project-chip/connectedhomeip) and Nordic
-Semiconductor's nRF Connect SDK, and works as a Matter accessory device, meaning it can be paired and controlled remotely over a Matter network built on top of a low-power 802.15.4 Thread or Wi-Fi network. 
+Semiconductor's nRF Connect SDK, and was created to facilitate testing and
+certification of a Matter device communicating over a low-power, 802.15.4 network, either Thread or Wi-Fi.
 
-Support for both Thread and Wi-Fi is mutually exclusive and depends on the hardware platform, so only one protocol can be supported for a specific lock device. In the case of Thread, this device works as a Thread Sleepy End Device. You can use this sample as a reference for creating your application.
+The example behaves as a Matter accessory, that is a device that can be paired
+into an existing Matter network and can be controlled by this network. 
+In the case of Thread, this device works as a Thread Sleepy End Device.
+Support for both Thread and Wi-Fi is mutually exclusive and depends on the hardware platform, so only one protocol can be supported for a specific lock device.
 
 <hr>
 
@@ -24,6 +28,7 @@ Support for both Thread and Wi-Fi is mutually exclusive and depends on the hardw
     -   [Device Firmware Upgrade](#device-firmware-upgrade)
 -   [Requirements](#requirements)
     -   [Supported devices](#supported_devices)
+    -   [IPv6 network support](#ipv6-network-support)
 -   [Device UI](#device-ui)
 -   [Setting up the environment](#setting-up-the-environment)
     -   [Using Docker container for setup](#using-docker-container-for-setup)
@@ -43,13 +48,6 @@ Support for both Thread and Wi-Fi is mutually exclusive and depends on the hardw
 
 <hr>
 
-## IPv6 network support
-
-The development kits for this sample offer the following IPv6 network support for Matter:
-
-* Matter over Thread is supported for ``nrf52840dk_nrf52840``, ``nrf5340dk_nrf5340_cpuapp``, and ``nrf21540dk_nrf52840``.
-* Matter over Wi-Fi is supported for ``nrf5340dk_nrf5340_cpuapp`` with the ``nrf7002_ek`` shield attached or for ``nrf7002dk_nrf5340_cpuapp``.
-
 <a name="overview"></a>
 
 ## Overview
@@ -61,13 +59,13 @@ and [Zephyr RTOS](https://zephyrproject.org/). Visit Matter's
 [nRF Connect platform overview](../../../docs/guides/nrfconnect_platform_overview.md)
 to read more about the platform structure and dependencies.
 
+By default, the Matter accessory device has IPv6 networking disabled. You must pair it with the Matter controller over Bluetooth® LE to get the configuration from the controller to use the device within a Thread or Wi-Fi network. You have to make the device discoverable manually (for security reasons). The controller must get the commissioning information from the Matter accessory device and provision the device into the network.
+
 The sample uses buttons for changing the lock and device states, and LEDs to show the state of these changes. You can test it in the following ways:
 
 - Standalone, using a single DK that runs the door lock application.
 
 - Remotely over the Thread or the Wi-Fi protocol, which in either case requires more devices, including a Matter controller that you can configure either on a PC or a mobile device.
-
-By default, the Matter accessory device has IPv6 networking disabled. You must pair it with the Matter controller over Bluetooth® LE to get the configuration from the controller to use the device within a Thread or Wi-Fi network. You have to make the device discoverable manually (for security reasons). The controller must get the commissioning information from the Matter accessory device and provision the device into the network.
 
 ### Bluetooth LE advertising
 
@@ -94,8 +92,7 @@ Bluetooth LE advertising timeout expires.
 #### Thread or Wi-Fi provisioning
 
 The Last part of the rendezvous procedure, the provisioning operation involves
-sending the Thread / Wi-Fi network credentials from the Matter controller to the Matter device. As a result, the device joins the Thread or Wi-Fi network and can
-communicate with other devices in the network.
+sending the Thread or Wi-Fi network credentials from the Matter controller to the Matter device. As a result, the device joins the Thread or Wi-Fi network and can communicate with other devices in the network.
 
 
 ### Device Firmware Upgrade
@@ -179,6 +176,13 @@ The example supports building and running on the following devices:
 
 <hr>
 
+### IPv6 network support
+
+The development kits for this sample offer the following IPv6 network support for Matter:
+
+* Matter over Thread is supported for ``nrf52840dk_nrf52840``, ``nrf5340dk_nrf5340_cpuapp``.
+* Matter over Wi-Fi is supported for ``nrf7002dk_nrf5340_cpuapp``.
+
 <a name="device-ui"></a>
 
 ## Device UI
@@ -199,8 +203,7 @@ following states are possible:
     Bluetooth LE.
 
 -   _Short Flash Off (950ms on/50ms off)_ &mdash; The device is fully
-    provisioned, but does not yet have full Thread network or service
-    connectivity.
+    provisioned, but does not yet have full Thread network, Wi-Fi network or service connectivity.
 
 -   _Solid On_ &mdash; The device is fully provisioned.
 
@@ -219,13 +222,12 @@ states are possible:
 **Button 1** can be used for the following purposes:
 
 -   _Pressed for less than 3 s_ &mdash; Initiates the OTA software update
-    process. This feature is disabled by default but can be enabled by
+    process. This feature is disabled by default, but can be enabled by
     following the
     [Building with Device Firmware Upgrade support](#building-with-device-firmware-upgrade-support)
     instructions.
 
--   _Pressed for more than 3 s_ &mdash; initiates the factory reset of the     device. 
-    Releasing the button within the 3-second window cancels the factory reset procedure.
+-   _Pressed for more than 3 s_ &mdash; initiates the factory reset of the device. Releasing the button within the 3-second window cancels the factory reset procedure.
 
 **Button 2** &mdash; Pressing the button once changes the lock state to the
 opposite one.
