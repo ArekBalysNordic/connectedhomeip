@@ -193,6 +193,7 @@ jobs:
                     examples/lighting-app/nrfconnect/build/zephyr/zephyr.elf \
                     /tmp/bloat_reports/
             - name: Build example nRF Connect SDK Lock App on nRF7002 PDK
+              if: github.event_name == 'push' || steps.changed_paths.outputs.nrfconnect == 'true'
               timeout-minutes: 20
               run: |
                   scripts/examples/nrfconnect_example.sh lock-app nrf7002dk_nrf5340_cpuapp
@@ -201,6 +202,7 @@ jobs:
                     examples/lock-app/nrfconnect/build/zephyr/zephyr.elf \
                     /tmp/bloat_reports/
             - name: Build example nRF Connect SDK Light Switch App on nRF7002 PDK
+              if: github.event_name == 'push' || steps.changed_paths.outputs.nrfconnect == 'true'
               timeout-minutes: 20
               run: |
                   scripts/examples/nrfconnect_example.sh light-switch-app nrf7002dk_nrf5340_cpuapp
@@ -209,6 +211,7 @@ jobs:
                     examples/light-switch-app/nrfconnect/build/zephyr/zephyr.elf \
                     /tmp/bloat_reports/                    
             - name: Build example nRF Connect SDK Lighting App on nRF7002 PDK
+              if: github.event_name == 'push' || steps.changed_paths.outputs.nrfconnect == 'true'
               timeout-minutes: 20
               run: |
                   scripts/examples/nrfconnect_example.sh lighting-app nrf7002dk_nrf5340_cpuapp

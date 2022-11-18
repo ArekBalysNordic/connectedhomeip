@@ -56,7 +56,7 @@ and [Zephyr RTOS](https://zephyrproject.org/). Visit Matter's
 [nRF Connect platform overview](../../../docs/guides/nrfconnect_platform_overview.md)
 to read more about the platform structure and dependencies.
 
-By default, the Matter accessory device has IPv6 networking disabled. You must pair it with the Matter controller over Bluetooth® LE to get the configuration from the controller to use the device within a Thread or Wi-Fi network. You have to make the device discoverable manually (for security reasons). The controller must get the commissioning information from the Matter accessory device and provision the device into the network.
+By default, the Matter accessory device has IPv6 networking disabled. You must pair it with the Matter controller over Bluetooth® LE to get the configuration from the controller to use the device within a Thread or Wi-Fi network. You have to make the device discoverable manually (for security reasons). See [Bluetooth LE advertising](#bluetooth-le-advertising) to learn how to do it. The controller must get the commissioning information from the Matter accessory device and provision the device into the network.
 
 You can test this application remotely over the Thread or the Wi-Fi protocol, which in either case requires more devices, including a Matter controller that you can configure either on a PC or a mobile device.
 
@@ -162,7 +162,7 @@ following states are possible:
     [Building with Device Firmware Upgrade support](#building-with-device-firmware-upgrade-support)
     instructions.
 
--   _Pressed for more than 3 s_ &mdash; initiates the factory reset of the device. Releasing the button within the 3-second window cancels the factory reset procedure.
+-   _Pressed for more than 3 s_ &mdash; initiates the factory reset of the device. Releasing the button within the 3-second window cancels the factory reset procedure.This piece of hardware is o
 
 
 **Button 2** &mdash; Pressing the button once changes the lock state to the

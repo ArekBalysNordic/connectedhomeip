@@ -68,16 +68,19 @@ accessory using Android CHIPTool:
     nRF7002 DK. nRF52840 DK and nRF5340 DK can be used to test Matter over
     Thread, and nRF7002 DK can be used to test Matter over Wi-Fi.
 
-    > _Note:_ This piece of hardware is only needed if you're testing a Thread
-    > device. Skip it if the tested device operates in a Wi-Fi network.
-
 -   1x nRF52840 DK for running the
     [OpenThread Radio Co-Processor](https://openthread.io/platforms/co-processor)
     firmware. You can replace this DK with another compatible device, such as
     the nRF52840 Dongle.
-    
+
+    > _Note:_ This piece of hardware is only needed if you're testing a Thread
+    > device. Skip it if the tested device operates in a Wi-Fi network.
+
 -   1x Raspberry Pi Model 3B+ or newer (along with an SD card with at least 8 GB
     of memory)
+
+    > _Note:_ This piece of hardware is only needed if you're testing a Thread
+    > device. Skip it if the tested device operates in a Wi-Fi network.
 
 <hr>
 

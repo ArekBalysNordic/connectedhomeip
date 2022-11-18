@@ -60,7 +60,9 @@ and [Zephyr RTOS](https://zephyrproject.org/). Visit Matter's
 [nRF Connect platform overview](../../../docs/guides/nrfconnect_platform_overview.md)
 to read more about the platform structure and dependencies.
 
-By default, the Matter accessory device has IPv6 networking disabled. You must pair it with the Matter controller over Bluetooth® LE to get the configuration from the controller to use the device within a Thread or Wi-Fi network. You have to make the device discoverable manually (for security reasons). The controller must get the commissioning information from the Matter accessory device and provision the device into the network.
+By default, the Matter accessory device has IPv6 networking disabled. You must pair it with the Matter controller over Bluetooth® LE to get the configuration from the controller to use the device within a Thread or Wi-Fi network. The device starts advertising automatically and you can commission the device within 15 minutes. If the advertising time elapsed you can re-enable it using buttons. See [Bluetooth LE advertising](#bluetooth-le-advertising) to learn how to do it. The controller must get the commissioning information from the Matter accessory device and provision the device into the network.
+
+You can test this application remotely over the Thread or the Wi-Fi protocol, which in either case requires more devices, including a Matter controller that you can configure either on a PC or a mobile device.
 
 The sample uses buttons for changing LED states to show the state of these changes. You can test it in the following ways:
 
