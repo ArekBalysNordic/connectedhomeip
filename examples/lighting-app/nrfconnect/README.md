@@ -60,7 +60,7 @@ and [Zephyr RTOS](https://zephyrproject.org/). Visit Matter's
 [nRF Connect platform overview](../../../docs/guides/nrfconnect_platform_overview.md)
 to read more about the platform structure and dependencies.
 
-By default, the Matter accessory device has IPv6 networking disabled. You must pair it with the Matter controller over Bluetooth® LE to get the configuration from the controller to use the device within a Thread or Wi-Fi network. The device starts advertising automatically and you can commission the device within 15 minutes. If the advertising time elapsed you can re-enable it using buttons. See [Bluetooth LE advertising](#bluetooth-le-advertising) to learn how to do it. The controller must get the commissioning information from the Matter accessory device and provision the device into the network.
+By default, the Matter accessory device has IPv6 networking disabled. You must pair it with the Matter controller over Bluetooth® LE to get the configuration from the controller to use the device within a Thread or Wi-Fi network. The device starts advertising automatically and you can commission the device within 15 minutes. If the advertising time elapsed you can re-enable it using buttons. See [Bluetooth LE advertising](#bluetooth-le-advertising) to learn how to do this. The controller must get the commissioning information from the Matter accessory device and provision the device into the network.
 
 You can test this application remotely over the Thread or the Wi-Fi protocol, which in either case requires more devices, including a Matter controller that you can configure either on a PC or a mobile device.
 
@@ -88,13 +88,13 @@ commissioner role.
 
 To start the rendezvous, the controller must get the commissioning information
 from the Matter device. The data payload is encoded within a QR code, printed to
-the UART console, and shared using an NFC tag. NFC tag emulation starts
+the UART console, and shared using an NFC tag. The emulation of the NFC tag emulation starts
 automatically when Bluetooth LE advertising is started and stays enabled until
 Bluetooth LE advertising timeout expires.
 
 #### Thread or Wi-Fi provisioning
 
-The Last part of the rendezvous procedure, the provisioning operation involves
+The provisioning operation, which is the Last part of the rendezvous procedure, involves
 sending the Thread or Wi-Fi network credentials from the Matter controller to the Matter device. As a result, the device joins the Thread or Wi-Fi network and can communicate with other devices in the network.
 
 ### Device Firmware Upgrade
@@ -183,7 +183,7 @@ The example supports building and running on the following devices:
 
 The development kits for this sample offer the following IPv6 network support for Matter:
 
-* Matter over Thread is supported for ``nrf52840dk_nrf52840``, ``nrf5340dk_nrf5340_cpuapp``.
+* Matter over Thread is supported for ``nrf52840dk_nrf52840`` and ``nrf5340dk_nrf5340_cpuapp``.
 * Matter over Wi-Fi is supported for ``nrf7002dk_nrf5340_cpuapp``.
 
 
@@ -216,7 +216,7 @@ following states are possible:
     Bluetooth LE.
 
 -   _Short Flash Off (950ms on/50ms off)_ &mdash; The device is fully
-    provisioned, but does not yet have full Thread network, Wi-Fi network or service connectivity.
+    provisioned, but does not yet have full connectivity for Thread or Wi-Fi network, or the related services.
 
 -   _Solid On_ &mdash; The device is fully provisioned.
 
