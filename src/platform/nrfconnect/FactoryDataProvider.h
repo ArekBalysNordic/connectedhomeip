@@ -112,9 +112,9 @@ public:
     CHIP_ERROR GetEnableKey(MutableByteSpan & enableKey);
 
     /**
-     * @brief Get the user data as MutableByteSpan
+     * @brief Get the user data in CBOR format as MutableByteSpan
      *
-     * @param userData MutableByteSpan object to obtain all user data
+     * @param userData MutableByteSpan object to obtain all user data in CBOR format
      * @returns
      * CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND if factory data does not contain user field, or the value cannot be read out.
      * CHIP_ERROR_BUFFER_TOO_SMALL if provided MutableByteSpan is too small

@@ -374,37 +374,7 @@ Can be placed as an user data argument in the following way:
 
 The user data is not handled anywhere in Matter stack, so you must handle it in your application. To do it, you can use the [Factory Data Provider](../../src/platform/nrfconnect/FactoryDataProvider.h) and apply one of the following methods:
 
-a. `GetUserData` method.
-
-1. Read all user data fields and obtain them as a MutableByteSpan.
-
-    The code example of how to read user data using `GetUserData` method:
-
-    ```
-    chip::DeviceLayer::FactoryDataProvider factoryDataProvider;
-    uint8_t userData[50];
-    MutableByteSpan userDataMutable(userData);
-
-    factoryDataProvider.Init();
-    factoryDataProvider.GetUserData(userDataMutable);
-    ```
-
-2. Parse the user data using your own parser, or prepare the structure corresponding to the JSON field and cast the data.
-
-    The code example of how to cast the data from `MutableByteSpan`:
-
-    ```
-    struct userData
-    {
-        char name[12];
-        uint32_t version;
-        char revision[5];
-    };
-
-    struct userData * uData = reinterpret_cast<struct userData *>(userDataMutable.data());
-    ```
-
-3. After extracting all user data fields you can use them in your code.
+a. You can `GetUserData` method to obtain raw data in CBOR format as a MutableByteSpan.
 
 b. `GetUserKey` method.
 

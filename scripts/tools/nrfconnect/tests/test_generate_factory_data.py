@@ -245,6 +245,7 @@ class TestGenerateFactoryData(unittest.TestCase):
             self.assertEqual(factory_data.get('spake2_it'), 1000)
             self.assertEqual(factory_data.get('spake2_verifier'), base64_to_json(
                 'uWFwqugDNGiEck/po7KHwwMwwqZgN10XuyBajPGuyzUEV/iree4lOrao5GuwnlQ65CJzbeUB49s31EH+NEkg0JVI5MGCQGMMT/SRPFNRODm3wH/MBiehuFc6FJ/NH6Rmzw=='))
+            self.assertEqual(factory_data.get('user'), {'name': 'product_name', 'version': 123, 'revision': '0x123'})
 
             subprocess.check_call(['python3', os.path.join(TOOLS_DIR, 'nrfconnect_generate_partition.py'),
                                    '-i', os.path.join(outdir, 'fd.json'),

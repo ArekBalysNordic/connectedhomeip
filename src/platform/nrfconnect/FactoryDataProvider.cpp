@@ -345,11 +345,9 @@ CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetUserData(MutableByteSpan & 
     ReturnErrorCodeIf(!mFactoryData.user.data, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
     ReturnErrorCodeIf(userData.size() < mFactoryData.user.len, CHIP_ERROR_BUFFER_TOO_SMALL);
 
-    size_t outlen = 0;
-    bool success  = ParseRawUserData(&mFactoryData, userData.data(), userData.size(), &outlen);
+    memcpy(userData.data(), mFactoryData.user.data, mFactoryData.user.len);
 
-    ReturnErrorCodeIf(!success, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
-    userData.reduce_size(outlen);
+    userData.reduce_size(mFactoryData.user.len);
 
     return CHIP_NO_ERROR;
 }
