@@ -76,6 +76,33 @@ struct FactoryData
  */
 bool ParseFactoryData(uint8_t * buffer, uint16_t bufferSize, struct FactoryData * factoryData);
 
+/**
+ * @brief Parses raw User Data from factory Data structure and saves raw bytes to buffer.
+ * The parser parses only the uint32 type of ints, so users should be aware that during parsing
+ * the data in their code.
+ *
+ * @param factoryData An address of object of factory data that contains user field filled.
+ * @param buffer Output buffer that is used to store raw user data.
+ * @param bufferSize Size of output buffer. That size must be at least equal to an expected size of factory data user field.
+ * @param outlen Final size of read user data.
+ * @returns true on success, false otherwise
+ */
+bool ParseRawUserData(struct FactoryData * factoryData, void * buffer, size_t bufferSize, size_t * outlen);
+
+/**
+ * @brief Tries to find an entry within the given factory data user data field.
+ * The parser parses only the uint32 type of ints. To read int-related objects the buffer size must be aligned to uint32.
+ * That means, to obtain uint8 or uint16 value users should provide the buffer with size at least sizeof(uint32_t).
+ *
+ * @param factoryData An address of object of factory data that contains user field filled.
+ * @param entry An entry name to be find out.
+ * @param buffer Output buffer to store found key value.
+ * @param bufferSize Size of buffer. That size should have size at least equal to expected key value.
+ * @param outlen Actual size of found user data field.
+ * @return true on success, false otherwise
+ */
+bool FindUserDataEntry(struct FactoryData * factoryData, const char * entry, void * buffer, size_t bufferSize, size_t * outlen);
+
 #ifdef __cplusplus
 }
 #endif

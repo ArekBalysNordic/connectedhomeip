@@ -339,6 +339,34 @@ CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetEnableKey(MutableByteSpan &
     return CHIP_NO_ERROR;
 }
 
+template <class FlashFactoryData>
+CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetUserData(MutableByteSpan & userData)
+{
+    ReturnErrorCodeIf(!mFactoryData.user.data, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
+    ReturnErrorCodeIf(userData.size() < mFactoryData.user.len, CHIP_ERROR_BUFFER_TOO_SMALL);
+
+    size_t outlen = 0;
+    bool success  = ParseRawUserData(&mFactoryData, userData.data(), userData.size(), &outlen);
+
+    ReturnErrorCodeIf(!success, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
+    userData.reduce_size(outlen);
+
+    return CHIP_NO_ERROR;
+}
+
+template <class FlashFactoryData>
+CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetUserKey(const char * userKey, void * buf, size_t & len)
+{
+    ReturnErrorCodeIf(!mFactoryData.user.data, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
+    ReturnErrorCodeIf(!buf, CHIP_ERROR_BUFFER_TOO_SMALL);
+
+    bool success = FindUserDataEntry(&mFactoryData, userKey, buf, len, &len);
+
+    ReturnErrorCodeIf(!success, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
+
+    return CHIP_NO_ERROR;
+}
+
 // Fully instantiate the template class in whatever compilation unit includes this file.
 template class FactoryDataProvider<InternalFlashFactoryData>;
 template class FactoryDataProvider<ExternalFlashFactoryData>;
