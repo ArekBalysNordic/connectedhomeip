@@ -91,6 +91,11 @@ bool FindUserDataEntry(struct FactoryData * factoryData, const char * entry, voi
     {
         res = zcbor_tstr_decode(states, &currentString);
 
+        if (!res)
+        {
+            break;
+        }
+
         if (strncmp(entry, (const char *) currentString.value, currentString.len) == 0)
         {
             res      = DecodeEntry(states, buffer, bufferSize, outlen);
