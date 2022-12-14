@@ -42,6 +42,7 @@ data secure by applying hardware write protection.
 -   [Generating factory data](#generating-factory-data)
     -   [Creating factory data JSON file with the first script](#creating-factory-data-json-file-with-the-first-script)
     -   [How to set user data](#how-to-set-user-data)
+        - [How to handle user data](#how-to-handle-user-data)
     -   [Verifying using the JSON Schema tool](#verifying-using-the-json-schema-tool)
         -   [Option 1: Using the php-json-schema tool](#option-1-using-the-php-json-schema-tool)
         -   [Option 2: Using a website validator](#option-2-using-a-website-validator)
@@ -356,7 +357,7 @@ To add user data as an argument to the [generate_nrfconnect_chip_factory_data.py
 --user-data {user data JSON}
 ```
 
-As `user data JSON`, provide a flat JSON map with values file that consists of `string` or `int32` types. For example, you can use a JSON file that looks like follows:
+As `user data JSON`, provide a flat JSON map with a value file that consists of `string` or `int32` types. For example, you can use a JSON file that looks like follows:
 
 ```
 {
@@ -371,6 +372,7 @@ When added to the argument line, the final result would look like follows:
 ```
 --user-data {"name": "product_name", "version": 123, "revision": "0x123"}
 ```
+#### How to handle user data
 
 The user data is not handled anywhere in the Matter stack, so you must handle it in your application. To do this, you can use the [Factory Data Provider](../../src/platform/nrfconnect/FactoryDataProvider.h) and apply one of the following methods:
 
