@@ -58,11 +58,17 @@ struct FactoryData
     uint32_t passcode;
     struct FactoryDataString enable_key;
     struct FactoryDataString user;
+    struct ProductAppearance
+    {
+        uint8_t finish;
+        uint8_t primary_color;
+    } product_appearance;
 
     bool vendorIdPresent;
     bool productIdPresent;
     bool hwVerPresent;
     bool discriminatorPresent;
+    bool appearancePresent;
 };
 
 /**

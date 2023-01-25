@@ -107,7 +107,8 @@ The following table lists the parameters of a factory data set:
 | `spake2_verifier` |           SPAKE2+ verifier           |    97 B    | byte string  |  mandatory  |                                                                                                                                                                        The SPAKE2+ verifier generated using SPAKE2+ salt, iteration counter, and passcode.                                                                                                                                                                         |
 |  `discriminator`  |            Discriminator             |    2 B     |    uint16    |  mandatory  |                                                                                                                                                   A 12-bit value matching the field of the same name in the setup code. The discriminator is used during the discovery process.                                                                                                                                                    |
 |    `passcode`     |            SPAKE passcode            |    4 B     |    uint32    |  optional   | A pairing passcode is a 27-bit unsigned integer which serves as a proof of possession during the commissioning. Its value must be restricted to the values from `0x0000001` to `0x5F5E0FE` (`00000001` to `99999998` in decimal), excluding the following invalid passcode values: `00000000`, `11111111`, `22222222`, `33333333`, `44444444`, `55555555`, `66666666`, `77777777`, `88888888`, `99999999`, `12345678`, `87654321`. |
-|      `user`       |              User data               |  variable  | JSON string  | max 1024 B  |                             The user data is provided in the JSON format. This parameter is optional and depends on device manufacturer's purpose. It is provided as a CBOR map type from persistent storage and should be parsed in the user application. This data is not used by the Matter stack. To learn how to work with user data, see [How to set user data](#how-to-set-user-data) section.                              |
+|`product_appearance`|     Product visible appearance      |    2 B     | CBOR map | optional | The appearance field is a structure that describes the visible appearance of the product. This field is provided in a CBOR map and consists of two attributes: `finish` (1 B), `primary_color` (1 B). See the [Appearance field description](#appearance-field-description) to learn how to set all attributes. | 
+|      `user`       |              User data               |  variable, max 1024 B  | CBOR map  | optional  | The user data is provided in the JSON format. This parameter is optional and depends on the device manufacturer's purpose. It is provided as a CBOR map type from persistent storage and should be parsed in the user application. This data is not used by the Matter stack. To learn how to work with user data, see the [How to set user data](#how-to-set-user-data) section.                              |
 
 ### Factory data format
 
@@ -131,8 +132,8 @@ All parameters of the factory data set are either mandatory or optional:
 
 In the factory data set, the following formats are used:
 
--   uint16 and uint32 -- These are the numeric formats representing,
-    respectively, two-bytes length unsigned integer and four-bytes length
+-   uint8, uint16, and uint32 -- These are the numeric formats representing,
+    respectively, one-byte length unsigned integer, two-bytes length unsigned integer, and four-bytes length
     unsigned integer. This value is stored in a HEX file in the big-endian
     order.
 -   Byte string - This parameter represents the sequence of integers between `0`
@@ -149,6 +150,34 @@ In the factory data set, the following formats are used:
     represents a date provided in the `YYYY-MM-DD` or `YYYYMMDD` format.
 -   All certificates stored in factory data are provided in the
     [X.509](https://www.itu.int/rec/T-REC-X.509-201910-I/en) format.
+
+#### Appearance field description
+
+The `appearance` field in the factory data set describes the device's visible appearance.
+
+- `finish` - A string name that indicates the visible exterior finish of the product. 
+It refers to the `ProductFinishEnum` enum, and currently, you can choose one of the following names:
+
+|   Name     | Enum value |
+| :--------: | :--------: |
+| `matte`    |     0      |
+| `satin`    |     1      |
+| `polished` |     2      |
+| `rugged`   |     3      |
+| `fabric`   |     4      |
+| `other`    |     255    |
+
+- `primary_color` - A string name that represents the RGB color space of the device's case color, which is the most representative. 
+It refers to the `ColorEnum` enum, and currently, you can choose one of the following names:
+
+(Enum value) color name (`RGB value`)
+
+| (0) $$\color{black} \color{black}{black}$$ (`#000000`) | (1) $$\color{#000080}{navy}$$ (`#000080`) | (2) $$\color{#008000}{green}$$ (`#008000`)| (3) $$\color{#008080}{teal}$$ (`#008080`) | (4) $$\color{#800080}{maroon}$$ (`#800080`) |
+| --------------------- | ----------------- | --------------- | ----------------- | --------------- |
+| (5) $$\color{#800080}{purple}$$ (`#800080`) | (6) $$\color{#808000}{olive}$$ (`#800080`) | (7) $$\color{#808080}{gray}$$ (`#800080`) | (8) $$\color{#0000FF}{blue}$$ (`#0000FF`) | (9) $$\color{#00FF00}{lime}$$ (`#00FF00`) |
+| (10) $$\color{#00FFFF}{aqua}$$ (`#00FFFF`) | (11) $$\color{#FF0000}{red}$$ (`#FF0000`) | (12) $$\color{#FF00FF}{fuchsia}$$ (`#FF00FF`) | (13) $$\color{#FFFF00}{yellow}$$ (`#FFFF00`) | (14) $$\color{#FFFFFF} \color{white}{white}$$ (`#800080`) |
+| (15) $$\color{#727472}{nickel}$$ (`#727472`) | (16) $$\color{#a8a9ad}{chrome}$$ (`#a8a9ad`) | (17) $$\color{#E1C16E}{brass}$$ (`#E1C16E`) | (18) $$\color{white}{co} \color{yellow}{p} \color{orange}{pe} \color{red}{r}$$  | (19) $$\color{#C0C0C0}{silver}$$ (`#C0C0C0`) |
+ (20) $$\color{#FFD700}{gold}$$ (`#FFD700`) |
 
 <hr>
 
@@ -287,6 +316,11 @@ To use this script, complete the following steps:
     --overwrite
     ```
 
+    i. (optional) Add the appearance of the product:
+    ```
+    --appearance 
+    ```
+
 4. Run the script using the prepared list of arguments:
 
     ```
@@ -314,7 +348,9 @@ $ python scripts/tools/nrfconnect/generate_nrfconnect_chip_factory_data.py \
 --discriminator 0xF00 \
 --generate_rd_uid \
 --passcode 20202021 \
---out "build.json" \
+--product_finish "matte" \
+--product_color "black" \
+--out "build.json"' \
 --schema "scripts/tools/nrfconnect/nrfconnect_factory_data.schema"
 ```
 

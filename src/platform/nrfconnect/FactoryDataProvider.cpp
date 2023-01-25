@@ -340,6 +340,28 @@ CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetEnableKey(MutableByteSpan &
 }
 
 template <class FlashFactoryData>
+CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetProductFinish(app::Clusters::BasicInformation::ProductFinishEnum * finish)
+{
+    ReturnErrorCodeIf(!finish, CHIP_ERROR_INVALID_ARGUMENT);
+    ReturnErrorCodeIf(!mFactoryData.appearancePresent, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
+
+    *finish = static_cast<app::Clusters::BasicInformation::ProductFinishEnum>(mFactoryData.product_appearance.finish);
+
+    return CHIP_NO_ERROR;
+}
+
+template <class FlashFactoryData>
+CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetProductPrimaryColor(app::Clusters::BasicInformation::ColorEnum * primaryColor)
+{
+    ReturnErrorCodeIf(!primaryColor, CHIP_ERROR_INVALID_ARGUMENT);
+    ReturnErrorCodeIf(!mFactoryData.appearancePresent, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
+
+    *primaryColor = static_cast<app::Clusters::BasicInformation::ColorEnum>(mFactoryData.product_appearance.primary_color);
+
+    return CHIP_NO_ERROR;
+}
+
+template <class FlashFactoryData>
 CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetUserData(MutableByteSpan & userData)
 {
     ReturnErrorCodeIf(!mFactoryData.user.data, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);

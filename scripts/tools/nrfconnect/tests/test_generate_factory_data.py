@@ -177,6 +177,8 @@ class TestGenerateFactoryData(unittest.TestCase):
                                    '--discriminator', '0xFED',
                                    '--rd_uid', '91a9c12a7c80700a31ddcfa7fce63e44',
                                    '--enable_key', '00112233445566778899aabbccddeeff',
+                                   '--product_color', 'red',
+                                   '--product_finish', 'satin',
                                    '--user', '{"name": "product_name", "version": 123, "revision": "0x123"}',
                                    '-o', os.path.join(outdir, 'fd.json')
                                    ])
@@ -207,6 +209,7 @@ class TestGenerateFactoryData(unittest.TestCase):
             self.assertEqual(factory_data.get('passcode'), 13243546)
             self.assertEqual(factory_data.get('rd_uid'), 'hex:91a9c12a7c80700a31ddcfa7fce63e44')
             self.assertEqual(factory_data.get('enable_key'), 'hex:00112233445566778899aabbccddeeff')
+            self.assertEqual(factory_data.get('product_appearance'), {'finish': 2, 'primary_color': 11})
             self.assertEqual(factory_data.get('user'), {'name': 'product_name', 'version': 123, 'revision': '0x123'})
 
             subprocess.check_call(['python3', os.path.join(TOOLS_DIR, 'nrfconnect_generate_partition.py'),
@@ -240,6 +243,8 @@ class TestGenerateFactoryData(unittest.TestCase):
                                    '--spake2_salt', 'U1BBS0UyUCBLZXkgU2FsdA==',
                                    '--passcode', '20202021',
                                    '--discriminator', '0xFED',
+                                   '--product_color', 'red',
+                                   '--product_finish', 'satin',
                                    '--user', '{"name": "product_name", "version": 123, "revision": "0x123"}',
                                    '-o', os.path.join(outdir, 'fd.json')
                                    ])
