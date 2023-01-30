@@ -147,6 +147,12 @@ CHIP_ERROR NrfWiFiDriver::CommitConfiguration()
 
 CHIP_ERROR NrfWiFiDriver::RevertConfiguration()
 {
+#if CONFIG_CHIP_WIFI_CONNECTION_RECOVERY_ENABLE
+    // Abort Connection Recovery if it is in progress during reverting configuration.
+    // This is needed to stop recovery process after failsafe timer expiring.
+    WiFiManager::Instance().AbortConnectionRecovery();
+#endif
+
     LoadFromStorage();
 
     if (WiFiManager::StationStatus::CONNECTING <= WiFiManager::Instance().GetStationStatus())

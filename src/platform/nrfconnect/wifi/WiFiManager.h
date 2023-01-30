@@ -74,12 +74,12 @@ public:
         return T2{};
     }
 
-    Map()            = delete;
-    Map(const Map &) = delete;
-    Map(Map &&)      = delete;
+    Map()                        = delete;
+    Map(const Map &)             = delete;
+    Map(Map &&)                  = delete;
     Map & operator=(const Map &) = delete;
-    Map & operator=(Map &&) = delete;
-    ~Map()                  = default;
+    Map & operator=(Map &&)      = delete;
+    ~Map()                       = default;
 
 private:
     Pair mMap[N];
@@ -183,6 +183,9 @@ public:
     CHIP_ERROR Disconnect();
     CHIP_ERROR GetWiFiInfo(WiFiInfo & info) const;
     CHIP_ERROR GetNetworkStatistics(NetworkStatistics & stats) const;
+#if CONFIG_CHIP_WIFI_CONNECTION_RECOVERY
+    void AbortConnectionRecovery();
+#endif
 
 private:
     using NetEventHandler = void (*)(uint8_t *);
@@ -214,6 +217,25 @@ private:
     WiFiNetwork mWantedNetwork{};
     bool mInternalScan{ false };
     uint8_t mRouterSolicitationCounter = 0;
+    bool mSsidFound{ false };
+
+#if CONFIG_CHIP_WIFI_CONNECTION_RECOVERY
+    static constexpr uint32_t kConnectionRecoveryMinIntervalMs = CONFIG_CHIP_WIFI_CONNECTION_RECOVERY_MINIMUM_INTERVAL;
+    static constexpr uint32_t kConnectionRecoveryMaxIntervalMs = CONFIG_CHIP_WIFI_CONNECTION_RECOVERY_MAXIMUM_INTERVAL;
+    static constexpr uint32_t kConnectionRecoveryJitterMs      = CONFIG_CHIP_WIFI_CONNECTION_RECOVERY_JITTER_INTERVAL;
+    static constexpr uint32_t kConnectionRecoveryDelayToReset  = CONFIG_CHIP_WIFI_CONNECTION_RECOVERY_RESET_DELAY;
+
+    static_assert(kConnectionRecoveryMinIntervalMs < kConnectionRecoveryMaxIntervalMs);
+    static_assert(kConnectionRecoveryJitterMs <= kConnectionRecoveryMaxIntervalMs);
+
+    uint32_t mConnectionRecoveryTimeMs{ kConnectionRecoveryMinIntervalMs };
+
+    System::Clock::Milliseconds32 GetNextRecoveryTime();
+    bool mRecoveryTimerAborted = false;
+    static void Recover(System::Layer * layer, void * param);
+    static void ResetRecoveryTime(System::Layer * layer, void * param);
+#endif
+
     static const Map<wifi_iface_state, StationStatus, 10> sStatusMap;
     static const Map<uint32_t, NetEventHandler, 4> sEventHandlerMap;
 };
