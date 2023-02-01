@@ -449,7 +449,6 @@ void WiFiManager::PostConnectivityStatusChange(ConnectivityChange changeType)
     PlatformMgr().PostEventOrDie(&networkEvent);
 }
 
-#if CONFIG_CHIP_WIFI_CONNECTION_RECOVERY
 System::Clock::Milliseconds32 WiFiManager::GetNextRecoveryTime()
 {
 
@@ -496,8 +495,6 @@ void WiFiManager::AbortConnectionRecovery()
     Instance().mConnectionRecoveryTimeMs = kConnectionRecoveryMinIntervalMs;
     Instance().mRecoveryTimerAborted     = true;
 }
-
-#endif
 
 } // namespace DeviceLayer
 } // namespace chip

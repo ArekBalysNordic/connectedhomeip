@@ -202,34 +202,23 @@ config CHIP_FACTORY_RESET_ERASE_NVS
 	bool
 	default y if CHIP_FACTORY_DATA || CHIP_FACTORY_DATA_CUSTOM_BACKEND
 
-config CHIP_WIFI_CONNECTION_RECOVERY
-	bool "Enable WiFi connection recovery feature"
-	depends on CHIP_WIFI
-	help
-	  Enables the connection recovery WiFi feature which allows the device 
-	  performing the next scanning and connection to the known network, 
-	  when the connection has been lost. 
-	  The re-scan time starts from a minimum interval specified by 
-	  CHIP_WIFI_CONNECTION_RECOVERY_MINIMUM_INTERVAL, and with every connection attempt 
-	  the wait time is doubled up to CHIP_WIFI_CONNECTION_RECOVERY_MAXIMUM_INTERVAL. 
-
 config CHIP_WIFI_CONNECTION_RECOVERY_MINIMUM_INTERVAL
 	int "Define the minimum connection recovery time interval in milliseconds"
-	depends on CHIP_WIFI_CONNECTION_RECOVERY
+	depends on CHIP_WIFI
 	default 500
 	help
 	  Specifies the minimum connection recovery interval (in milliseconds).
 
 config CHIP_WIFI_CONNECTION_RECOVERY_MAXIMUM_INTERVAL
 	int "Define the maximum connection recovery time interval in milliseconds"
-	depends on CHIP_WIFI_CONNECTION_RECOVERY
+	depends on CHIP_WIFI
 	default 3600000 # 1 hour
 	help
 	  Specifies the maximum connection recovery interval (in milliseconds).
 
 config CHIP_WIFI_CONNECTION_RECOVERY_JITTER_INTERVAL
 	int "Define the connection recovery jitter in milliseconds"
-	depends on CHIP_WIFI_CONNECTION_RECOVERY
+	depends on CHIP_WIFI
 	default 2000
 	help
 	  Specifies the maximum connection recovery jitter interval (in milliseconds).
@@ -240,7 +229,7 @@ config CHIP_WIFI_CONNECTION_RECOVERY_JITTER_INTERVAL
 
 config CHIP_WIFI_CONNECTION_RECOVERY_RESET_DELAY
 	int "Define the delay between resetting connection recovery interval"
-	depends on CHIP_WIFI_CONNECTION_RECOVERY
+	depends on CHIP_WIFI
 	default 0
 	help
 	  Specifies the delay after a successful connection recovery.
