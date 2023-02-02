@@ -161,10 +161,11 @@ CHIP_ERROR WiFiManager::Scan(const ByteSpan & ssid, ScanResultCallback resultCal
     net_if * iface = InetUtils::GetInterface();
     VerifyOrReturnError(nullptr != iface, CHIP_ERROR_INTERNAL);
 
-    mInternalScan       = internalScan;
-    mScanResultCallback = resultCallback;
-    mScanDoneCallback   = doneCallback;
-    mWiFiState          = WIFI_STATE_SCANNING;
+    mInternalScan         = internalScan;
+    mScanResultCallback   = resultCallback;
+    mScanDoneCallback     = doneCallback;
+    mWiFiState            = WIFI_STATE_SCANNING;
+    Instance().mSsidFound = false;
 
     if (net_mgmt(NET_REQUEST_WIFI_SCAN, iface, NULL, 0))
     {
@@ -341,13 +342,11 @@ void WiFiManager::ScanDoneHandler(uint8_t * data)
     {
         ChipLogDetail(DeviceLayer, "Scan request done (%d)", status->status);
 
-#if CONFIG_CHIP_WIFI_CONNECTION_RECOVERY
         if (!Instance().mSsidFound)
         {
             DeviceLayer::SystemLayer().StartTimer(Instance().GetNextRecoveryTime(), Recover, nullptr);
             return;
         }
-#endif
 
         // Internal scan is supposed to be followed by connection request
         if (Instance().mInternalScan)
@@ -454,11 +453,9 @@ System::Clock::Milliseconds32 WiFiManager::GetNextRecoveryTime()
 
     if (mConnectionRecoveryTimeMs >= kConnectionRecoveryMaxIntervalMs)
     {
-        // reset previous connection recovery time to max value
-        mConnectionRecoveryTimeMs = kConnectionRecoveryMaxIntervalMs;
         // find the new random jitter value in range [-jitter, +jitter]
         int32_t jitter            = chip::Crypto::GetRandU32() % (2 * jitter + 1) - jitter;
-        mConnectionRecoveryTimeMs = mConnectionRecoveryTimeMs + jitter;
+        mConnectionRecoveryTimeMs = kConnectionRecoveryMaxIntervalMs + jitter;
     }
     else
     {
@@ -467,33 +464,40 @@ System::Clock::Milliseconds32 WiFiManager::GetNextRecoveryTime()
     return System::Clock::Milliseconds32(mConnectionRecoveryTimeMs);
 }
 
-void WiFiManager::Recover(System::Layer * layer, void * param)
+void WiFiManager::Recover(System::Layer *, void *)
 {
+    // If kConnectionRecoveryMaxOverallInterval has a non-zero value prevent re-scan endless.
+    if (0 != kConnectionRecoveryMaxOverallInterval &&
+        (++Instance().mConnectionRecoveryCounter >= kConnectionRecoveryMaxOverallInterval))
+    {
+        Instance().AbortConnectionRecovery();
+    }
+
     // Prevent executing Scan if it has been aborted by the failsafe timer occurrence.
     if (!Instance().mRecoveryTimerAborted)
     {
         ChipLogProgress(DeviceLayer, "Connection recover re-scanning... (next attempt in %d ms)",
                         Instance().GetNextRecoveryTime().count());
-        Instance().mInternalScan = true;
-        Instance().mSsidFound    = false;
         Instance().Scan(Instance().mWantedNetwork.GetSsidSpan(), nullptr, nullptr, true /* internal scan */);
     }
     Instance().mRecoveryTimerAborted = false;
 }
 
-void WiFiManager::ResetRecoveryTime(System::Layer * layer, void * param)
+void WiFiManager::ResetRecoveryTime(System::Layer *, void *)
 {
     if (WIFI_STATE_COMPLETED == Instance().mWiFiState)
     {
-        Instance().mConnectionRecoveryTimeMs = kConnectionRecoveryMinIntervalMs;
+        Instance().mConnectionRecoveryTimeMs  = kConnectionRecoveryMinIntervalMs;
+        Instance().mConnectionRecoveryCounter = 0;
     }
 }
 
 void WiFiManager::AbortConnectionRecovery()
 {
     DeviceLayer::SystemLayer().CancelTimer(Recover, nullptr);
-    Instance().mConnectionRecoveryTimeMs = kConnectionRecoveryMinIntervalMs;
-    Instance().mRecoveryTimerAborted     = true;
+    Instance().mConnectionRecoveryTimeMs  = kConnectionRecoveryMinIntervalMs;
+    Instance().mConnectionRecoveryCounter = 0;
+    Instance().mRecoveryTimerAborted      = true;
 }
 
 } // namespace DeviceLayer

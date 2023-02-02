@@ -165,13 +165,14 @@ public:
         }
     };
 
-    static constexpr uint16_t kRouterSolicitationIntervalMs        = 4000;
-    static constexpr uint16_t kMaxInitialRouterSolicitationDelayMs = 1000;
-    static constexpr uint8_t kRouterSolicitationMaxCount           = 3;
-    static constexpr uint32_t kConnectionRecoveryMinIntervalMs     = CONFIG_CHIP_WIFI_CONNECTION_RECOVERY_MINIMUM_INTERVAL;
-    static constexpr uint32_t kConnectionRecoveryMaxIntervalMs     = CONFIG_CHIP_WIFI_CONNECTION_RECOVERY_MAXIMUM_INTERVAL;
-    static constexpr uint32_t kConnectionRecoveryJitterMs          = CONFIG_CHIP_WIFI_CONNECTION_RECOVERY_JITTER_INTERVAL;
-    static constexpr uint32_t kConnectionRecoveryDelayToReset      = CONFIG_CHIP_WIFI_CONNECTION_RECOVERY_RESET_DELAY;
+    static constexpr uint16_t kRouterSolicitationIntervalMs         = 4000;
+    static constexpr uint16_t kMaxInitialRouterSolicitationDelayMs  = 1000;
+    static constexpr uint8_t kRouterSolicitationMaxCount            = 3;
+    static constexpr uint32_t kConnectionRecoveryMinIntervalMs      = CONFIG_CHIP_WIFI_CONNECTION_RECOVERY_MINIMUM_INTERVAL;
+    static constexpr uint32_t kConnectionRecoveryMaxIntervalMs      = CONFIG_CHIP_WIFI_CONNECTION_RECOVERY_MAXIMUM_INTERVAL;
+    static constexpr uint32_t kConnectionRecoveryJitterMs           = CONFIG_CHIP_WIFI_CONNECTION_RECOVERY_JITTER;
+    static constexpr uint32_t kConnectionRecoveryDelayToReset       = CONFIG_CHIP_WIFI_CONNECTION_RECOVERY_RESET_DELAY;
+    static constexpr uint32_t kConnectionRecoveryMaxOverallInterval = CONFIG_CHIP_WIFI_CONNECTION_RECOVERY_MAX_OVERALL_INTERVAL;
 
     static_assert(kConnectionRecoveryMinIntervalMs < kConnectionRecoveryMaxIntervalMs);
     static_assert(kConnectionRecoveryJitterMs <= kConnectionRecoveryMaxIntervalMs);
@@ -226,6 +227,7 @@ private:
     bool mInternalScan{ false };
     uint8_t mRouterSolicitationCounter = 0;
     bool mSsidFound{ false };
+    uint32_t mConnectionRecoveryCounter{ 0 };
     uint32_t mConnectionRecoveryTimeMs{ kConnectionRecoveryMinIntervalMs };
     bool mRecoveryTimerAborted = false;
 

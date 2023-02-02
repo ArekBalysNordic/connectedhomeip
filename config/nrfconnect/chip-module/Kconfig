@@ -216,7 +216,16 @@ config CHIP_WIFI_CONNECTION_RECOVERY_MAXIMUM_INTERVAL
 	help
 	  Specifies the maximum connection recovery interval (in milliseconds).
 
-config CHIP_WIFI_CONNECTION_RECOVERY_JITTER_INTERVAL
+config CHIP_WIFI_CONNECTION_RECOVERY_MAX_OVERALL_INTERVAL
+	int "Define maximum amount of connection recovery occurrences"
+	depends on CHIP_WIFI
+	default 0
+	help
+	  If it is a non-zero value specifies the maximum amount of connection 
+	  recovery occurrences. the zero value means that there is no limit
+	  for number of connection recoveries.
+
+config CHIP_WIFI_CONNECTION_RECOVERY_JITTER
 	int "Define the connection recovery jitter in milliseconds"
 	depends on CHIP_WIFI
 	default 2000
