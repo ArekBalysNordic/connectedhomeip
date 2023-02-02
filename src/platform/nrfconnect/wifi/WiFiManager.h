@@ -213,6 +213,16 @@ private:
     static void DisconnectHandler(uint8_t * data);
     static void PostConnectivityStatusChange(ConnectivityChange changeType);
     static void SendRouterSolicitation(System::Layer * layer, void * param);
+
+    // Connection Recovery feature
+    // This feature allows re-scanning and re-connecting the connection to the known network after
+    // a reboot or when a connection is lost. The following attempts will occur with increasing interval.
+    // The connection recovery interval starts from kConnectionRecoveryMinIntervalMs and is doubled
+    // with each occurrence until reaching kConnectionRecoveryMaxIntervalMs.
+    // When the connection recovery interval reaches the maximum value the randomized kConnectionRecoveryJitterMs
+    // from the range [-jitter, +jitter] is added to the value to avoid the periodicity.
+    // To avoid frequent recovery attempts when the signal to an access point is poor quality
+    // The connection recovery interval will be cleared after the defined delay in kConnectionRecoveryDelayToReset.
     static void Recover(System::Layer * layer, void * param);
     static void ResetRecoveryTime(System::Layer * layer, void * param);
     System::Clock::Milliseconds32 GetNextRecoveryTime();
