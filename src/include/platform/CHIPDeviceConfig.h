@@ -1343,3 +1343,23 @@
 #ifndef CHIP_DISPATCH_EVENT_LONG_DISPATCH_TIME_WARNING_THRESHOLD_MS
 #define CHIP_DISPATCH_EVENT_LONG_DISPATCH_TIME_WARNING_THRESHOLD_MS 100
 #endif
+
+/**
+ * CHIP_CONFIG_ADDRESS_RESOLVE_MIN_LOOKUP_DEFAULT_TIME_MS
+ *
+ * Minimum lookup time to wait for additional DNSSD queries even if a replay
+ * has already been received or to allow additional heuristics regarding node choice
+ * to succeed 
+ */
+#ifndef CHIP_CONFIG_ADDRESS_RESOLVE_MIN_LOOKUP_DEFAULT_TIME_MS
+#define CHIP_CONFIG_ADDRESS_RESOLVE_MIN_LOOKUP_DEFAULT_TIME_MS 200
+#endif
+
+/**
+ * CHIP_CONFIG_ADDRESS_RESOLVE_MAX_LOOKUP_DEFAULT_TIME_MS
+ *
+ * The maximum time to wait until a timeout on DNSSD response occurs
+ */
+#ifndef CHIP_CONFIG_ADDRESS_RESOLVE_MAX_LOOKUP_DEFAULT_TIME_MS
+#define CHIP_CONFIG_ADDRESS_RESOLVE_MAX_LOOKUP_DEFAULT_TIME_MS 45000
+#endif
