@@ -56,6 +56,8 @@ public:
     static void IdentifyStartHandler(Identify *);
     static void IdentifyStopHandler(Identify *);
 
+    static void StartBLEAdvertisementHandler(const AppEvent & event);
+
 private:
     CHIP_ERROR Init();
 
@@ -67,7 +69,6 @@ private:
     static void FunctionHandler(const AppEvent & event);
     static void StartBLEAdvertisementAndLockActionEventHandler(const AppEvent & event);
     static void LockActionEventHandler(const AppEvent & event);
-    static void StartBLEAdvertisementHandler(const AppEvent & event);
     static void UpdateLedStateEventHandler(const AppEvent & event);
 
     static void ChipEventHandler(const chip::DeviceLayer::ChipDeviceEvent * event, intptr_t arg);
