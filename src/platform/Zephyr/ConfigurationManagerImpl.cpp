@@ -55,6 +55,8 @@ namespace DeviceLayer {
 
 using namespace ::chip::DeviceLayer::Internal;
 
+ConfigurationManagerImpl::DeviceFactoryResetCallback ConfigurationManagerImpl::sDeviceFactoryResetCallback = nullptr;
+
 ConfigurationManagerImpl & ConfigurationManagerImpl::GetDefaultInstance()
 {
     static ConfigurationManagerImpl sInstance;
@@ -212,14 +214,21 @@ void ConfigurationManagerImpl::DoFactoryReset(intptr_t arg)
         ChipLogError(DeviceLayer, "Factory reset failed: %d", status);
     }
 #else
+    ConnectivityMgr().ErasePersistentInfo();
+
+    //  Do device-specific actions before erasing the settings and performing factory reset.
+    if (sDeviceFactoryResetCallback)
+    {
+        ChipLogProgress(DeviceLayer, "Cleaning device-specific data...");
+        sDeviceFactoryResetCallback(arg);
+    }
+
     const CHIP_ERROR err = PersistedStorage::KeyValueStoreMgrImpl().DoFactoryReset();
 
     if (err != CHIP_NO_ERROR)
     {
         ChipLogError(DeviceLayer, "Factory reset failed: %" CHIP_ERROR_FORMAT, err.Format());
     }
-
-    ConnectivityMgr().ErasePersistentInfo();
 #endif
 
     PlatformMgr().Shutdown();
