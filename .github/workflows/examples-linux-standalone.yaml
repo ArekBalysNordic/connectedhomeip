@@ -16,9 +16,6 @@ name: Build example - Linux Standalone
 
 on:
     push:
-        branches:
-            - master
-            - 'v*-branch'
     pull_request:
     merge_group:
 
