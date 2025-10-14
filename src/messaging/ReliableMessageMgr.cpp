@@ -214,6 +214,13 @@ void ReliableMessageMgr::ExecuteActions()
             // Do not StartTimer, we will schedule the timer at the end of the timer handler.
             mRetransTable.ReleaseObject(entry);
 
+#if CHIP_CONFIG_ENABLE_ICD_SERVER
+            // Manually withdraw ICD active mode to switch to slow polling immediately,
+            // while keeping the exchange alive for its response timer to handle cleanup naturally
+            ec->mFlags.Set(ReliableMessageContext::Flags::kFlagICDActiveWithdrawn);
+            app::ICDNotifier::GetInstance().NotifyActiveRequestWithdrawal(app::ICDListener::KeepActiveFlag::kExchangeContextOpen);
+#endif // CHIP_CONFIG_ENABLE_ICD_SERVER
+
             return Loop::Continue;
         }
 

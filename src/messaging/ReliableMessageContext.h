@@ -184,6 +184,10 @@ protected:
         ///     IsResponseExpected() is true).
         /// (2) We have received neither a response nor an ack for that message.
         kFlagWaitingForResponseOrAck = (1u << 11),
+
+        /// When set, signifies that ICD active mode withdrawal has already been called
+        /// for this exchange, so the destructor should not withdraw again.
+        kFlagICDActiveWithdrawn = (1u << 12),
     };
 
     BitFlags<Flags> mFlags; // Internal state flags

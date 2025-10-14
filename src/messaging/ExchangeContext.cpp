@@ -343,7 +343,11 @@ ExchangeContext::~ExchangeContext()
 
 #if CHIP_CONFIG_ENABLE_ICD_SERVER
     // TODO(#33075) : Add check for group context to not a req since it serves no purpose
-    app::ICDNotifier::GetInstance().NotifyActiveRequestWithdrawal(app::ICDListener::KeepActiveFlag::kExchangeContextOpen);
+    // Only withdraw if we haven't already done so (e.g., at max retransmissions)
+    if (!mFlags.Has(Flags::kFlagICDActiveWithdrawn))
+    {
+        app::ICDNotifier::GetInstance().NotifyActiveRequestWithdrawal(app::ICDListener::KeepActiveFlag::kExchangeContextOpen);
+    }
 #endif // CHIP_CONFIG_ENABLE_ICD_SERVER
 
     // Ideally, in this scenario, the retransmit table should
