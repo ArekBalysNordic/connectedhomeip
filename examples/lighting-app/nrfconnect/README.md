@@ -16,6 +16,12 @@
 > Nordic technical support via [DevZone](https://devzone.nordicsemi.com/)
 > portal.
 
+> **Note:** Most sample files in this directory are symlinks to
+> `third_party/nrfconnect/ncs-matter/samples/light_bulb`. The local
+> `CMakeLists.txt` still builds against the connectedhomeip tree through
+> `third_party/connectedhomeip`. Board files for the nRF52840 Dongle are kept
+> locally under `boards/`.
+
 The nRF Connect Lighting Example demonstrates how to remotely control a white
 dimmable light bulb. It uses buttons to test changing the lighting and device
 states and LEDs to show the state of these changes. You can use this example as
@@ -502,15 +508,8 @@ Semiconductor's kit you own.
 
 ### Building with Pigweed RPCs
 
-The RPCs in `lighting-common/lighting_service/lighting_service.proto` can be
-used to control various functionalities of the lighting app from a USB-connected
-host computer. To build the example with the RPC server, run the following
-command with _build-target_ replaced with the build target name of the Nordic
-Semiconductor's kit you own:
-
-    ```
-    $ west build -b build-target --sysbuild -- -DOVERLAY_CONFIG=rpc.overlay
-    ```
+Pigweed RPC support is not wired up in the refactored ncs-matter-based sample
+yet. The legacy `rpc.overlay` file is kept for reference only.
 
 ### Building with Device Firmware Upgrade support
 
