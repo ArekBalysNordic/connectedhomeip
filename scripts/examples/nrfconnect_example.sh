@@ -16,16 +16,16 @@
 #    limitations under the License.
 #
 
-cd "$(dirname "$0")/../../examples"
+CHIP_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 
 APP="$1"
 BOARD="$2"
 shift 2
 
-if [[ ! -f "$APP/nrfconnect/CMakeLists.txt" || -z "$BOARD" ]]; then
+if [[ ! -f "$CHIP_ROOT/examples/$APP/nrfconnect/CMakeLists.txt" || -z "$BOARD" ]]; then
     echo "Usage: $0 <application> <board>" >&2
     echo "Applications:" >&2
-    ls */nrfconnect/CMakeLists.txt | awk -F/ '{print "  "$1}' >&2
+    ls "$CHIP_ROOT/examples"/*/nrfconnect/CMakeLists.txt | awk -F/ '{print "  "$(NF-2)}' >&2
     exit 1
 fi
 
@@ -34,8 +34,10 @@ set -x
 # Activate Zephyr environment
 [[ -n $ZEPHYR_BASE ]] && source "$ZEPHYR_BASE/../.zephyrrc"
 
-# Activate Matter environment
-source "../scripts/activate.sh"
+# Activate Matter from repo root so activate.sh submodule checks resolve correctly.
+cd "$CHIP_ROOT"
+source "$CHIP_ROOT/scripts/activate.sh"
+cd "$CHIP_ROOT/examples"
 
 # Set ccache base directory to improve the cache hit ratio
 export CCACHE_BASEDIR="$PWD/$APP/nrfconnect"
